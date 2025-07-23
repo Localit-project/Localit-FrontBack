@@ -1,0 +1,12 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <!-- themes.xml (or styles.xml) -->
+    <style name="Theme.Localit" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- ActionBar 제거된 테마 -->
+        <item name="colorPrimary">#000000</item> <!-- 배경색으로 쓰는 색 -->
+
+        <item name="colorPrimaryVariant">#6B8E6B</item>
+        <item name="colorOnPrimary">#333333</item>
+    </style>
+
+</resources>

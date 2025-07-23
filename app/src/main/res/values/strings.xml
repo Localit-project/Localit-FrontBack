@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Localit</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="hint_user_id">아이디 (example@email.com)</string>
+    <string name="hint_password">비밀번호</string>
+    <string name="btn_login">로그인</string>
+    <string name="login_google">구글로 로그인</string>
+    <string name="login_naver">네이버로 로그인</string>
+    <string name="login_kakao">카카오로 로그인</string>
+    <string name="forgot_password">아이디/비밀번호 찾기</string>
+    <string name="sign_up">회원가입</string>
+</resources>
