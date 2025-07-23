@@ -41,6 +41,12 @@
             android:exported="true"
             android:label="@string/app_name" />
 
+        <!-- 아이디/비밀번호 찾기 버튼 누르면 이동 -->
+        <activity
+            android:name=".FindIdActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+
 
     </application>
 
