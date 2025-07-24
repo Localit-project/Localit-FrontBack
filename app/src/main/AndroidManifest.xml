@@ -47,6 +47,11 @@
             android:exported="true"
             android:label="@string/app_name" />
 
+        <!--비밀번호 찾기 버튼 누르면 이동 -->
+        <activity
+            android:name=".ChangePwActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
 
     </application>
 
