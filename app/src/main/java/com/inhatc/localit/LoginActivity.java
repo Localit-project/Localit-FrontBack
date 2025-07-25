@@ -9,7 +9,10 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.FirebaseNetworkException;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -79,7 +82,7 @@ public class LoginActivity extends AppCompatActivity {
             }
         }
     }
-    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {//성공시 MainActivity로 넘어가기,실패시 오류 메세지 출력
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
@@ -87,13 +90,23 @@ public class LoginActivity extends AppCompatActivity {
                         FirebaseUser user = mAuth.getCurrentUser();
                         Log.d("FirebaseAuth", "signInWithCredential:success, user: " + user.getEmail());
 
-                        //로그인 성공 후 MainActivity로 이동
                         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                         startActivity(intent);
-                        finish();  // 로그인 화면 종료
+                        finish();
                     } else {
-                        Log.w("FirebaseAuth", "signInWithCredential:failure", task.getException());
-                        // 실패 시 사용자에게 메시지 보여주기 등 추가 가능
+                        Exception e = task.getException();
+                        if (e != null) {
+                            if (e instanceof FirebaseAuthInvalidCredentialsException) {
+                                Toast.makeText(this, "유효하지 않은 인증 정보입니다. 다시 시도해 주세요.", Toast.LENGTH_LONG).show();
+                            } else if (e instanceof FirebaseAuthUserCollisionException) {
+                                Toast.makeText(this, "이미 다른 계정으로 가입된 이메일입니다.", Toast.LENGTH_LONG).show();
+                            } else if (e instanceof FirebaseNetworkException) {
+                                Toast.makeText(this, "네트워크 오류입니다. 인터넷 연결을 확인하세요.", Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(this, "로그인에 실패했습니다: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                            Log.w("FirebaseAuth", "signInWithCredential:failure", e);
+                        }
                     }
                 });
     }
