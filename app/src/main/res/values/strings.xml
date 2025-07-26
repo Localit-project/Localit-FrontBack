@@ -11,4 +11,5 @@
     <string name="login_kakao">카카오로 로그인</string>
     <string name="forgot_password">아이디/비밀번호 찾기</string>
     <string name="sign_up">회원가입</string>
+    <string name="default_web_client_id">820308975341-treemo59ba156b4rlo234het9umo7uj3.apps.googleusercontent.com</string>
 </resources>
