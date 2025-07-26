@@ -82,7 +82,7 @@ public class SignUpActivity extends AppCompatActivity {
             }
 
             if (!isValidPassword(password)) {
-                Toast.makeText(this, "비밀번호는 영문자와 특수문자를 포함해야 합니다", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "비밀번호는 영문자와 특수문자를 포함해야 하며 최소 6글자 이상 입력해야 합니다", Toast.LENGTH_SHORT).show();
                 return;
             }
 
