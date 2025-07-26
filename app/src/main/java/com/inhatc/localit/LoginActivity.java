@@ -59,6 +59,8 @@ public class LoginActivity extends AppCompatActivity {
                 .requestIdToken(getString(R.string.default_web_client_id))  // google-services.json 안에 있음
                 .requestEmail()
                 .build();
+
+
         //Google 로그인 클라이언트 초기화
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
         //구글 로그인 버튼 클릭 처리
@@ -87,14 +89,19 @@ public class LoginActivity extends AppCompatActivity {
             }
         }
     }
-    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {//성공시 MainActivity로 넘어가기,실패시 오류 메세지 출력
+
+    //성공시 MainActivity로 넘어가기,실패시 오류 메세지 출력
+    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+        //디버깅
+        Log.d("GoogleToken", "ID Token: " + acct.getIdToken());
+
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
                         Log.d("FirebaseAuth", "signInWithCredential:success, user: " + user.getEmail());
-
+                        Toast.makeText(LoginActivity.this, "로그인에 성공했습니다", Toast.LENGTH_SHORT).show();
                         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                         startActivity(intent);
                         finish();
