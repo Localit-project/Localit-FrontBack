@@ -82,7 +82,7 @@ public class SignUpActivity extends AppCompatActivity {
             }
 
             if (!isValidPassword(password)) {
-                Toast.makeText(this, "비밀번호는 영문자와 특수문자를 포함해야 하며 최소 6글자 이상 입력해야 합니다", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "비밀번호는 영문자와 특수문자를 포함해야 하며 최소 8글자 이상 입력해야 합니다", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -130,7 +130,7 @@ public class SignUpActivity extends AppCompatActivity {
 
     // 비번 유효성 검사 (영문 + 특수문자 포함, 최소 6자)
     private boolean isValidPassword(String password) {
-        return password.matches("^(?=.*[A-Za-z])(?=.*[^A-Za-z0-9]).{6,}$");
+        return password.matches("^(?=.*[A-Za-z])(?=.*[^A-Za-z0-9]).{8,}$");
     }
 
     // 전화번호 자동 - 설정
