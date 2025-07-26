@@ -2,15 +2,15 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/white">
+    android:background="@color/white"
+    android:orientation="vertical">
 
     <!-- 상단 헤더 -->
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_marginTop="25dp"
         android:layout_height="56dp"
+        android:layout_marginTop="25dp"
         android:background="@color/white"
         android:paddingHorizontal="16dp">
 
@@ -107,9 +107,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="25dp"
+                android:background="@color/white"
                 android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:background="@color/white">
+                android:paddingEnd="16dp">
 
                 <TextView
                     android:id="@+id/textView2"
