@@ -2,20 +2,41 @@ package com.inhatc.localit;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-import android.widget.*;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.android.gms.auth.api.signin.*;
+import com.google.firebase.FirebaseNetworkException;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.*;
-import com.google.firebase.firestore.FirebaseFirestore;
+import android.util.Log;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.GoogleAuthProvider;
 import com.navercorp.nid.NaverIdLoginSDK;
 import com.navercorp.nid.oauth.OAuthLoginCallback;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,36 +45,40 @@ public class LoginActivity extends AppCompatActivity {
     private EditText etId, etPassword;
     private Button btnLogin;
     private TextView tvForgotPassword, tvSignUp;
+
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
 
-    private GoogleSignInClient mGoogleSignInClient;
-    private final int RC_SIGN_IN = 9001;
+    GoogleSignInClient mGoogleSignInClient;
+    private int RC_SIGN_IN = 9001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        // Firebase 인증 및 Firestore 초기화
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
+        // 뷰 및 리스너 초기화
         initViews();
         setClickListeners();
 
-
+        // Google 로그인 옵션
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
+        //Google 로그인 클라이언트 초기화
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-
+        //구글 로그인 버튼 클릭 처리
         findViewById(R.id.googleSignInButton).setOnClickListener(view -> {
             Intent signInIntent = mGoogleSignInClient.getSignInIntent();
             startActivityForResult(signInIntent, RC_SIGN_IN);
         });
 
-
+        // 네이버 로그인 초기화
         NaverIdLoginSDK.INSTANCE.initialize(
                 this,
                 "XjKX66OIxZPMPqnulSoy",  // 네이버 Client ID
@@ -61,7 +86,7 @@ public class LoginActivity extends AppCompatActivity {
                 "Localit"                // 앱 이름
         );
 
-        ImageButton btnNaver = findViewById(R.id.btn_naver);
+        ImageButton btnNaver = findViewById(R.id.btn_naver); // 레이아웃에 추가되어 있어야 함
         btnNaver.setOnClickListener(v -> {
             NaverIdLoginSDK.INSTANCE.authenticate(
                     LoginActivity.this,
@@ -87,18 +112,144 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == RC_SIGN_IN) {
+            if (data != null) {
+                Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+                try {
+                    GoogleSignInAccount account = task.getResult(ApiException.class);
+                    firebaseAuthWithGoogle(account);
+                } catch (ApiException e) {
+                    Log.w("Google Sign In", "Google sign in failed", e);
+                    Toast.makeText(this, "로그인에 실패했습니다.", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Log.e("Google Sign In", "data is null");
+            }
+        }
+    }
+
+    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        Log.d("FirebaseAuth", "signInWithCredential:success, user: " + user.getEmail());
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                        startActivity(intent);
+                        finish();
+                    } else {
+                        Exception e = task.getException();
+                        if (e != null) {
+                            if (e instanceof FirebaseAuthInvalidCredentialsException) {
+                                Toast.makeText(this, "유효하지 않은 인증 정보입니다. 다시 시도해 주세요.", Toast.LENGTH_LONG).show();
+                            } else if (e instanceof FirebaseAuthUserCollisionException) {
+                                Toast.makeText(this, "이미 다른 계정으로 가입된 이메일입니다.", Toast.LENGTH_LONG).show();
+                            } else if (e instanceof FirebaseNetworkException) {
+                                Toast.makeText(this, "네트워크 오류입니다. 인터넷 연결을 확인하세요.", Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(this, "로그인에 실패했습니다: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                            Log.w("FirebaseAuth", "signInWithCredential:failure", e);
+                        }
+                    }
+                });
+    }
+
+    private void performLogin() {
+        String email = etId.getText().toString().trim();
+        String password = etPassword.getText().toString().trim();
+
+        if (email.isEmpty()) {
+            etId.setError("이메일을 입력해주세요");
+            etId.requestFocus();
+            return;
+        }
+
+        if (password.isEmpty()) {
+            etPassword.setError("비밀번호를 입력해주세요");
+            etPassword.requestFocus();
+            return;
+        }
+
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        if (user != null) {
+                            user.reload().addOnSuccessListener(unused -> {
+                                if (user.isEmailVerified()) {
+                                    db.collection("users").document(user.getUid())
+                                            .get()
+                                            .addOnSuccessListener(document -> {
+                                                if (!document.exists()) {
+                                                    // 최초 로그인 시 Firestore에 기본 정보 저장
+                                                    Map<String, Object> userMap = new HashMap<>();
+                                                    userMap.put("email", user.getEmail());
+                                                    userMap.put("uid", user.getUid());
+                                                    userMap.put("name", "");
+                                                    userMap.put("gender", "");
+                                                    userMap.put("phone", "");
+
+                                                    db.collection("users").document(user.getUid())
+                                                            .set(userMap)
+                                                            .addOnSuccessListener(aVoid -> {
+                                                                Toast.makeText(this, "로그인 성공!", Toast.LENGTH_SHORT).show();
+                                                                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                                                                finish();
+                                                            })
+                                                            .addOnFailureListener(e -> {
+                                                                Toast.makeText(this, "유저 정보 저장 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                            });
+                                                } else {
+                                                    //이미 Firestore에 정보 있음
+                                                    Toast.makeText(this, "로그인 성공!", Toast.LENGTH_SHORT).show();
+                                                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                                                    finish();
+                                                }
+                                            });
+                                } else {
+                                    Toast.makeText(this, "이메일 인증을 완료해주세요", Toast.LENGTH_LONG).show();
+                                    mAuth.signOut();
+                                }
+                            });
+                        }
+                    } else {
+                        Toast.makeText(this, "로그인 실패: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void initViews() {
+        etId = findViewById(R.id.et_id);
+        etPassword = findViewById(R.id.et_password);
+        btnLogin = findViewById(R.id.btn_login);
+        tvForgotPassword = findViewById(R.id.tv_forgot_password);
+        tvSignUp = findViewById(R.id.tv_sign_up);
+    }
+
+    private void setClickListeners() {
+        btnLogin.setOnClickListener(v -> performLogin());
+        tvForgotPassword.setOnClickListener(v -> startActivity(new Intent(this, FindIdActivity.class)));
+        tvSignUp.setOnClickListener(v -> startActivity(new Intent(this, SignUpActivity.class)));
+    }
+
+    // ✅ 네이버 사용자 정보 요청 및 Firestore 저장
     private void fetchNaverUserProfile(String token) {
         new Thread(() -> {
             try {
-                java.net.URL url = new java.net.URL("https://openapi.naver.com/v1/nid/me");
-                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                URL url = new URL("https://openapi.naver.com/v1/nid/me");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("Authorization", "Bearer " + token);
                 int responseCode = conn.getResponseCode();
 
                 if (responseCode == 200) {
-                    java.io.BufferedReader br = new java.io.BufferedReader(
-                            new java.io.InputStreamReader(conn.getInputStream()));
+                    BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                     StringBuilder response = new StringBuilder();
                     String line;
                     while ((line = br.readLine()) != null) {
@@ -106,8 +257,8 @@ public class LoginActivity extends AppCompatActivity {
                     }
                     br.close();
 
-                    org.json.JSONObject json = new org.json.JSONObject(response.toString());
-                    org.json.JSONObject responseJson = json.getJSONObject("response");
+                    JSONObject json = new JSONObject(response.toString());
+                    JSONObject responseJson = json.getJSONObject("response");
                     String email = responseJson.getString("email");
                     String name = responseJson.optString("name", "네이버사용자");
 
@@ -137,89 +288,5 @@ public class LoginActivity extends AppCompatActivity {
                 .set(userMap)
                 .addOnSuccessListener(aVoid -> Log.d("Firestore", "네이버 유저 저장 성공"))
                 .addOnFailureListener(e -> Log.e("Firestore", "저장 실패: " + e.getMessage()));
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == RC_SIGN_IN && data != null) {
-            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-            try {
-                GoogleSignInAccount account = task.getResult(ApiException.class);
-                firebaseAuthWithGoogle(account);
-            } catch (ApiException e) {
-                Toast.makeText(this, "구글 로그인 실패", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
-        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
-        mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        FirebaseUser user = mAuth.getCurrentUser();
-                        if (user != null) {
-                            Toast.makeText(this, "구글 로그인 성공", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(this, MainActivity.class));
-                            finish();
-                        }
-                    } else {
-                        Toast.makeText(this, "로그인 실패: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
-                    }
-                });
-    }
-
-    private void initViews() {
-        etId = findViewById(R.id.et_id);
-        etPassword = findViewById(R.id.et_password);
-        btnLogin = findViewById(R.id.btn_login);
-        tvForgotPassword = findViewById(R.id.tv_forgot_password);
-        tvSignUp = findViewById(R.id.tv_sign_up);
-    }
-
-    private void setClickListeners() {
-        btnLogin.setOnClickListener(v -> performLogin());
-
-        tvForgotPassword.setOnClickListener(v ->
-                startActivity(new Intent(this, FindIdActivity.class)));
-
-        tvSignUp.setOnClickListener(v ->
-                startActivity(new Intent(this, SignUpActivity.class)));
-    }
-
-    private void performLogin() {
-        String email = etId.getText().toString().trim();
-        String password = etPassword.getText().toString().trim();
-
-        if (email.isEmpty()) {
-            etId.setError("이메일을 입력해주세요");
-            etId.requestFocus();
-            return;
-        }
-
-        if (password.isEmpty()) {
-            etPassword.setError("비밀번호를 입력해주세요");
-            etPassword.requestFocus();
-            return;
-        }
-
-        mAuth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        FirebaseUser user = mAuth.getCurrentUser();
-                        if (user != null && user.isEmailVerified()) {
-                            Toast.makeText(this, "로그인 성공!", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(this, MainActivity.class));
-                            finish();
-                        } else {
-                            Toast.makeText(this, "이메일 인증을 완료해주세요", Toast.LENGTH_LONG).show();
-                            mAuth.signOut();
-                        }
-                    } else {
-                        Toast.makeText(this, "로그인 실패: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
     }
 }
