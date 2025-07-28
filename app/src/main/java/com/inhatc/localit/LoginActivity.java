@@ -87,7 +87,7 @@ public class LoginActivity extends AppCompatActivity {
             }
         }
     }
-    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {//성공시 MainActivity로 넘어가기,실패시 오류 메세지 출력
+    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {//성공시 MainActivity로 넘어가며,실패시 오류 메세지 출력
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
