@@ -1,5 +1,7 @@
 package com.inhatc.localit;
 
+import static java.lang.System.getProperties;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
@@ -27,9 +29,15 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import android.util.Log;
 import com.google.firebase.auth.AuthCredential;
-import com.google.firebase.auth.GoogleAuthProvider;
 import com.navercorp.nid.NaverIdLoginSDK;
 import com.navercorp.nid.oauth.OAuthLoginCallback;
+import android.view.View;
+
+import com.kakao.sdk.auth.model.OAuthToken;
+import com.kakao.sdk.user.UserApiClient;
+
+import kotlin.Unit;
+import kotlin.jvm.functions.Function2;
 
 import org.json.JSONObject;
 
@@ -42,6 +50,7 @@ import java.util.Map;
 
 public class LoginActivity extends AppCompatActivity {
 
+    private static final int RC_KAKAO_SIGN_IN =64206 ;
     private EditText etId, etPassword;
     private Button btnLogin;
     private TextView tvForgotPassword, tvSignUp;
@@ -110,12 +119,14 @@ public class LoginActivity extends AppCompatActivity {
                     }
             );
         });
+        setupKakaoLogin();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+        // 구글 로그인 처리
         if (requestCode == RC_SIGN_IN) {
             if (data != null) {
                 Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
@@ -128,6 +139,23 @@ public class LoginActivity extends AppCompatActivity {
                 }
             } else {
                 Log.e("Google Sign In", "data is null");
+            }
+        }
+
+        // 카카오 로그인 처리
+        if (requestCode == RC_KAKAO_SIGN_IN) {
+            if (resultCode == RESULT_OK) {
+                UserApiClient.getInstance().loginWithKakaoTalk(this, (token, error) -> {
+                    if (error != null) {
+                        Log.e("KakaoLogin", "카카오톡 로그인 실패", error);
+                    } else if (token != null) {
+                        Log.i("KakaoLogin", "카카오톡 로그인 성공: " + token.getAccessToken());
+                        getUserInfo(); // 사용자 정보 가져오기
+                    }
+                    return null;
+                });
+            } else {
+                Log.e("KakaoLogin", "카카오톡 로그인 실패");
             }
         }
     }
@@ -288,5 +316,57 @@ public class LoginActivity extends AppCompatActivity {
                 .set(userMap)
                 .addOnSuccessListener(aVoid -> Log.d("Firestore", "네이버 유저 저장 성공"))
                 .addOnFailureListener(e -> Log.e("Firestore", "저장 실패: " + e.getMessage()));
+    }
+    private static final String TAG = "KAKAO_LOGIN"; // 카카오 소셜 로그인 설정
+
+    private void setupKakaoLogin() {
+        ImageButton kakaoLoginBtn = findViewById(R.id.btn_kakao);
+        kakaoLoginBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // 카카오톡 로그인 가능 여부 확인
+                if (UserApiClient.getInstance().isKakaoTalkLoginAvailable(LoginActivity.this)) {
+                    // 카카오톡 로그인
+                    UserApiClient.getInstance().loginWithKakaoTalk(LoginActivity.this, new Function2<OAuthToken, Throwable, Unit>() {
+                        @Override
+                        public Unit invoke(OAuthToken token, Throwable error) {
+                            if (error != null) {
+                                Log.e(TAG, "카카오톡 로그인 실패", error);
+                            } else if (token != null) {
+                                Log.i(TAG, "카카오톡 로그인 성공 " + token.getAccessToken());
+                                getUserInfo();  // 사용자 정보 요청
+                            }
+                            return null;
+                        }
+                    });
+                } else {
+                    // 카카오 계정으로 로그인
+                    UserApiClient.getInstance().loginWithKakaoAccount(LoginActivity.this, new Function2<OAuthToken, Throwable, Unit>() {
+                        @Override
+                        public Unit invoke(OAuthToken token, Throwable error) {
+                            if (error != null) {
+                                Log.e(TAG, "카카오계정 로그인 실패", error);
+                            } else if (token != null) {
+                                Log.i(TAG, "카카오계정 로그인 성공 " + token.getAccessToken());
+                                getUserInfo();  // 사용자 정보 요청
+                            }
+                            return null;
+                        }
+                    });
+                }
+            }
+        });
+    }
+    // 사용자 정보 가져오기
+    private void getUserInfo() {
+        UserApiClient.getInstance().me((user, error) -> {
+            if (error != null) {
+                Log.e(TAG, "사용자 정보 가져오기 실패", error);
+            } else {
+                Log.i(TAG, "사용자 정보 가져오기 성공: " + getProperties().get("nickname"));
+                // 사용자 정보를 통해 추가 작업을 할 수 있음
+            }
+            return null;
+        });
     }
 }
