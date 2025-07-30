@@ -62,6 +62,22 @@
             android:exported="true"
             android:label="@string/app_name" />
 
+        <activity android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- 여기 URI Scheme은 kakao{네이티브 앱 키} 로 설정 -->
+                <data
+                    android:host="oauth"
+                    android:scheme="kakao47032f657514090a03eb23e26657b152"/>
+            </intent-filter>
+        </activity>
+
     </application>
+
+
 
 </manifest>
