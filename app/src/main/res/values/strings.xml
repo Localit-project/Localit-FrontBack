@@ -15,4 +15,5 @@
     <string name="naver_client_id">XjKX66OIxZPMPqnulSoy</string>
     <string name="naver_client_secret">BS64ivicIw</string>
     <string name="naver_client_name">Localit</string>
+    <string name="kakao_app_key">47032f657514090a03eb23e26657b152</string>
 </resources>

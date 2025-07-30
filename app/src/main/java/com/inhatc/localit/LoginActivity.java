@@ -1,5 +1,7 @@
 package com.inhatc.localit;
 
+import static java.lang.System.getProperties;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
@@ -27,9 +29,15 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import android.util.Log;
 import com.google.firebase.auth.AuthCredential;
-import com.google.firebase.auth.GoogleAuthProvider;
 import com.navercorp.nid.NaverIdLoginSDK;
 import com.navercorp.nid.oauth.OAuthLoginCallback;
+import android.view.View;
+
+import com.kakao.sdk.auth.model.OAuthToken;
+import com.kakao.sdk.user.UserApiClient;
+
+import kotlin.Unit;
+import kotlin.jvm.functions.Function2;
 
 import org.json.JSONObject;
 
@@ -42,6 +50,7 @@ import java.util.Map;
 
 public class LoginActivity extends AppCompatActivity {
 
+    private static final int RC_KAKAO_SIGN_IN = 64206;
     private EditText etId, etPassword;
     private Button btnLogin;
     private TextView tvForgotPassword, tvSignUp;
@@ -110,27 +119,9 @@ public class LoginActivity extends AppCompatActivity {
                     }
             );
         });
+        setupKakaoLogin();
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == RC_SIGN_IN) {
-            if (data != null) {
-                Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-                try {
-                    GoogleSignInAccount account = task.getResult(ApiException.class);
-                    firebaseAuthWithGoogle(account);
-                } catch (ApiException e) {
-                    Log.w("Google Sign In", "Google sign in failed", e);
-                    Toast.makeText(this, "로그인에 실패했습니다.", Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                Log.e("Google Sign In", "data is null");
-            }
-        }
-    }
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
@@ -288,5 +279,59 @@ public class LoginActivity extends AppCompatActivity {
                 .set(userMap)
                 .addOnSuccessListener(aVoid -> Log.d("Firestore", "네이버 유저 저장 성공"))
                 .addOnFailureListener(e -> Log.e("Firestore", "저장 실패: " + e.getMessage()));
+    }
+
+    private static final String TAG = "KAKAO_LOGIN";
+
+    private void setupKakaoLogin() {
+        ImageButton kakaoLoginBtn = findViewById(R.id.btn_kakao);
+        kakaoLoginBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (UserApiClient.getInstance().isKakaoTalkLoginAvailable(LoginActivity.this)) {
+                    UserApiClient.getInstance().loginWithKakaoTalk(LoginActivity.this, new Function2<OAuthToken, Throwable, Unit>() {
+                        @Override
+                        public Unit invoke(OAuthToken token, Throwable error) {
+                            if (error != null) {
+                                Log.e(TAG, "카카오톡 로그인 실패", error);
+                                runOnUiThread(() ->
+                                        Toast.makeText(LoginActivity.this, "카카오톡 로그인 실패: " + error.getMessage(), Toast.LENGTH_SHORT).show()
+                                );
+                            } else if (token != null) {
+                                Log.i(TAG, "카카오톡 로그인 성공: " + token.getAccessToken());
+                                runOnUiThread(() ->
+                                        Toast.makeText(LoginActivity.this, "카카오톡 로그인 성공", Toast.LENGTH_SHORT).show()
+                                );
+                                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                                startActivity(intent);
+                                finish();
+                            }
+                            return null;
+                        }
+                    });
+                } else {
+                    UserApiClient.getInstance().loginWithKakaoAccount(LoginActivity.this, new Function2<OAuthToken, Throwable, Unit>() {
+                        @Override
+                        public Unit invoke(OAuthToken token, Throwable error) {
+                            if (error != null) {
+                                Log.e(TAG, "카카오계정 로그인 실패", error);
+                                runOnUiThread(() ->
+                                        Toast.makeText(LoginActivity.this, "카카오계정 로그인 실패: " + error.getMessage(), Toast.LENGTH_SHORT).show()
+                                );
+                            } else if (token != null) {
+                                Log.i(TAG, "카카오계정 로그인 성공: " + token.getAccessToken());
+                                runOnUiThread(() ->
+                                        Toast.makeText(LoginActivity.this, "카카오계정 로그인 성공", Toast.LENGTH_SHORT).show()
+                                );
+                                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                                startActivity(intent);
+                                finish();
+                            }
+                            return null;
+                        }
+                    });
+                }
+            }
+        });
     }
 }
