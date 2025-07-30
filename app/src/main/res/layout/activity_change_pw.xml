@@ -70,54 +70,8 @@
 
 
             <!-- 새비밀번호 입력 -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="새 비밀번호"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp" />
-
-            <EditText
-                android:id="@+id/et_password"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:background="@drawable/edit_text_background"
-                android:drawableStart="@drawable/ic_lock"
-                android:drawablePadding="12dp"
-                android:hint="새 비밀번호를 입력해주세요"
-                android:inputType="textPassword"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="16dp"
-                android:textColor="@color/text_primary"
-                android:textColorHint="@color/text_hint"
-                android:textSize="16sp" />
 
             <!-- 비밀번호 확인 -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="비밀번호 확인"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                android:layout_marginBottom="8dp" />
-
-            <EditText
-                android:id="@+id/et_password_confirm"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:hint="비밀번호 확인"
-                android:textColorHint="@color/text_hint"
-                android:background="@drawable/edit_text_background"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="16dp"
-                android:drawableStart="@drawable/ic_lock"
-                android:drawablePadding="12dp"
-                android:textSize="16sp"
-                android:textColor="@color/text_primary"
-                android:layout_marginBottom="20dp"
-                android:inputType="textPassword" />
 
             <!--  비밀번호 변경 버튼 -->
             <Button
@@ -126,7 +80,7 @@
                 android:layout_height="66dp"
                 android:layout_marginTop="20dp"
                 android:backgroundTint="@color/black"
-                android:text="비밀번호 변경"
+                android:text="비밀번호 변경 메일 발송"
                 android:textColor="@color/white"
                 android:textSize="16sp"
                 android:textStyle="bold" />
