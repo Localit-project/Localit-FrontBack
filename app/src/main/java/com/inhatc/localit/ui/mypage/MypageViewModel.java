@@ -1,16 +1,16 @@
-package com.inhatc.localit.ui.dashboard;
+package com.inhatc.localit.ui.mypage;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-public class DashboardViewModel extends ViewModel {
+public class MypageViewModel extends ViewModel {
 
     private final MutableLiveData<String> mText;
 
-    public DashboardViewModel() {
+    public MypageViewModel() {
         mText = new MutableLiveData<>();
-        mText.setValue("This is dashboard fragment");
+        mText.setValue("This is Mypage fragment");
     }
 
     public LiveData<String> getText() {

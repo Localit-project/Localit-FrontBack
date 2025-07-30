@@ -41,8 +41,8 @@
                 android:textStyle="bold" />
 
             <ImageView
-                android:layout_width="194dp"
-                android:layout_height="341dp"
+                android:layout_width="177dp"
+                android:layout_height="319dp"
                 android:layout_gravity="center"
                 android:layout_marginTop="20dp"
                 android:scaleType="centerCrop"

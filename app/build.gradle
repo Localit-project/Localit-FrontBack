@@ -1,6 +1,6 @@
 plugins {
     id 'com.android.application'
-    id 'com.google.gms.google-services' // ✅ 이미 선언되어 있으므로 apply plugin 필요 없음
+    id 'com.google.gms.google-services' // Firebase 플러그인 추가 (버전은 루트에서 관리)
 }
 
 android {
@@ -9,14 +9,12 @@ android {
 
     defaultConfig {
         applicationId "com.inhatc.localit"
-        minSdk 26
+        minSdk 26 // 보통 21 이상 권장, 35는 너무 높음
         targetSdk 35
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
-
     }
 
     buildTypes {
@@ -37,8 +35,9 @@ android {
 }
 
 dependencies {
+    // Firebase BoM 추가
     implementation platform('com.google.firebase:firebase-bom:34.0.0')
-    implementation 'com.google.firebase:firebase-firestore-ktx:24.7.1'
+    implementation 'com.google.firebase:firebase-firestore-ktx:24.7.1' // 버전은 최신으로
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-auth'
     implementation 'androidx.appcompat:appcompat:1.6.1'
@@ -49,11 +48,14 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment-ktx:2.5.3'
     implementation 'androidx.navigation:navigation-ui-ktx:2.5.3'
     implementation 'com.google.android.gms:play-services-auth:21.0.0'
-    implementation 'com.navercorp.nid:oauth:5.7.0'
-    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
-        implementation "com.kakao.sdk:v2-user:2.19.0"  // 최신 버전 확인해서 넣어줘
+    implementation libs.credentials
+    implementation libs.credentials.play.services.auth
+    implementation libs.googleid
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    apply plugin: 'com.google.gms.google-services' // 구글 서비스 플러그인
 }
