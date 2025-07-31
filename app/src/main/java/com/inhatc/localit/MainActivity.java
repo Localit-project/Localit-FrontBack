@@ -13,26 +13,27 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainActivity extends AppCompatActivity {
 
     private ImageView btnMenu;
-    private TextView[] regionTexts;
-
-    private String[] regions = {
-            "서울특별시", "인천광역시", "경기도", "강원특별자치도",
-            "충청북도", "세종특별자치시", "충청남도", "대전광역시",
-            "경상북도", "대구광역시", "울산광역시", "부산광역시",
-            "경상남도", "전북특별자치도", "광주광역시", "전라남도", "제주특별자치도"
-    };
+    private TextView[] regionTexts;   // 추가됨
+    private String[] regions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // strings.xml에서 지역 이름 불러오기
+        regions = getResources().getStringArray(R.array.regions_array);
+
         initViews();
+        setRegionNames();           // 지역 이름 자동 세팅
         setupRegionInteractions();
         setupMenuClick();
     }
 
     private void initViews() {
         btnMenu = findViewById(R.id.btnMenu);
+
+        // regionTexts 배열에 연결할 TextView 아이디 전부 넣기
         regionTexts = new TextView[]{
                 findViewById(R.id.textSeoul),
                 findViewById(R.id.textIncheon),
@@ -54,6 +55,12 @@ public class MainActivity extends AppCompatActivity {
         };
     }
 
+    private void setRegionNames() {
+        for (int i = 0; i < regionTexts.length; i++) {
+            regionTexts[i].setText(regions[i]);  // TextView에 지역 이름 적용
+        }
+    }
+
     private void setupRegionInteractions() {
         for (TextView tv : regionTexts) {
 
@@ -61,17 +68,15 @@ public class MainActivity extends AppCompatActivity {
             tv.setOnTouchListener((v, event) -> {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        // 닿자마자 확대
                         v.animate().scaleX(1.1f).scaleY(1.1f).setDuration(100).start();
                         break;
 
                     case MotionEvent.ACTION_UP:
                     case MotionEvent.ACTION_CANCEL:
-                        // 떼면 원래 크기
                         v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start();
                         break;
                 }
-                return false; // 클릭 이벤트도 작동하게 하려면 false
+                return false; // false로 둬야 클릭 이벤트도 작동함
             });
 
             // 클릭 시 지역 선택 로직
@@ -82,12 +87,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-
     private void setupMenuClick() {
         btnMenu.setOnClickListener(v ->
                 Toast.makeText(this, "메뉴 클릭", Toast.LENGTH_SHORT).show()
         );
+
     }
 
     private void onRegionSelected(String regionName) {
