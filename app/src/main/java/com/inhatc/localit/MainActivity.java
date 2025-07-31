@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initViews() {
+        btnMenu = findViewById(R.id.btnMenu);
         regionTexts = new TextView[]{
                 findViewById(R.id.textSeoul),
                 findViewById(R.id.textIncheon),

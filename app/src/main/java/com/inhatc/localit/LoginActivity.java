@@ -66,62 +66,66 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // Firebase 인증 및 Firestore 초기화
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        // 뷰 및 리스너 초기화
         initViews();
         setClickListeners();
 
-        // Google 로그인 옵션
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
-        //Google 로그인 클라이언트 초기화
+
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-        //구글 로그인 버튼 클릭 처리
+
         findViewById(R.id.googleSignInButton).setOnClickListener(view -> {
             Intent signInIntent = mGoogleSignInClient.getSignInIntent();
             startActivityForResult(signInIntent, RC_SIGN_IN);
         });
 
-        // 네이버 로그인 초기화
-        NaverIdLoginSDK.INSTANCE.initialize(
-                this,
-                "XjKX66OIxZPMPqnulSoy",  // 네이버 Client ID
-                "BS64ivicIw",            // 네이버 Client Secret
-                "Localit"                // 앱 이름
-        );
+        NaverIdLoginSDK.INSTANCE.initialize(this, "XjKX66OIxZPMPqnulSoy", "BS64ivicIw", "Localit");
 
-        ImageButton btnNaver = findViewById(R.id.btn_naver); // 레이아웃에 추가되어 있어야 함
+        ImageButton btnNaver = findViewById(R.id.btn_naver);
         btnNaver.setOnClickListener(v -> {
-            NaverIdLoginSDK.INSTANCE.authenticate(
-                    LoginActivity.this,
-                    new OAuthLoginCallback() {
-                        @Override
-                        public void onSuccess() {
-                            String accessToken = NaverIdLoginSDK.INSTANCE.getAccessToken();
-                            fetchNaverUserProfile(accessToken);
-                        }
+            NaverIdLoginSDK.INSTANCE.authenticate(LoginActivity.this, new OAuthLoginCallback() {
+                @Override
+                public void onSuccess() {
+                    String accessToken = NaverIdLoginSDK.INSTANCE.getAccessToken();
+                    fetchNaverUserProfile(accessToken);
+                }
 
-                        @Override
-                        public void onFailure(int httpStatus, @NonNull String message) {
-                            Toast.makeText(LoginActivity.this, "네이버 로그인 실패", Toast.LENGTH_SHORT).show();
-                            Log.e("NaverLogin", "실패: " + httpStatus + " / " + message);
-                        }
+                @Override
+                public void onFailure(int httpStatus, @NonNull String message) {
+                    Toast.makeText(LoginActivity.this, "네이버 로그인 실패", Toast.LENGTH_SHORT).show();
+                    Log.e("NaverLogin", "실패: " + httpStatus + " / " + message);
+                }
 
-                        @Override
-                        public void onError(int errorCode, @NonNull String message) {
-                            onFailure(errorCode, message);
-                        }
-                    }
-            );
+                @Override
+                public void onError(int errorCode, @NonNull String message) {
+                    onFailure(errorCode, message);
+                }
+            });
         });
+
         setupKakaoLogin();
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == RC_SIGN_IN) {
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            try {
+                GoogleSignInAccount account = task.getResult(ApiException.class);
+                firebaseAuthWithGoogle(account);
+            } catch (ApiException e) {
+                Log.w("GoogleSignIn", "Google sign in failed", e);
+                Toast.makeText(this, "Google 로그인 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
@@ -178,7 +182,6 @@ public class LoginActivity extends AppCompatActivity {
                                             .get()
                                             .addOnSuccessListener(document -> {
                                                 if (!document.exists()) {
-                                                    // 최초 로그인 시 Firestore에 기본 정보 저장
                                                     Map<String, Object> userMap = new HashMap<>();
                                                     userMap.put("email", user.getEmail());
                                                     userMap.put("uid", user.getUid());
@@ -197,7 +200,6 @@ public class LoginActivity extends AppCompatActivity {
                                                                 Toast.makeText(this, "유저 정보 저장 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                                                             });
                                                 } else {
-                                                    //이미 Firestore에 정보 있음
                                                     Toast.makeText(this, "로그인 성공!", Toast.LENGTH_SHORT).show();
                                                     startActivity(new Intent(LoginActivity.this, MainActivity.class));
                                                     finish();
@@ -229,7 +231,6 @@ public class LoginActivity extends AppCompatActivity {
         tvSignUp.setOnClickListener(v -> startActivity(new Intent(this, SignUpActivity.class)));
     }
 
-    // ✅ 네이버 사용자 정보 요청 및 Firestore 저장
     private void fetchNaverUserProfile(String token) {
         new Thread(() -> {
             try {
