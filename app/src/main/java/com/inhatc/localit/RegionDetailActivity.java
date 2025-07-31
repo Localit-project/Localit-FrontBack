@@ -1,5 +1,6 @@
 package com.inhatc.localit;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -8,9 +9,14 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import com.inhatc.localit.ui.category.EventsActivity;
+import com.inhatc.localit.ui.category.NewsActivity;
+import com.inhatc.localit.ui.category.TourismActivity;
+
 public class RegionDetailActivity extends AppCompatActivity {
 
     private ImageView btnBack;
+    private TextView btnMoreFestivals, btnMoreTourism, btnMoreNews;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,10 +40,6 @@ public class RegionDetailActivity extends AppCompatActivity {
         } else {
             cardSubRegion.setVisibility(View.GONE);     // 그 외에는 숨김
         }
-
-        // 버튼, 텍스트뷰 초기화
-        initViews();
-        setClickListeners();
 
         // [1] 축제·행사 섹션
         TextView textFestival1Title = findViewById(R.id.textFestival1Title);
@@ -77,14 +79,39 @@ public class RegionDetailActivity extends AppCompatActivity {
         );
     }
 
-    /*버튼과 뷰 연결 */
+    /** 버튼과 뷰 연결 */
     private void initViews() {
-        btnBack = findViewById(R.id.btnBack);  // XML에 맞춰 btnBack으로 변경
+        btnBack = findViewById(R.id.btnBack);  // 뒤로가기
+        btnMoreFestivals = findViewById(R.id.btnMoreFestivals);
+        btnMoreTourism = findViewById(R.id.btnMoreTourism);
+        btnMoreNews = findViewById(R.id.btnMoreNews);
     }
 
-    /* 클릭 이벤트 연결 */
+    /** 클릭 이벤트 연결 */
     private void setClickListeners() {
-        btnBack.setOnClickListener(v -> finish());  // 클릭 시 Activity 종료
+        // 🔙 뒤로가기
+        btnBack.setOnClickListener(v -> finish());
+
+        // 축제·행사 → EventsActivity로 이동
+        btnMoreFestivals.setOnClickListener(v -> {
+            Intent intent = new Intent(RegionDetailActivity.this, EventsActivity.class);
+            intent.putExtra("region_name", getIntent().getStringExtra("regionName")); // 선택한 지역 이름 전달
+            startActivity(intent);
+        });
+
+        // 관광지 → TourismActivity로 이동
+        btnMoreTourism.setOnClickListener(v -> {
+            Intent intent = new Intent(RegionDetailActivity.this, TourismActivity.class);
+            intent.putExtra("region_name", getIntent().getStringExtra("regionName"));
+            startActivity(intent);
+        });
+
+        // 뉴스 → NewsActivity로 이동
+        btnMoreNews.setOnClickListener(v -> {
+            Intent intent = new Intent(RegionDetailActivity.this, NewsActivity.class);
+            intent.putExtra("region_name", getIntent().getStringExtra("regionName"));
+            startActivity(intent);
+        });
     }
 
     /** 임시 데이터 넣는 메소드 */
@@ -106,21 +133,21 @@ public class RegionDetailActivity extends AppCompatActivity {
         f2DateInfo.setText("2025.07.28");
 
         // 관광지
-        t1Title.setText("2025년 수원화성문화제");
-        t1Location.setText("기간 : 2025.07.19 ~ 2025.08.08");
+        t1Title.setText("수원화성");
+        t1Location.setText("경기도 수원시");
         t1Date.setText("2025.07.28");
 
-        t2Title.setText("2025년 수원화성문화제");
-        t2Location.setText("기간 : 2025.07.19 ~ 2025.08.08");
+        t2Title.setText("남한산성");
+        t2Location.setText("경기도 광주시");
         t2Date.setText("2025.07.28");
 
         // 뉴스
-        n1Title.setText("2025년 수원화성문화제");
-        n1Source.setText("기간 : 2025.07.19 ~ 2025.08.08");
+        n1Title.setText("경기도 주요 뉴스");
+        n1Source.setText("뉴스1");
         n1Date.setText("2025.07.28");
 
-        n2Title.setText("2025년 수원화성문화제");
-        n2Source.setText("기간 : 2025.07.19 ~ 2025.08.08");
+        n2Title.setText("경기도 핫이슈");
+        n2Source.setText("뉴스2");
         n2Date.setText("2025.07.28");
     }
 }

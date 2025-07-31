@@ -76,10 +76,23 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".RegionDetailActivity" />
-        <activity android:name=".ui.category.NewsActivity"/>
-        <activity android:name=".ui.category.EventsActivity"/>
-        <activity android:name=".ui.category.TourismActivity"/>
+        <!-- 지역 상세 정보 페이지 -->
+        <activity android:name=".RegionDetailActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+
+        <activity android:name=".ui.category.NewsActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+
+        <activity android:name=".ui.category.EventsActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+
+        <activity android:name=".ui.category.TourismActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+
 
 
     </application>
