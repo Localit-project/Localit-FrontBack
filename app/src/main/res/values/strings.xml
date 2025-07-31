@@ -18,4 +18,25 @@
     <string name="naver_client_secret">BS64ivicIw</string>
     <string name="naver_client_name">Localit</string>
     <string name="kakao_app_key">47032f657514090a03eb23e26657b152</string>
+
+    <string-array name="regions_array">
+        <item>서울특별시</item>
+        <item>인천광역시</item>
+        <item>경기도</item>
+        <item>강원특별자치도</item>
+        <item>충청북도</item>
+        <item>세종특별자치시</item>
+        <item>충청남도</item>
+        <item>대전광역시</item>
+        <item>경상북도</item>
+        <item>대구광역시</item>
+        <item>울산광역시</item>
+        <item>부산광역시</item>
+        <item>경상남도</item>
+        <item>전북특별자치도</item>
+        <item>광주광역시</item>
+        <item>전라남도</item>
+        <item>제주특별자치도</item>
+    </string-array>
+
 </resources>

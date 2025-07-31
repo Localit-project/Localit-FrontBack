@@ -76,6 +76,12 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".RegionDetailActivity" />
+        <activity android:name=".ui.category.NewsActivity"/>
+        <activity android:name=".ui.category.EventsActivity"/>
+        <activity android:name=".ui.category.TourismActivity"/>
+
+
     </application>
 
 
