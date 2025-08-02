@@ -1,29 +1,28 @@
+package com.inhatc.localit.Fragment;
+
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.inhatc.localit.databinding.FragmentMypageBinding;
-import com.inhatc.localit.ui.mypage.MypageViewModel;
+import com.inhatc.localit.databinding.FragmentFavoriteBinding;
 
-public class MypageFragment extends Fragment {
+public class FavoriteFragment extends Fragment {
 
-    private FragmentMypageBinding binding;
+    private FragmentFavoriteBinding binding;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        MypageViewModel mypageViewModel =
-                new ViewModelProvider(this).get(MypageViewModel.class);
 
-        binding = FragmentMypageBinding.inflate(inflater, container, false);
+        binding = FragmentFavoriteBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        mypageViewModel.getText().observe(getViewLifecycleOwner(), binding.textMypage::setText);
-
+        final TextView textView = binding.textFavorite;
         return root;
     }
 

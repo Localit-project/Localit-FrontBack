@@ -1,4 +1,127 @@
 package com.inhatc.localit.ui.category;
 
-public class TourismActivity {
+import android.content.Intent;
+import android.os.Bundle;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.inhatc.localit.MainActivity;
+import com.inhatc.localit.R;
+import com.inhatc.localit.EventDetailActivity;
+import com.inhatc.localit.model.Event;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class TourismActivity extends AppCompatActivity {
+
+    private RecyclerView recyclerViewTourism;
+    private TourismAdapter tourismAdapter;
+    private List<Event> tourismList;
+    private TextView textRegionTitle;
+    private ImageView btnBack;
+    private BottomNavigationView navView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_tourism);   // 관광지 전용 레이아웃
+
+        initViews();
+        getRegionNameFromIntent();  // 상단 타이틀에 지역명 표시
+        setupData();
+        setupRecyclerView();
+        setupClickListeners();
+        setupBottomNavigationView();  // 하단 네비게이션 설정
+    }
+
+    /** XML 뷰 초기화 */
+    private void initViews() {
+        recyclerViewTourism = findViewById(R.id.recyclerViewTourism);
+        textRegionTitle = findViewById(R.id.textRegionTitle);
+        btnBack = findViewById(R.id.btnBack);
+        navView = findViewById(R.id.nav_view);
+    }
+
+    /** RegionDetailActivity에서 넘긴 지역명을 받아 타이틀에 표시 */
+    private void getRegionNameFromIntent() {
+        String regionName = getIntent().getStringExtra("region_name");
+        if (regionName != null && !regionName.isEmpty()) {
+            textRegionTitle.setText(regionName + " 관광지");
+        } else {
+            textRegionTitle.setText("관광지");  // 값이 없으면 기본값
+        }
+    }
+
+    /** 임시 데이터 (API 연동 전까지 샘플) */
+    private void setupData() {
+        tourismList = new ArrayList<>();
+
+        // Event 객체 대신 Tourism 전용 모델 만들어도 됨, 임시로 Event 재사용
+        tourismList.add(new Event("남산타워", "2025.08.01", R.drawable.sample1, false));
+        tourismList.add(new Event("경복궁", "2025.07.30", R.drawable.sample1, false));
+        tourismList.add(new Event("제주 성산일출봉", "2025.07.28", R.drawable.sample1, false));
+        tourismList.add(new Event("부산 해운대", "2025.07.25", R.drawable.sample1, false));
+    }
+
+    /** RecyclerView 연결 */
+    private void setupRecyclerView() {
+        tourismAdapter = new TourismAdapter(tourismList, new TourismAdapter.OnTourismClickListener() {
+            @Override
+            public void onTourismClick(Event event, int position) {
+                // 클릭 시 관광지 상세 페이지로 이동
+                Intent intent = new Intent(TourismActivity.this, EventDetailActivity.class);
+                intent.putExtra("event_title", event.getTitle());
+                intent.putExtra("event_date", event.getDate());
+                intent.putExtra("event_image", event.getImageResId());
+                startActivity(intent);
+            }
+
+            @Override
+            public void onFavoriteClick(Event event, int position) {
+                // 즐겨찾기 토글
+                event.setFavorite(!event.isFavorite());
+                tourismAdapter.notifyItemChanged(position);
+            }
+        });
+
+
+        recyclerViewTourism.setLayoutManager(new LinearLayoutManager(this));
+        recyclerViewTourism.setAdapter(tourismAdapter);
+    }
+
+    /** 상단 뒤로가기 버튼 */
+    private void setupClickListeners() {
+        btnBack.setOnClickListener(v -> finish());
+    }
+
+    /** ✅ 네비게이션바 클릭 시 MainActivity 열어서 프래그먼트 전환되게 설정 */
+    private void setupBottomNavigationView() {
+        navView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            Intent intent = new Intent(TourismActivity.this, MainActivity.class);
+
+            if (id == R.id.navigation_home) {
+                intent.putExtra("start_fragment", 0);
+            } else if (id == R.id.navigation_category) {
+                intent.putExtra("start_fragment", 1);
+            } else if (id == R.id.navigation_search) {
+                intent.putExtra("start_fragment", 2);
+            } else if (id == R.id.navigation_favorite) {
+                intent.putExtra("start_fragment", 3);
+            } else if (id == R.id.navigation_mypage) {
+                intent.putExtra("start_fragment", 4);
+            }
+
+            startActivity(intent);
+            finish(); // ✅ 현재 Activity 종료 (중복 쌓이지 않게)
+
+            return true;
+        });
+    }
 }

@@ -1,105 +1,93 @@
 package com.inhatc.localit;
 
-import android.content.Intent;
 import android.os.Bundle;
-import android.view.MotionEvent;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.inhatc.localit.Fragment.CategoryFragment;
+import com.inhatc.localit.Fragment.FavoriteFragment;
+import com.inhatc.localit.Fragment.HomeFragment;
+import com.inhatc.localit.Fragment.MypageFragment;
+import com.inhatc.localit.Fragment.SearchFragment;
+import com.inhatc.localit.databinding.ActivityMainBinding;
+
+import androidx.fragment.app.Fragment;
+
 public class MainActivity extends AppCompatActivity {
 
-    private ImageView btnMenu;
-    private TextView[] regionTexts;   // 추가됨
-    private String[] regions;
+    private ActivityMainBinding binding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
-        // strings.xml에서 지역 이름 불러오기
-        regions = getResources().getStringArray(R.array.regions_array);
+        BottomNavigationView navView = findViewById(R.id.nav_view);
 
-        initViews();
-        setRegionNames();           // 지역 이름 자동 세팅
-        setupRegionInteractions();
-        setupMenuClick();
-    }
+        // ✅ 인텐트로 받은 start_fragment 값 확인 (없으면 기본값 0)
+        int startFragmentIndex = getIntent().getIntExtra("start_fragment", 0);
 
-    private void initViews() {
-        btnMenu = findViewById(R.id.btnMenu);
-
-        // regionTexts 배열에 연결할 TextView 아이디 전부 넣기
-        regionTexts = new TextView[]{
-                findViewById(R.id.textSeoul),
-                findViewById(R.id.textIncheon),
-                findViewById(R.id.textGyeonggi),
-                findViewById(R.id.textGangwon),
-                findViewById(R.id.textChungbuk),
-                findViewById(R.id.textSejong),
-                findViewById(R.id.textChungnam),
-                findViewById(R.id.textDaejeon),
-                findViewById(R.id.textGyeongbuk),
-                findViewById(R.id.textDaegu),
-                findViewById(R.id.textUlsan),
-                findViewById(R.id.textBusan),
-                findViewById(R.id.textGyeongnam),
-                findViewById(R.id.textJeonbuk),
-                findViewById(R.id.textGwangju),
-                findViewById(R.id.textJeonnam),
-                findViewById(R.id.textJeju)
-        };
-    }
-
-    private void setRegionNames() {
-        for (int i = 0; i < regionTexts.length; i++) {
-            regionTexts[i].setText(regions[i]);  // TextView에 지역 이름 적용
+        // ✅ start_fragment 값에 따라 첫 화면 프래그먼트 바로 띄우기
+        Fragment initialFragment = null;
+        switch (startFragmentIndex) {
+            case 0:
+                initialFragment = new HomeFragment();
+                navView.setSelectedItemId(R.id.navigation_home);
+                break;
+            case 1:
+                initialFragment = new CategoryFragment();
+                navView.setSelectedItemId(R.id.navigation_category);
+                break;
+            case 2:
+                initialFragment = new SearchFragment();
+                navView.setSelectedItemId(R.id.navigation_search);
+                break;
+            case 3:
+                initialFragment = new FavoriteFragment();
+                navView.setSelectedItemId(R.id.navigation_favorite);
+                break;
+            case 4:
+                initialFragment = new MypageFragment();
+                navView.setSelectedItemId(R.id.navigation_mypage);
+                break;
         }
-    }
 
-    private void setupRegionInteractions() {
-        for (TextView tv : regionTexts) {
-
-            // 손가락 닿으면 확대, 떼면 복원
-            tv.setOnTouchListener((v, event) -> {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        v.animate().scaleX(1.1f).scaleY(1.1f).setDuration(100).start();
-                        break;
-
-                    case MotionEvent.ACTION_UP:
-                    case MotionEvent.ACTION_CANCEL:
-                        v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start();
-                        break;
-                }
-                return false; // false로 둬야 클릭 이벤트도 작동함
-            });
-
-            // 클릭 시 지역 선택 로직
-            tv.setOnClickListener(v -> {
-                String regionName = ((TextView) v).getText().toString().replace("\n", "");
-                onRegionSelected(regionName);
-            });
+        // ✅ 첫 화면 프래그먼트 교체
+        if (initialFragment != null) {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, initialFragment)
+                    .commit();
         }
+
+        // ✅ 네비게이션 클릭 시 프래그먼트 전환
+        setupBottomNavigationView();
     }
 
-    private void setupMenuClick() {
-        btnMenu.setOnClickListener(v ->
-                Toast.makeText(this, "메뉴 클릭", Toast.LENGTH_SHORT).show()
-        );
+    private void setupBottomNavigationView() {
+        binding.navView.setOnItemSelectedListener(item -> {
+            Fragment selectedFragment = null;
+            int id = item.getItemId();
 
-    }
+            if (id == R.id.navigation_home) {
+                selectedFragment = new HomeFragment();
+            } else if (id == R.id.navigation_category) {
+                selectedFragment = new CategoryFragment();
+            } else if (id == R.id.navigation_search) {
+                selectedFragment = new SearchFragment();
+            } else if (id == R.id.navigation_favorite) {
+                selectedFragment = new FavoriteFragment();
+            } else if (id == R.id.navigation_mypage) {
+                selectedFragment = new MypageFragment();
+            }
 
-    private void onRegionSelected(String regionName) {
-        Toast.makeText(this, regionName + " 선택됨", Toast.LENGTH_SHORT).show();
-
-        // 상세 페이지로 전환 예시
-        Intent intent = new Intent(MainActivity.this, RegionDetailActivity.class);
-        intent.putExtra("regionName", regionName);
-        startActivity(intent);
+            if (selectedFragment != null) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, selectedFragment)
+                        .commit();
+            }
+            return true;
+        });
     }
 }

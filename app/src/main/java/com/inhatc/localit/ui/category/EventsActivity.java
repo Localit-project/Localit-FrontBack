@@ -10,11 +10,15 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.inhatc.localit.Fragment.CategoryFragment;
+import com.inhatc.localit.Fragment.FavoriteFragment;
+import com.inhatc.localit.Fragment.HomeFragment;
+import com.inhatc.localit.Fragment.MypageFragment;
+import com.inhatc.localit.Fragment.SearchFragment;
 import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
-import com.inhatc.localit.ui.category.EventDetailActivity;
-import com.inhatc.localit.ui.category.EventsAdapter;
-import com.inhatc.localit.model.Event;   // model 폴더에 있는 Event 클래스만 사용
+import com.inhatc.localit.EventDetailActivity;
+import com.inhatc.localit.model.Event;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +42,9 @@ public class EventsActivity extends AppCompatActivity {
         setupData();
         setupRecyclerView();
         setupClickListeners();
+
+        /** ✅ ✅ ✅ 여기 추가 */
+        setupBottomNavigationView();
     }
 
     /** XML 뷰 초기화 */
@@ -94,5 +101,31 @@ public class EventsActivity extends AppCompatActivity {
     /** 상단 뒤로가기 버튼 */
     private void setupClickListeners() {
         btnBack.setOnClickListener(v -> finish());
+    }
+
+    /** ✅ ✅ ✅ 네비게이션바 클릭 시 MainActivity 열어서 프래그먼트 전환되게 설정 */
+    private void setupBottomNavigationView() {
+        navView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            Intent intent = new Intent(EventsActivity.this, MainActivity.class);
+
+            if (id == R.id.navigation_home) {
+                intent.putExtra("start_fragment", 0);
+            } else if (id == R.id.navigation_category) {
+                intent.putExtra("start_fragment", 1);
+            } else if (id == R.id.navigation_search) {
+                intent.putExtra("start_fragment", 2);
+            } else if (id == R.id.navigation_favorite) {
+                intent.putExtra("start_fragment", 3);
+            } else if (id == R.id.navigation_mypage) {
+                intent.putExtra("start_fragment", 4);
+            }
+
+            startActivity(intent);
+            finish(); // ✅ 현재 Activity 종료 (중복 쌓이지 않게)
+
+            return true;
+        });
     }
 }

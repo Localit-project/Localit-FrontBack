@@ -9,6 +9,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.inhatc.localit.ui.category.EventsActivity;
 import com.inhatc.localit.ui.category.NewsActivity;
 import com.inhatc.localit.ui.category.TourismActivity;
@@ -17,6 +18,7 @@ public class RegionDetailActivity extends AppCompatActivity {
 
     private ImageView btnBack;
     private TextView btnMoreFestivals, btnMoreTourism, btnMoreNews;
+    private BottomNavigationView navView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +27,7 @@ public class RegionDetailActivity extends AppCompatActivity {
 
         initViews();
         setClickListeners();
+        setupBottomNavigationView();
 
         // MainActivity에서 넘긴 지역 이름 받기
         String regionName = getIntent().getStringExtra("regionName");
@@ -36,9 +39,9 @@ public class RegionDetailActivity extends AppCompatActivity {
         // CardView 제어
         CardView cardSubRegion = findViewById(R.id.cardSubRegion);
         if ("경기도".equals(regionName)) {
-            cardSubRegion.setVisibility(View.VISIBLE);  // 경기도일 때만 보임
+            cardSubRegion.setVisibility(View.VISIBLE);
         } else {
-            cardSubRegion.setVisibility(View.GONE);     // 그 외에는 숨김
+            cardSubRegion.setVisibility(View.GONE);
         }
 
         // [1] 축제·행사 섹션
@@ -81,21 +84,21 @@ public class RegionDetailActivity extends AppCompatActivity {
 
     /** 버튼과 뷰 연결 */
     private void initViews() {
-        btnBack = findViewById(R.id.btnBack);  // 뒤로가기
+        btnBack = findViewById(R.id.btnBack);
         btnMoreFestivals = findViewById(R.id.btnMoreFestivals);
         btnMoreTourism = findViewById(R.id.btnMoreTourism);
         btnMoreNews = findViewById(R.id.btnMoreNews);
+        navView = findViewById(R.id.nav_view);   // 네비게이션뷰 초기화
     }
 
     /** 클릭 이벤트 연결 */
     private void setClickListeners() {
-        // 🔙 뒤로가기
         btnBack.setOnClickListener(v -> finish());
 
         // 축제·행사 → EventsActivity로 이동
         btnMoreFestivals.setOnClickListener(v -> {
             Intent intent = new Intent(RegionDetailActivity.this, EventsActivity.class);
-            intent.putExtra("region_name", getIntent().getStringExtra("regionName")); // 선택한 지역 이름 전달
+            intent.putExtra("region_name", getIntent().getStringExtra("regionName"));
             startActivity(intent);
         });
 
@@ -106,11 +109,35 @@ public class RegionDetailActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // 뉴스 → NewsActivity로 이동
+        //  뉴스 → NewsActivity로 이동
         btnMoreNews.setOnClickListener(v -> {
             Intent intent = new Intent(RegionDetailActivity.this, NewsActivity.class);
             intent.putExtra("region_name", getIntent().getStringExtra("regionName"));
             startActivity(intent);
+        });
+    }
+
+    /**  하단 네비게이션 동작 추가 */
+    private void setupBottomNavigationView() {
+        navView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            Intent intent = new Intent(RegionDetailActivity.this, MainActivity.class);
+
+            if (id == R.id.navigation_home) {
+                intent.putExtra("start_fragment", 0);
+            } else if (id == R.id.navigation_category) {
+                intent.putExtra("start_fragment", 1);
+            } else if (id == R.id.navigation_search) {
+                intent.putExtra("start_fragment", 2);
+            } else if (id == R.id.navigation_favorite) {
+                intent.putExtra("start_fragment", 3);
+            } else if (id == R.id.navigation_mypage) {
+                intent.putExtra("start_fragment", 4);
+            }
+
+            startActivity(intent);
+            finish(); // 현재 Activity 종료 (중복 스택 방지)
+            return true;
         });
     }
 

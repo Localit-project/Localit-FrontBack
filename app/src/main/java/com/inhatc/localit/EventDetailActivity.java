@@ -1,4 +1,4 @@
-package com.inhatc.localit.ui.category;
+package com.inhatc.localit;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
