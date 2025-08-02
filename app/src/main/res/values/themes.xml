@@ -7,6 +7,9 @@
 
         <item name="colorPrimaryVariant">#6B8E6B</item>
         <item name="colorOnPrimary">#333333</item>
+        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+
     </style>
 
 </resources>
