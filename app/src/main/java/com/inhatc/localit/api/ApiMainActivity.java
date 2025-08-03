@@ -25,7 +25,7 @@ public class ApiMainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.item_region);  // 여기서 해당 XML 레이아웃 이름 맞게 써야 함
 
-//        recyclerView = findViewById(R.id.recyclerView);  // 이 ID가 위 XML에 있으니 잘 찾아짐
+        recyclerView = findViewById(R.id.recyclerViewTourism);  // 이 ID가 recyclerViewTourism
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         fetchTourData();

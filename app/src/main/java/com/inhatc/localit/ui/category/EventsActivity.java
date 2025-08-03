@@ -42,8 +42,6 @@ public class EventsActivity extends AppCompatActivity {
         setupData();
         setupRecyclerView();
         setupClickListeners();
-
-        /** ✅ ✅ ✅ 여기 추가 */
         setupBottomNavigationView();
     }
 
