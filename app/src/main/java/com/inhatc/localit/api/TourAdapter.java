@@ -49,10 +49,10 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
         if (item.firstimage != null && !item.firstimage.isEmpty()) {
             Glide.with(holder.itemView.getContext())
                     .load(item.firstimage)
-                    .placeholder(R.drawable.ic_tour_placeholder)
+                    .placeholder(R.drawable.sample1)
                     .into(holder.imageTour);
         } else {
-            holder.imageTour.setImageResource(R.drawable.ic_tour_placeholder); // 이미지 없을 때 대체
+            holder.imageTour.setImageResource(R.drawable.sample1); // 이미지 없을 때 대체
         }
     }
 

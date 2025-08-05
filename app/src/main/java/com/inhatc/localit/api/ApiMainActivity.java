@@ -11,7 +11,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.gson.Gson;
 import com.inhatc.localit.R;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,21 +20,21 @@ import retrofit2.Response;
 
 public class ApiMainActivity extends AppCompatActivity {
 
-    private RecyclerView recyclerView;
+    private RecyclerView recyclerViewTourism;  // ID 이름 맞춤
     private TourAdapter tourAdapter;
     private List<TourResponse.Item> itemList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_tourism);
+        setContentView(R.layout.activity_tourism);  // 이 XML에는 recyclerViewTourism이 존재해야 함
 
-        recyclerView = findViewById(R.id.recyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerViewTourism = findViewById(R.id.recyclerViewTourism);  // XML에 맞게 수정
+        recyclerViewTourism.setLayoutManager(new LinearLayoutManager(this));
 
         // ★ 빈 리스트로 초기 어댑터 설정
         tourAdapter = new TourAdapter(itemList);
-        recyclerView.setAdapter(tourAdapter);
+        recyclerViewTourism.setAdapter(tourAdapter);
 
         fetchAreaBasedList(); // Retrofit API 호출
     }
@@ -72,7 +71,6 @@ public class ApiMainActivity extends AppCompatActivity {
                     }
                 } else {
                     try {
-                        // ✅ 실패 로그 좀 더 자세히
                         Log.e("API 응답 실패", response.errorBody().string());
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -80,6 +78,7 @@ public class ApiMainActivity extends AppCompatActivity {
                     Toast.makeText(ApiMainActivity.this, "응답 실패", Toast.LENGTH_LONG).show();
                 }
             }
+
             @Override
             public void onFailure(Call<TourResponse> call, Throwable t) {
                 Toast.makeText(ApiMainActivity.this, "API 호출 실패: " + t.getMessage(), Toast.LENGTH_LONG).show();
