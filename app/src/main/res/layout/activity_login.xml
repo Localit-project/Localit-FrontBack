@@ -87,7 +87,7 @@
 
         <ImageButton
             android:id="@+id/btn_naver"
-            android:layout_width="43dp"
+            android:layout_width="56dp"
             android:layout_height="56dp"
             android:layout_marginEnd="16dp"
             android:background="@drawable/social_button_background"
