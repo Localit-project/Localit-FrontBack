@@ -48,15 +48,38 @@ public class NewsActivity extends AppCompatActivity {
         navView = findViewById(R.id.nav_view);
     }
 
-    /** RegionDetailActivity에서 넘긴 지역명을 받아 타이틀에 표시 */
     private void getRegionNameFromIntent() {
-        String regionName = getIntent().getStringExtra("region_name");
-        if (regionName != null && !regionName.isEmpty()) {
+        String regionName = getIntent().getStringExtra("subRegionName");
+
+        if (regionName == null || regionName.isEmpty()) {
+            regionName = getIntent().getStringExtra("regionName");
+        }
+
+        if (regionName == null || regionName.isEmpty()) {
+            textRegionTitle.setText("뉴스");
+            return;
+        }
+
+        String[] gyeonggiCities = getResources().getStringArray(R.array.textGyeonggi);
+        boolean isGyeonggiSubRegion = false;
+
+        for (String city : gyeonggiCities) {
+            if (city.equals(regionName)) {
+                isGyeonggiSubRegion = true;
+                break;
+            }
+        }
+
+        if (regionName.equals("경기")) {
+            textRegionTitle.setText("상세 지역 선택 필요");
+        } else if (isGyeonggiSubRegion) {
             textRegionTitle.setText(regionName + " 뉴스");
         } else {
-            textRegionTitle.setText("뉴스");  // 값이 없으면 기본값
+            textRegionTitle.setText(regionName + " 뉴스");
         }
     }
+
+
 
     /** 임시 데이터 (API 연동 전까지 샘플) */
     private void setupData() {

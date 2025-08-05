@@ -13,12 +13,19 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.inhatc.localit.ui.category.EventsActivity;
 import com.inhatc.localit.ui.category.NewsActivity;
 import com.inhatc.localit.ui.category.TourismActivity;
+import android.widget.Spinner;
+import android.widget.AdapterView;
 
 public class RegionDetailActivity extends AppCompatActivity {
-
+    private Spinner spinnerSubRegion; // 상세 지역 선택 스피너
     private ImageView btnBack;
     private TextView btnMoreFestivals, btnMoreTourism, btnMoreNews;
     private BottomNavigationView navView;
+    private String regionName;
+    private String subRegionName;
+    private CardView cardSubRegion; // 상세 지역 선택 카드
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,20 +36,39 @@ public class RegionDetailActivity extends AppCompatActivity {
         setClickListeners();
         setupBottomNavigationView();
 
-        // MainActivity에서 넘긴 지역 이름 받기
-        String regionName = getIntent().getStringExtra("regionName");
+        // 지역명 받기
+        regionName = getIntent().getStringExtra("regionName");
+        subRegionName = getIntent().getStringExtra("subRegionName");
 
-        // Title TextView 표시
+        // 상단 제목 표시
         TextView textRegionTitle = findViewById(R.id.textRegionTitle);
         textRegionTitle.setText(regionName);
 
-        // CardView 제어
-        CardView cardSubRegion = findViewById(R.id.cardSubRegion);
+        // 경기도일 때만 스피너 초기화
         if ("경기도".equals(regionName)) {
             cardSubRegion.setVisibility(View.VISIBLE);
+
+            // ⚠ Spinner가 이미 초기화된 상태에서 첫 값 수동 설정
+            subRegionName = spinnerSubRegion.getSelectedItem().toString();
+
+            // Spinner 변경 감지해서 subRegionName 업데이트
+            spinnerSubRegion.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    subRegionName = (String) parent.getItemAtPosition(position);
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                    subRegionName = null;
+                }
+            });
+
         } else {
             cardSubRegion.setVisibility(View.GONE);
         }
+
+
 
         // [1] 축제·행사 섹션
         TextView textFestival1Title = findViewById(R.id.textFestival1Title);
@@ -89,32 +115,49 @@ public class RegionDetailActivity extends AppCompatActivity {
         btnMoreTourism = findViewById(R.id.btnMoreTourism);
         btnMoreNews = findViewById(R.id.btnMoreNews);
         navView = findViewById(R.id.nav_view);   // 네비게이션뷰 초기화
+        spinnerSubRegion = findViewById(R.id.spinnerSubRegion);
+        subRegionName = spinnerSubRegion.getSelectedItem().toString();
+        cardSubRegion = findViewById(R.id.cardSubRegion);
+        spinnerSubRegion = findViewById(R.id.spinnerSubRegion);
+
     }
 
     /** 클릭 이벤트 연결 */
     private void setClickListeners() {
         btnBack.setOnClickListener(v -> finish());
 
-        // 축제·행사 → EventsActivity로 이동
+        // 축제·행사 → EventsActivity
         btnMoreFestivals.setOnClickListener(v -> {
             Intent intent = new Intent(RegionDetailActivity.this, EventsActivity.class);
-            intent.putExtra("region_name", getIntent().getStringExtra("regionName"));
+            String finalRegion = (subRegionName != null && !subRegionName.isEmpty()) ? subRegionName : regionName;
+
+            //key 이름을 EventsActivity가 인식할 수 있는 이름으로 맞추기
+            intent.putExtra("subRegionName", subRegionName);  // 경기 하위 지역
+            intent.putExtra("regionName", regionName);        // 경기, 서울 등
             startActivity(intent);
         });
 
-        // 관광지 → TourismActivity로 이동
+
+        // 관광지 → TourismActivity
         btnMoreTourism.setOnClickListener(v -> {
             Intent intent = new Intent(RegionDetailActivity.this, TourismActivity.class);
-            intent.putExtra("region_name", getIntent().getStringExtra("regionName"));
+            String finalRegion = (subRegionName != null && !subRegionName.isEmpty()) ? subRegionName : regionName;
+
+            intent.putExtra("subRegionName", subRegionName);
+            intent.putExtra("regionName", regionName);
             startActivity(intent);
         });
 
-        //  뉴스 → NewsActivity로 이동
+        // 뉴스 → NewsActivity
         btnMoreNews.setOnClickListener(v -> {
             Intent intent = new Intent(RegionDetailActivity.this, NewsActivity.class);
-            intent.putExtra("region_name", getIntent().getStringExtra("regionName"));
+            String finalRegion = (subRegionName != null && !subRegionName.isEmpty()) ? subRegionName : regionName;
+
+            intent.putExtra("subRegionName", subRegionName);
+            intent.putExtra("regionName", regionName);
             startActivity(intent);
         });
+
     }
 
     /**  하단 네비게이션 동작 추가 */

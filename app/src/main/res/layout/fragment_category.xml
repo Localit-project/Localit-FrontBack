@@ -1,133 +1,97 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".Fragment.CategoryFragment">
 
-    <!-- 상단 바 -->
+    <!-- 3열 구성 -->
     <LinearLayout
-        android:id="@+id/topBar"
-        android:layout_width="0dp"
-        android:layout_height="60dp"
-        android:background="#FFFFFF"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp"
-        android:layout_marginTop="25dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <ImageView
-            android:id="@+id/btnBack"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:focusable="true"
-            android:src="@drawable/ic_arrow_back" />
-
-        <TextView
-            android:id="@+id/textCategory"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="카테고리"
-            android:textSize="18sp"
-            android:textColor="#333333"
-            android:layout_margin="16dp"/>
-
-    </LinearLayout>
-
-    <!-- 카테고리 화면 본문 (스크롤 가능) -->
-    <ScrollView
+        android:id="@+id/mainLinearLayout"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/topBar"
+        android:layout_marginTop="40dp"
+        android:orientation="horizontal"
+        android:background="@android:color/white"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
+        <!-- 왼쪽: 광역시/도 -->
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="#F5F5F5">
 
-            <!-- 왼쪽 지역 목록 -->
-            <LinearLayout
-                android:layout_width="0dp"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewRegions"
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:background="#F5F5F5">
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recyclerViewRegions"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:clipToPadding="false"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp" />
-
-            </LinearLayout>
-
-            <!-- 구분선 -->
-            <View
-                android:layout_width="1dp"
-                android:layout_height="match_parent"
-                android:background="#E0E0E0" />
-
-            <!-- 오른쪽 카테고리 목록 -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:background="#FFFFFF"
-                android:padding="16dp">
-
-                <TextView
-                    android:id="@+id/categoryNews"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="뉴스"
-                    android:textSize="16sp"
-                    android:textColor="#333333"
-                    android:padding="16dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:layout_marginBottom="8dp" />
-
-                <TextView
-                    android:id="@+id/categoryEvents"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="행사·축제"
-                    android:textSize="16sp"
-                    android:textColor="#333333"
-                    android:padding="16dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:layout_marginBottom="8dp" />
-
-                <TextView
-                    android:id="@+id/categoryTourism"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="관광지"
-                    android:textSize="16sp"
-                    android:textColor="#333333"
-                    android:padding="16dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-            </LinearLayout>
+                android:paddingVertical="8dp"
+                android:clipToPadding="false"/>
         </LinearLayout>
-    </ScrollView>
 
+        <!-- 가운데: 경기도 하위 지역 -->
+        <LinearLayout
+            android:id="@+id/subCategoryLayout"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="#F0F0F0"
+            android:visibility="gone"
+            android:paddingVertical="8dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewSubRegions"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"/>
+        </LinearLayout>
+
+        <!-- 오른쪽: 뉴스 / 행사·축제 / 관광지 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="16dp">
+
+            <!-- 뉴스 -->
+            <TextView
+                android:id="@+id/categoryNews"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="뉴스"
+                android:textSize="16sp"
+                android:textColor="#333333"
+                android:padding="12dp" />
+
+            <!-- 행사·축제 -->
+            <TextView
+                android:id="@+id/categoryEvents"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="행사·축제"
+                android:textSize="16sp"
+                android:textColor="#333333"
+                android:padding="12dp" />
+
+            <!-- 관광지 -->
+            <TextView
+                android:id="@+id/categoryTourism"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="관광지"
+                android:textSize="16sp"
+                android:textColor="#333333"
+                android:padding="12dp" />
+
+        </LinearLayout>
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

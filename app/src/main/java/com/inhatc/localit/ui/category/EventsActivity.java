@@ -54,12 +54,44 @@ public class EventsActivity extends AppCompatActivity {
     }
 
     /** RegionDetailActivity에서 넘긴 지역명을 받아 타이틀에 표시 */
+//    private void getRegionNameFromIntent() {
+//        String regionName = getIntent().getStringExtra("region_name");
+//        if (regionName != null && !regionName.isEmpty()) {
+//            textRegionTitle.setText(regionName);
+//        } else {
+//            textRegionTitle.setText("축제·행사");  // 값이 없으면 기본값
+//        }
+//    }
     private void getRegionNameFromIntent() {
-        String regionName = getIntent().getStringExtra("region_name");
-        if (regionName != null && !regionName.isEmpty()) {
+        String regionName = getIntent().getStringExtra("subRegionName"); // ← 여기 수정함
+
+        if (regionName == null || regionName.isEmpty()) {
+            regionName = getIntent().getStringExtra("regionName"); // 경기 등
+        }
+
+        if (regionName == null || regionName.isEmpty()) {
+            textRegionTitle.setText("축제·행사");
+            return;
+        }
+
+        // 경기도 하위 지역 리스트 정의
+        String[] gyeonggiCities = getResources().getStringArray(R.array.textGyeonggi);
+
+        boolean isGyeonggiSubRegion = false;
+        for (String city : gyeonggiCities) {
+            if (city.equals(regionName)) {
+                isGyeonggiSubRegion = true;
+                break;
+            }
+        }
+
+        if (regionName.equals("경기")) {
+            textRegionTitle.setText("상세 지역 선택 필요");
+        } else if (isGyeonggiSubRegion) {
             textRegionTitle.setText(regionName);
         } else {
-            textRegionTitle.setText("축제·행사");  // 값이 없으면 기본값
+            // 서울, 부산 등 광역시/도
+            textRegionTitle.setText(regionName);
         }
     }
 

@@ -6,7 +6,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -17,8 +16,9 @@ import com.inhatc.localit.R;
 import com.inhatc.localit.databinding.FragmentCategoryBinding;
 import com.inhatc.localit.ui.category.EventsActivity;
 import com.inhatc.localit.ui.category.NewsActivity;
-import com.inhatc.localit.ui.category.TourismActivity;
 import com.inhatc.localit.ui.category.RegionAdapter;
+import com.inhatc.localit.ui.category.SubRegionAdapter;
+import com.inhatc.localit.ui.category.TourismActivity;
 
 import java.util.Arrays;
 import java.util.List;
@@ -27,6 +27,7 @@ public class CategoryFragment extends Fragment {
 
     private FragmentCategoryBinding binding;
     private String selectedRegion = null;
+    private String selectedSubRegion = null;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -35,20 +36,39 @@ public class CategoryFragment extends Fragment {
         binding = FragmentCategoryBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        // 지역 목록 불러오기
-        List<String> regions = Arrays.asList(getResources().getStringArray(R.array.regions_array));
+        hideRightCategorySection(); // 초기 숨김
 
-        // RecyclerView 설정
+        List<String> regions = Arrays.asList(getResources().getStringArray(R.array.korea_regions));
+
         RegionAdapter adapter = new RegionAdapter(regions, region -> {
             selectedRegion = region;
-            Log.d("RegionClick", "클릭된 지역: " + region);
-        });
+            selectedSubRegion = null;
 
+            Log.d("RegionClick", "선택된 지역: " + region);
+
+            if (region.equals("경기")) {
+                binding.subCategoryLayout.setVisibility(View.VISIBLE);
+
+                List<String> subRegions = Arrays.asList(getResources().getStringArray(R.array.textGyeonggi));
+                SubRegionAdapter subAdapter = new SubRegionAdapter(subRegions, subRegion -> {
+                    selectedSubRegion = subRegion;
+                    Log.d("SubRegionClick", "선택된 상세 지역: " + subRegion);
+                    showRightCategorySection();
+                });
+
+                binding.recyclerViewSubRegions.setLayoutManager(new LinearLayoutManager(getContext()));
+                binding.recyclerViewSubRegions.setAdapter(subAdapter);
+
+            } else {
+                binding.subCategoryLayout.setVisibility(View.GONE);
+                selectedSubRegion = null;
+                showRightCategorySection();
+            }
+        });
 
         binding.recyclerViewRegions.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.recyclerViewRegions.setAdapter(adapter);
 
-        // 오른쪽 메뉴 클릭 리스너
         setupCategoryClickListeners();
 
         return root;
@@ -61,15 +81,41 @@ public class CategoryFragment extends Fragment {
     }
 
     private void openCategoryActivity(Class<?> activityClass) {
-        if (selectedRegion == null) {
-            Toast.makeText(getContext(), "먼저 지역을 선택해주세요.", Toast.LENGTH_SHORT).show();
-            return;
+        String targetRegion;
+
+        if ("경기".equals(selectedRegion)) {
+            if (selectedSubRegion == null) {
+                Toast.makeText(getContext(), "경기도의 상세 지역을 선택해주세요.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            targetRegion = selectedSubRegion;
+        } else {
+            if (selectedRegion == null) {
+                Toast.makeText(getContext(), "먼저 지역을 선택해주세요.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            targetRegion = selectedRegion;
         }
-        Intent intent = new Intent(getContext(), activityClass);
-        intent.putExtra("region_name", selectedRegion); // 지역명 선택!
+
+        Intent intent = new Intent(getContext(), activityClass);  // 💡 해당 액티비티로 이동
+        intent.putExtra("regionName", selectedRegion);
+        if (selectedSubRegion != null) {
+            intent.putExtra("subRegionName", selectedSubRegion);
+        }
         startActivity(intent);
     }
 
+    private void showRightCategorySection() {
+        binding.categoryNews.setVisibility(View.VISIBLE);
+        binding.categoryEvents.setVisibility(View.VISIBLE);
+        binding.categoryTourism.setVisibility(View.VISIBLE);
+    }
+
+    private void hideRightCategorySection() {
+        binding.categoryNews.setVisibility(View.GONE);
+        binding.categoryEvents.setVisibility(View.GONE);
+        binding.categoryTourism.setVisibility(View.GONE);
+    }
 
     @Override
     public void onDestroyView() {
