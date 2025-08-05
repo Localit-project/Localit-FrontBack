@@ -39,4 +39,15 @@
         <item>제주특별자치도</item>
     </string-array>
 
+    <!-- FavoriteFragment 에서 쓰이는 문자열 -->
+    <string name="back">뒤로</string>
+    <string name="favorite_title">찜 목록</string>
+    <string name="empty_message">찜 목록이 비어있습니다.</string>
+
+    <!-- 탭 제목 -->
+    <string name="tab_festival">축제 · 행사</string>
+    <string name="tab_tourism">관광지</string>
+    <string name="tab_news">뉴스</string>
+    <string name="tab_empty">   </string>
+
 </resources>
