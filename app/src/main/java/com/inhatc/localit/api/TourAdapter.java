@@ -24,7 +24,6 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
     @NonNull
     @Override
     public TourViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // item_tourism_sub.xml 파일을 아이템 레이아웃으로 사용
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_tourism_sub, parent, false);
         return new TourViewHolder(view);
@@ -35,30 +34,43 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
         TourResponse.Item item = itemList.get(position);
 
         holder.textTitle.setText(item.title);
-        holder.textAddr.setText(item.addr1);
+        holder.textAddr.setText(item.addr1 != null ? item.addr1 : "주소 정보 없음");
 
-        if (item.createdtime != null && item.createdtime.length() >= 8) {
-            String date = item.createdtime.substring(0, 4) + "." +
-                    item.createdtime.substring(4, 6) + "." +
-                    item.createdtime.substring(6, 8);
-            holder.textDate.setText(date);
+        // 날짜 처리
+        if (item.eventstartdate != null && item.eventenddate != null) {
+            // 축제일 경우
+            String start = formatDate(item.eventstartdate);
+            String end = formatDate(item.eventenddate);
+            holder.textDate.setText("기간: " + start + " ~ " + end);
+        } else if (item.createdtime != null) {
+            // 관광지일 경우
+            String date = formatDate(item.createdtime);
+            holder.textDate.setText("등록일: " + date);
         } else {
-            holder.textDate.setText("날짜 없음");
+            holder.textDate.setText("날짜 정보 없음");
         }
 
+        // 이미지 처리
         if (item.firstimage != null && !item.firstimage.isEmpty()) {
             Glide.with(holder.itemView.getContext())
                     .load(item.firstimage)
                     .placeholder(R.drawable.sample1)
                     .into(holder.imageTour);
         } else {
-            holder.imageTour.setImageResource(R.drawable.sample1); // 이미지 없을 때 대체
+            holder.imageTour.setImageResource(R.drawable.sample1);
         }
     }
 
     @Override
     public int getItemCount() {
         return itemList.size();
+    }
+
+    private String formatDate(String raw) {
+        if (raw != null && raw.length() == 8) {
+            return raw.substring(0, 4) + "." + raw.substring(4, 6) + "." + raw.substring(6);
+        }
+        return "";
     }
 
     public static class TourViewHolder extends RecyclerView.ViewHolder {

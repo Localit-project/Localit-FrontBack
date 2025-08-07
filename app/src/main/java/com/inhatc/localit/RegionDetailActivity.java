@@ -1,5 +1,5 @@
 package com.inhatc.localit;
-
+import com.inhatc.localit.api.ApiMainActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -65,6 +65,7 @@ public class RegionDetailActivity extends AppCompatActivity {
         AREA_CODE_MAP.put("경상북도", 37);
         AREA_CODE_MAP.put("경상남도", 38);
         AREA_CODE_MAP.put("제주특별자치도", 39);
+
     }
 
     @Override
@@ -140,12 +141,12 @@ public class RegionDetailActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
 
         btnMoreFestivals.setOnClickListener(v -> {
-            Intent intent = new Intent(this, EventsActivity.class);
+            Intent intent = new Intent(this, ApiMainActivity.class); // ✅ ApiMainActivity로
             intent.putExtra("regionName", regionName);
-            intent.putExtra("subRegionName", subRegionName);
+            intent.putExtra("subRegionName", subRegionName); // 필요시
+            intent.putExtra("contentTypeId", 15); // ✅ 축제용 contentTypeId
             startActivity(intent);
         });
-
         btnMoreTourism.setOnClickListener(v -> {
             Intent intent = new Intent(this, com.inhatc.localit.api.ApiMainActivity.class);
             intent.putExtra("regionName", regionName);
