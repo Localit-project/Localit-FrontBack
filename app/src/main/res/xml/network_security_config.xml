@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- HTTP 허용 -->
-    <domain-config cleartext-traffic-permitted="true">
-        <domain includeSubdomains="true">example.com</domain> <!-- 여기서 example.com은 허용하려는 도메인입니다. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">tong.visitkorea.or.kr</domain>
     </domain-config>
 </network-security-config>

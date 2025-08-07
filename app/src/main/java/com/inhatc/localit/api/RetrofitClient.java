@@ -4,7 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
-
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 public class RetrofitClient {
 
     private static Retrofit retrofit = null;
