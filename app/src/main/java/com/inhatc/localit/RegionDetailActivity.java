@@ -16,7 +16,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.inhatc.localit.api.TourApiHelper;
 import com.inhatc.localit.api.TourApiService;
 import com.inhatc.localit.api.TourResponse;
-import com.inhatc.localit.ui.category.EventsActivity;
 import com.inhatc.localit.ui.category.NewsActivity;
 
 import java.text.SimpleDateFormat;

@@ -5,80 +5,78 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
+import com.bumptech.glide.Glide;
 import com.inhatc.localit.R;
-import com.inhatc.localit.model.Event;   // model.Event 사용
-
+import com.inhatc.localit.api.TourResponse;
 import java.util.List;
 
-public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventViewHolder> {
+public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.VH> {
 
-    /** 클릭 리스너 인터페이스 */
-    public interface OnEventClickListener {
-        void onEventClick(Event event, int position);
-        void onFavoriteClick(Event event, int position);
+    public interface OnItemClick { void onEventClick(TourResponse.Item item, int position); }
+    public interface OnFavClick  { void onFavoriteClick(TourResponse.Item item, int position); }
+
+    private final List<TourResponse.Item> items;
+    private final OnItemClick onItemClick;
+    private final OnFavClick onFavClick;
+
+    public EventsAdapter(List<TourResponse.Item> items, OnItemClick onItemClick, OnFavClick onFavClick) {
+        this.items = items;
+        this.onItemClick = onItemClick;
+        this.onFavClick = onFavClick;
     }
 
-    private List<Event> eventList;
-    private OnEventClickListener listener;
-
-    /** 생성자 */
-    public EventsAdapter(List<Event> eventList, OnEventClickListener listener) {
-        this.eventList = eventList;
-        this.listener = listener;
-    }
-
-    @NonNull
-    @Override
-    public EventViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_event, parent, false);
-        return new EventViewHolder(view);
+    @NonNull @Override
+    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_event, parent, false);
+        return new VH(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
-        Event event = eventList.get(position);
-        holder.bind(event, listener, position);
-    }
+    public void onBindViewHolder(@NonNull VH h, int position) {
+        TourResponse.Item it = items.get(position);
 
-    @Override
-    public int getItemCount() {
-        return eventList.size();
-    }
+        h.title.setText(it.title != null ? it.title : "");
 
-    /** ViewHolder 내부 클래스 */
-    static class EventViewHolder extends RecyclerView.ViewHolder {
+        String start = formatDate(it.eventstartdate);
+        String end   = formatDate(it.eventenddate);
+        String dateText = (!start.isEmpty() && !end.isEmpty()) ? (start + " ~ " + end)
+                : (!start.isEmpty() ? start : (!end.isEmpty() ? end : "일정 미정"));
+        h.date.setText(dateText);
 
-        TextView title, date;
-        ImageView image, btnFavorite;
-
-        public EventViewHolder(@NonNull View itemView) {
-            super(itemView);
-            title = itemView.findViewById(R.id.textEventTitle);
-            date = itemView.findViewById(R.id.textEventDate);
-            image = itemView.findViewById(R.id.imageEvent);
-            btnFavorite = itemView.findViewById(R.id.btnFavorite);
+        if (it.firstimage != null && !it.firstimage.isEmpty()) {
+            Glide.with(h.itemView.getContext())
+                    .load(it.firstimage)
+                    .centerCrop()
+                    .placeholder(R.drawable.sample1)
+                    .error(R.drawable.sample1)
+                    .into(h.image);
+        } else {
+            h.image.setImageResource(R.drawable.sample1);
         }
 
-        void bind(Event event, OnEventClickListener listener, int position) {
-            title.setText(event.getTitle());
-            date.setText(event.getDate());
-            image.setImageResource(event.getImageResId());
+        h.itemView.setOnClickListener(v -> { if (onItemClick != null) onItemClick.onEventClick(it, h.getBindingAdapterPosition()); });
+        h.btnFavorite.setOnClickListener(v -> { if (onFavClick != null) onFavClick.onFavoriteClick(it, h.getBindingAdapterPosition()); });
+    }
 
-            // 전체 클릭 → 상세 페이지 이동
-            itemView.setOnClickListener(v -> listener.onEventClick(event, position));
+    @Override public int getItemCount() { return items == null ? 0 : items.size(); }
 
-            // 좋아요 버튼 클릭 → 즐겨찾기 토글
-            btnFavorite.setOnClickListener(v -> listener.onFavoriteClick(event, position));
-
-            // 좋아요 상태에 따라 버튼 이미지 변경
-            btnFavorite.setImageResource(
-                    event.isFavorite() ? R.drawable.img : R.drawable.ic_favorite_border_24
-            );
+    static class VH extends RecyclerView.ViewHolder {
+        ImageView image;
+        TextView title;
+        TextView date;
+        ImageView btnFavorite;
+        VH(@NonNull View v) {
+            super(v);
+            image = v.findViewById(R.id.imageEvent);
+            title = v.findViewById(R.id.textEventTitle);
+            date = v.findViewById(R.id.textEventDate);
+            btnFavorite = v.findViewById(R.id.btnFavorite);
         }
+    }
+
+    private String formatDate(String raw) {
+        return (raw != null && raw.length() >= 8) ? raw.substring(0,4)+"."+raw.substring(4,6)+"."+raw.substring(6,8) : "";
     }
 }

@@ -31,5 +31,7 @@ public class TourResponse {
      // 축제
         public String eventstartdate;
         public String eventenddate;
+
+
     }
 }

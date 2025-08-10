@@ -1,18 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardTourismItem"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    app:cardCornerRadius="12dp"
     app:cardElevation="4dp">
 
-    <TextView
-        android:id="@+id/textTourismTitle"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="관광지 제목"
-        android:textSize="16sp"
-        android:textColor="#333333"
-        android:padding="12dp" />
+        android:orientation="horizontal"
+        android:padding="12dp">
+
+        <!-- 썸네일 -->
+        <ImageView
+            android:id="@+id/imageTourismThumb"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="관광지 이미지" />
+
+        <!-- 텍스트 영역 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <TextView
+                android:id="@+id/textTourismTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="관광지 제목"
+                android:textColor="#333333"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <!-- 선택: 주소/카테고리 등 한줄 부가정보 -->
+            <TextView
+                android:id="@+id/textTourismSub"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="서울특별시 · 관광지"
+                android:textColor="#666666"
+                android:textSize="13sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- 즐겨찾기 -->
+        <ImageButton
+            android:id="@+id/btnFavorite"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center_vertical"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="즐겨찾기"
+            android:src="@drawable/ic_favorite_border_24" />
+    </LinearLayout>
 </androidx.cardview.widget.CardView>

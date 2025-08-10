@@ -29,5 +29,6 @@ public interface TourApiService {
             @Query("eventStartDate") String eventStartDate,
             @Query("arrange") String arrange,
             @Query("serviceKey") String serviceKey
+
     );
 }

@@ -33,7 +33,14 @@
             android:textColor="@android:color/darker_gray"
             android:maxLines="2"
             android:ellipsize="end"/>
-
+        <ImageButton
+            android:id="@+id/btnFavorite"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center_vertical"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="즐겨찾기"
+            android:src="@drawable/ic_favorite_border_24" />
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>

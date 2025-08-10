@@ -1,22 +1,43 @@
+// app/src/main/java/com/inhatc/localit/model/Event.java
 package com.inhatc.localit.model;
 
 public class Event {
     private String title;
     private String date;
-    private int imageResId;
-    private boolean isFavorite;
 
-    public Event(String title, String date, int imageResId, boolean isFavorite) {
+    // 로컬 샘플 이미지용 (기존 유지)
+    private int imageResId;
+
+    // ✅ API 이미지 URL용
+    private String imageUrl;
+
+    private boolean favorite;
+
+    // 리소스 이미지용 (샘플/더미)
+    public Event(String title, String date, int imageResId, boolean favorite) {
         this.title = title;
         this.date = date;
         this.imageResId = imageResId;
-        this.isFavorite = isFavorite;
+        this.favorite = favorite;
+    }
+
+    // ✅ API용 생성자 (URL)
+    public Event(String title, String date, String imageUrl, boolean favorite) {
+        this.title = title;
+        this.date = date;
+        this.imageUrl = imageUrl;
+        this.favorite = favorite;
     }
 
     public String getTitle() { return title; }
     public String getDate() { return date; }
-    public int getImageResId() { return imageResId; }
-    public boolean isFavorite() { return isFavorite; }
 
-    public void setFavorite(boolean favorite) { isFavorite = favorite; }
+    public int getImageResId() { return imageResId; }
+    public void setImageResId(int imageResId) { this.imageResId = imageResId; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public boolean isFavorite() { return favorite; }
+    public void setFavorite(boolean favorite) { this.favorite = favorite; }
 }

@@ -9,73 +9,105 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.inhatc.localit.R;
-import com.inhatc.localit.model.Event;   // 관광지도 API 붙기 전까지 Event 모델 임시 재사용
+import com.inhatc.localit.api.TourResponse;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class TourismAdapter extends RecyclerView.Adapter<TourismAdapter.TourismViewHolder> {
+public class TourismAdapter extends RecyclerView.Adapter<TourismAdapter.VH> {
 
-    /** 클릭 리스너 인터페이스 */
-    public interface OnTourismClickListener {
-        void onTourismClick(Event tourism, int position);
-        void onFavoriteClick(Event tourism, int position);
+    public interface OnItemClick {
+        void onTourismClick(TourResponse.Item item, int position);
+    }
+    public interface OnFavClick {
+        void onFavoriteClick(TourResponse.Item item, int position);
     }
 
-    private List<Event> tourismList;
-    private OnTourismClickListener listener;
+    private final List<TourResponse.Item> items = new ArrayList<>();
+    private final OnItemClick onItemClick;
+    private final OnFavClick onFavClick;
 
-    /** 생성자 */
-    public TourismAdapter(List<Event> tourismList, OnTourismClickListener listener) {
-        this.tourismList = tourismList;
-        this.listener = listener;
+    public TourismAdapter(List<TourResponse.Item> initial,
+                          OnItemClick onItemClick,
+                          OnFavClick onFavClick) {
+        if (initial != null) items.addAll(initial);
+        this.onItemClick = onItemClick;
+        this.onFavClick  = onFavClick;
     }
 
-    @NonNull
+    public void submitList(List<TourResponse.Item> newItems) {
+        items.clear();
+        if (newItems != null) items.addAll(newItems);
+        notifyDataSetChanged();
+    }
+
+    @NonNull @Override
+    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_tourism, parent, false);
+        return new VH(v);
+    }
+
     @Override
-    public TourismViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_event, parent, false); // ✅ item_event 재사용
-        return new TourismViewHolder(view);
-    }
+    public void onBindViewHolder(@NonNull VH h, int position) {
+        final TourResponse.Item it = items.get(position);
 
-    @Override
-    public void onBindViewHolder(@NonNull TourismViewHolder holder, int position) {
-        Event tourism = tourismList.get(position);
-        holder.bind(tourism, listener, position);
-    }
+        // 제목 표시
+        h.title.setText(it != null && it.title != null && !it.title.isEmpty()
+                ? it.title : "제목 없음");
 
-    @Override
-    public int getItemCount() {
-        return tourismList.size();
-    }
-
-    /** ViewHolder 내부 클래스 */
-    static class TourismViewHolder extends RecyclerView.ViewHolder {
-
-        TextView title, date;
-        ImageView image, btnFavorite;
-
-        public TourismViewHolder(@NonNull View itemView) {
-            super(itemView);
-            title = itemView.findViewById(R.id.textEventTitle);
-            date = itemView.findViewById(R.id.textEventDate);
-            image = itemView.findViewById(R.id.imageEvent);
-            btnFavorite = itemView.findViewById(R.id.btnFavorite);
+        // ✅ 이미지 표시 로직 추가
+        if (h.image != null) {
+            if (it.firstimage != null && !it.firstimage.isEmpty()) {
+                Glide.with(h.itemView.getContext())
+                        .load(it.firstimage)
+                        .centerCrop()
+                        .placeholder(R.drawable.sample1)
+                        .error(R.drawable.sample1)
+                        .into(h.image);
+            } else {
+                h.image.setImageResource(R.drawable.sample1);
+            }
         }
 
-        void bind(Event tourism, OnTourismClickListener listener, int position) {
-            title.setText(tourism.getTitle());
-            date.setText(tourism.getDate());
-            image.setImageResource(tourism.getImageResId());
+        // 클릭 이벤트
+        h.itemView.setOnClickListener(v -> {
+            int pos = h.getBindingAdapterPosition();
+            if (pos == RecyclerView.NO_POSITION) return;
+            if (onItemClick != null) onItemClick.onTourismClick(items.get(pos), pos);
+        });
 
-            itemView.setOnClickListener(v -> listener.onTourismClick(tourism, position));
+        // 즐겨찾기 클릭 이벤트
+        if (h.btnFavorite != null) {
+            h.btnFavorite.setOnClickListener(v -> {
+                int pos = h.getBindingAdapterPosition();
+                if (pos == RecyclerView.NO_POSITION) return;
+                if (onFavClick != null) onFavClick.onFavoriteClick(items.get(pos), pos);
+            });
+        } else {
+            h.itemView.setOnLongClickListener(v -> {
+                int pos = h.getBindingAdapterPosition();
+                if (pos == RecyclerView.NO_POSITION) return true;
+                if (onFavClick != null) onFavClick.onFavoriteClick(items.get(pos), pos);
+                return true;
+            });
+        }
+    }
 
-            btnFavorite.setOnClickListener(v -> listener.onFavoriteClick(tourism, position));
+    @Override public int getItemCount() { return items.size(); }
 
-            btnFavorite.setImageResource(
-                    tourism.isFavorite() ? R.drawable.img : R.drawable.ic_favorite_border_24
-            );
+    static class VH extends RecyclerView.ViewHolder {
+        ImageView image;         // @id/imageTourismThumb
+        TextView title;          // @id/textTourismTitle
+        ImageView btnFavorite;   // @id/btnFavorite (선택)
+
+        VH(@NonNull View v) {
+            super(v);
+            image = v.findViewById(R.id.imageTourismThumb);
+            title = v.findViewById(R.id.textTourismTitle);
+            btnFavorite = v.findViewById(R.id.btnFavorite);
         }
     }
 }
