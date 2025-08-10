@@ -134,6 +134,7 @@ public class ApiMainActivity extends AppCompatActivity {
                 }
             }
 
+
             @Override
             public void onFailure(Call<TourResponse> call, Throwable t) {
                 Toast.makeText(ApiMainActivity.this, "API 호출 실패: " + t.getMessage(), Toast.LENGTH_LONG).show();
@@ -141,4 +142,7 @@ public class ApiMainActivity extends AppCompatActivity {
             }
         };
     }
-}
+
+
+
+        }
