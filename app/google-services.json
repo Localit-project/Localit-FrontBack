@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "820308975341-0mcja0l692ro3rqnr7kapolemooelihq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.inhatc.localit",
+            "certificate_hash": "67056ca644535d67925d8a22edc50269505ac73c"
+          }
+        },
+        {
           "client_id": "820308975341-6elk66ieh5bn7l31u42dvp2cbj9ju602.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -27,6 +35,14 @@
           "android_info": {
             "package_name": "com.inhatc.localit",
             "certificate_hash": "63a2efa80e355fb53001ab7c072fd115551231b3"
+          }
+        },
+        {
+          "client_id": "820308975341-n9e8rvmvo74l0t9ngqvbm31b3dvrglo3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.inhatc.localit",
+            "certificate_hash": "efafbc4ba80c3be468dc1617989eaf781c12f3d4"
           }
         },
         {
