@@ -3,6 +3,7 @@ package com.inhatc.localit.ui.category;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -21,6 +22,7 @@ public class TourismAdapter extends RecyclerView.Adapter<TourismAdapter.VH> {
     public interface OnItemClick {
         void onTourismClick(TourResponse.Item item, int position);
     }
+
     public interface OnFavClick {
         void onFavoriteClick(TourResponse.Item item, int position);
     }
@@ -54,13 +56,21 @@ public class TourismAdapter extends RecyclerView.Adapter<TourismAdapter.VH> {
     public void onBindViewHolder(@NonNull VH h, int position) {
         final TourResponse.Item it = items.get(position);
 
-        // 제목 표시
+        // 제목
         h.title.setText(it != null && it.title != null && !it.title.isEmpty()
                 ? it.title : "제목 없음");
 
-        // ✅ 이미지 표시 로직 추가
+        // 주소/부가정보 (addr1이 우선, 없으면 "지역정보 없음")
+        if (h.sub != null) {
+            String addr = (it != null && it.addr1 != null && !it.addr1.trim().isEmpty())
+                    ? it.addr1.trim() : "지역정보 없음";
+            // 필요하면 뒤에 카테고리 간단 라벨 추가
+            h.sub.setText(addr);
+        }
+
+        // 이미지
         if (h.image != null) {
-            if (it.firstimage != null && !it.firstimage.isEmpty()) {
+            if (it != null && it.firstimage != null && !it.firstimage.isEmpty()) {
                 Glide.with(h.itemView.getContext())
                         .load(it.firstimage)
                         .centerCrop()
@@ -72,14 +82,14 @@ public class TourismAdapter extends RecyclerView.Adapter<TourismAdapter.VH> {
             }
         }
 
-        // 클릭 이벤트
+        // 아이템 클릭
         h.itemView.setOnClickListener(v -> {
             int pos = h.getBindingAdapterPosition();
             if (pos == RecyclerView.NO_POSITION) return;
             if (onItemClick != null) onItemClick.onTourismClick(items.get(pos), pos);
         });
 
-        // 즐겨찾기 클릭 이벤트
+        // 즐겨찾기 클릭
         if (h.btnFavorite != null) {
             h.btnFavorite.setOnClickListener(v -> {
                 int pos = h.getBindingAdapterPosition();
@@ -87,6 +97,7 @@ public class TourismAdapter extends RecyclerView.Adapter<TourismAdapter.VH> {
                 if (onFavClick != null) onFavClick.onFavoriteClick(items.get(pos), pos);
             });
         } else {
+            // 즐겨찾기 버튼이 레이아웃에 없을 경우 롱클릭으로 대체
             h.itemView.setOnLongClickListener(v -> {
                 int pos = h.getBindingAdapterPosition();
                 if (pos == RecyclerView.NO_POSITION) return true;
@@ -99,14 +110,16 @@ public class TourismAdapter extends RecyclerView.Adapter<TourismAdapter.VH> {
     @Override public int getItemCount() { return items.size(); }
 
     static class VH extends RecyclerView.ViewHolder {
-        ImageView image;         // @id/imageTourismThumb
-        TextView title;          // @id/textTourismTitle
-        ImageView btnFavorite;   // @id/btnFavorite (선택)
+        ImageView image;
+        TextView title;
+        TextView sub;
+        ImageButton btnFavorite;
 
         VH(@NonNull View v) {
             super(v);
-            image = v.findViewById(R.id.imageTourismThumb);
-            title = v.findViewById(R.id.textTourismTitle);
+            image       = v.findViewById(R.id.imageTourismThumb);
+            title       = v.findViewById(R.id.textTourismTitle);
+            sub         = v.findViewById(R.id.textTourismSub);
             btnFavorite = v.findViewById(R.id.btnFavorite);
         }
     }

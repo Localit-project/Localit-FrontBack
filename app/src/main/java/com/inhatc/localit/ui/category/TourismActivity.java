@@ -1,4 +1,4 @@
-// app/src/main/java/com/inhatc/localit/ui/category/TourismActivity.java
+
 package com.inhatc.localit.ui.category;
 
 import android.content.Intent;
@@ -24,7 +24,6 @@ import com.inhatc.localit.api.TourResponse;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -34,7 +33,8 @@ import retrofit2.Response;
 public class TourismActivity extends AppCompatActivity {
 
     private static final String TAG = "TourismActivity";
-    private static final String SERVICE_KEY = "wL/Ry8EMiMg43mPRl3wyQhKosVExsJbLLDcZebat4S4eedobtNuBG+eqrj5GPKHvEAxy4NjYPz25Parbyeg8PA==";
+    private static final String SERVICE_KEY =
+            "wL/Ry8EMiMg43mPRl3wyQhKosVExsJbLLDcZebat4S4eedobtNuBG+eqrj5GPKHvEAxy4NjYPz25Parbyeg8PA==";
 
     private RecyclerView recyclerViewTourism;
     private TourismAdapter tourismAdapter;
@@ -47,13 +47,12 @@ public class TourismActivity extends AppCompatActivity {
     private String regionName;
     private String subRegionName;
 
-
     private static final Map<String, Integer> AREA_CODE_MAP = new HashMap<>();
-
-    private static final Map<String, String> REGION_ALIAS = new HashMap<>();
+    private static final Map<String, String>  REGION_ALIAS  = new HashMap<>();
+    private static final Map<String, Integer> GG_SIGUNGU    = new HashMap<>();
 
     static {
-
+        // 시/도 → areaCode
         AREA_CODE_MAP.put("서울특별시", 1);
         AREA_CODE_MAP.put("인천광역시", 2);
         AREA_CODE_MAP.put("대전광역시", 3);
@@ -72,19 +71,66 @@ public class TourismActivity extends AppCompatActivity {
         AREA_CODE_MAP.put("경상남도", 38);
         AREA_CODE_MAP.put("제주특별자치도", 39);
 
+        // 약칭/별칭 → 표준명 매핑
+        alias("서울특별시", "서울", "서울시");
+        alias("인천광역시", "인천", "인천시");
+        alias("대전광역시", "대전", "대전시");
+        alias("대구광역시", "대구", "대구시");
+        alias("광주광역시", "광주", "광주시");
+        alias("부산광역시", "부산", "부산시");
+        alias("울산광역시", "울산", "울산시");
+        alias("세종특별자치시", "세종", "세종시");
 
+        alias("경기도", "경기");
+        alias("강원특별자치도", "강원", "강원도");
+        alias("충청북도", "충북");
+        alias("충청남도", "충남");
+        alias("전라북도", "전북");
+        alias("전라남도", "전남");
+        alias("경상북도", "경북");
+        alias("경상남도", "경남");
+        alias("제주특별자치도", "제주", "제주도");
+
+        // 경기도 하위 시/군 → sigunguCode (예시값, 실제 API로 갱신 권장)
+        GG_SIGUNGU.put("수원시", 13);
+        GG_SIGUNGU.put("성남시", 12);
+        GG_SIGUNGU.put("고양시", 2);
+        GG_SIGUNGU.put("용인시", 23);
+        GG_SIGUNGU.put("안산시", 15);
+        GG_SIGUNGU.put("안양시", 17);
+        GG_SIGUNGU.put("부천시", 11);
+        GG_SIGUNGU.put("화성시", 31);
+        GG_SIGUNGU.put("남양주시", 9);
+        GG_SIGUNGU.put("평택시", 28);
+        GG_SIGUNGU.put("의정부시", 25);
+        GG_SIGUNGU.put("시흥시", 14);
+        GG_SIGUNGU.put("파주시", 27);
+        GG_SIGUNGU.put("김포시", 8);
+        GG_SIGUNGU.put("광명시", 4);
+        GG_SIGUNGU.put("군포시", 7);
+        GG_SIGUNGU.put("광주시", 5);
+        GG_SIGUNGU.put("하남시", 30);
+        GG_SIGUNGU.put("오산시", 22);
+        GG_SIGUNGU.put("이천시", 26);
+        GG_SIGUNGU.put("안성시", 16);
+        GG_SIGUNGU.put("구리시", 6);
+        GG_SIGUNGU.put("의왕시", 24);
+        GG_SIGUNGU.put("여주시", 20);
+        GG_SIGUNGU.put("양평군", 19);
+        GG_SIGUNGU.put("동두천시", 10);
+        GG_SIGUNGU.put("과천시", 3);
+        GG_SIGUNGU.put("포천시", 29);
+        GG_SIGUNGU.put("연천군", 21);
+        GG_SIGUNGU.put("가평군", 1);
+        GG_SIGUNGU.put("양주시", 18);
     }
 
     private static void alias(String standard, String... aliases) {
         REGION_ALIAS.put(clean(standard), standard);
         for (String a : aliases) REGION_ALIAS.put(clean(a), standard);
     }
-
     private static String clean(String s) { return s == null ? "" : s.replaceAll("\\s+", ""); }
-
-    private static String stripSuffix(String k) {
-        return k.replaceAll("(광역시|특별자치시|특별자치도|특별시|자치시|자치도|시|도)$", "");
-    }
+    private static String stripSuffix(String k) { return k.replaceAll("(광역시|특별자치시|특별자치도|특별시|자치시|자치도|시|도)$", ""); }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,7 +168,6 @@ public class TourismActivity extends AppCompatActivity {
         tourismAdapter = new TourismAdapter(
                 apiItems,
                 (item, position) -> {
-                    // 아이템 클릭 시 동작
                     Intent intent = new Intent(TourismActivity.this, EventDetailActivity.class);
                     intent.putExtra("event_title", item.title != null ? item.title : "");
                     String sub = (item.addr1 != null && !item.addr1.isEmpty()) ? item.addr1
@@ -131,24 +176,21 @@ public class TourismActivity extends AppCompatActivity {
                     intent.putExtra("event_image_url", item.firstimage != null ? item.firstimage : "");
                     startActivity(intent);
                 },
-                (item, position) -> {
-                    // 즐겨찾기 클릭 시 동작 (일단 토스트만)
-                    Toast.makeText(TourismActivity.this,
-                            "즐겨찾기: " + (item.title != null ? item.title : ""),
-                            Toast.LENGTH_SHORT).show();
-                }
+                (item, position) -> Toast.makeText(
+                        TourismActivity.this,
+                        "즐겨찾기: " + (item.title != null ? item.title : ""),
+                        Toast.LENGTH_SHORT
+                ).show()
         );
 
         recyclerViewTourism.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewTourism.setAdapter(tourismAdapter);
     }
 
-    private void setupClickListeners() {
-        btnBack.setOnClickListener(v -> finish());
-    }
+    private void setupClickListeners() { btnBack.setOnClickListener(v -> finish()); }
 
     private void setupBottomNavigationView() {
-        if (navView == null) return; // 레이아웃에 nav_view가 없을 수 있음
+        if (navView == null) return;
         navView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             Intent intent = new Intent(TourismActivity.this, MainActivity.class);
@@ -163,22 +205,19 @@ public class TourismActivity extends AppCompatActivity {
         });
     }
 
-
     private void fetchTourismListFromApi() {
         int areaCode = getAreaCode(regionName);
+        Integer sigunguCode = getSigunguIfGyeonggi(regionName, subRegionName);
+
+        Log.d(TAG, "[CHECK] region=" + regionName + ", sub=" + subRegionName
+                + ", areaCode=" + areaCode + ", sigungu=" + sigunguCode);
 
         TourApiService api = TourApiHelper.getApiService();
 
         Call<TourResponse> call = api.getTourList(
-                30,
-                1,
-                "AND",
-                "localit",
-                "A",
-                12,
-                areaCode,
-                "json",
-                SERVICE_KEY
+                30, 1, "AND", "localit", "A",
+                12, areaCode, sigunguCode,
+                "json", SERVICE_KEY
         );
 
         Log.d(TAG, "REQ URL: " + call.request().url());
@@ -196,6 +235,10 @@ public class TourismActivity extends AppCompatActivity {
                 }
                 List<TourResponse.Item> items = response.body().response.body.items.item;
 
+                // 서버가 sigungu를 무시/불일치하면 addr1로 보조 필터
+                if (sigunguCode != null && !TextUtils.isEmpty(subRegionName)) {
+                    items = filterByAddr(items, subRegionName);
+                }
 
                 tourismAdapter.submitList(items);
             }
@@ -208,9 +251,33 @@ public class TourismActivity extends AppCompatActivity {
         });
     }
 
+    /** 경기도 하위 시/군 코드 매핑 ("전체"면 null). 약칭(경기) 대응을 위해 areaCode==31로 판정 */
+    private Integer getSigunguIfGyeonggi(String region, String sub) {
+        if (TextUtils.isEmpty(sub)) return null;
+        int area = getAreaCode(region);        // 별칭/접미사 정규화 포함
+        if (area != 31) return null;           // 경기도만 sigungu 적용
+        String s = sub.trim();
+        if ("전체".equals(s)) return null;
+        return GG_SIGUNGU.get(s);
+    }
 
+    /** addr1에 하위도시명이 포함돼 있는지로 2차 필터 */
+    private List<TourResponse.Item> filterByAddr(List<TourResponse.Item> src, String key) {
+        if (src == null) return new ArrayList<>();
+        if (TextUtils.isEmpty(key)) return src;
+        String k = key.trim();
+        List<TourResponse.Item> out = new ArrayList<>();
+        for (TourResponse.Item it : src) {
+            String addr = it != null && it.addr1 != null ? it.addr1 : "";
+            if (addr.startsWith(k) || addr.contains(" " + k) || addr.contains(k + " ")) {
+                out.add(it);
+            }
+        }
+        return out;
+    }
+
+    /** 별칭/접미사 제거 포함해서 areaCode 계산 (서울 폴백 방지) */
     private int getAreaCode(String region) {
-        if (TextUtils.isEmpty(region)) return 1; // 서울
         String key = clean(region);
         String standard = REGION_ALIAS.get(key);
         if (standard == null) {
@@ -227,6 +294,4 @@ public class TourismActivity extends AppCompatActivity {
         Integer code = AREA_CODE_MAP.get(standard);
         return code != null ? code : 1;
     }
-
-    private String safe(String s) { return s == null ? "" : s; }
 }

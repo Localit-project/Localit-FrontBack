@@ -51,7 +51,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="서울특별시 · 관광지"
+                android:text=""
                 android:textColor="#666666"
                 android:textSize="13sp"
                 android:maxLines="1"

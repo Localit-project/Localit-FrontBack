@@ -15,9 +15,11 @@ public interface TourApiService {
             @Query("arrange") String arrange,
             @Query("contentTypeId") int contentTypeId,
             @Query("areaCode") int areaCode,
+            @Query("sigunguCode") Integer sigunguCode,
             @Query("_type") String type,
             @Query("serviceKey") String key
     );
+    // TourApiService.java
     @GET("searchFestival2")
     Call<TourResponse> getFestivalList(
             @Query("numOfRows") int numOfRows,
@@ -26,9 +28,10 @@ public interface TourApiService {
             @Query("MobileApp") String mobileApp,
             @Query("_type") String type,
             @Query("areaCode") int areaCode,
-            @Query("eventStartDate") String eventStartDate,
+            @Query("sigunguCode") Integer sigunguCode,   // ★ Integer
+            @Query("eventStartDate") String eventStartDate, // ★ String(yyyyMMdd)
             @Query("arrange") String arrange,
             @Query("serviceKey") String serviceKey
-
     );
+
 }

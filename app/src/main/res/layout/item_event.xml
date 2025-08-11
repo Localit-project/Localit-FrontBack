@@ -48,9 +48,13 @@
 
         <ImageView
             android:id="@+id/btnFavorite"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_gravity="center_vertical"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="false"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_favorite_border_24" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>

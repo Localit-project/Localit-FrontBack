@@ -24,6 +24,7 @@ public class TourResponse {
     }
 
     public static class Item {
+        public String contentid;
         public String title;
         public String addr1;
         public String firstimage;
