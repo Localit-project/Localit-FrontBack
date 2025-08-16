@@ -2,11 +2,9 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
-    tools:context=".Fragment.NotificationsFragment">
+    android:background="#FFFFFF">
 
     <!-- TopBar -->
     <LinearLayout
@@ -17,7 +15,7 @@
         android:gravity="center_vertical"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:layout_marginTop="25dp"
+        android:layout_marginTop="30dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -34,7 +32,7 @@
 
         <TextView
             android:id="@+id/tvTitle"
-            android:layout_width="364dp"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:ellipsize="end"
@@ -44,6 +42,9 @@
             android:textColor="#111111"
             android:textSize="20sp"
             android:textStyle="bold" />
+        <Space
+            android:layout_width="24dp"
+            android:layout_height="24dp" />
     </LinearLayout>
 
     <!-- 탭 -->
@@ -63,31 +64,24 @@
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipAll"
-            style="@style/Widget.MaterialComponents.Chip.Filter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/tab_all" />
+            style="@style/Chip.Tab"
+            android:text="@string/tab_all"
+            android:checked="true"/>
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipFestival"
-            style="@style/Widget.MaterialComponents.Chip.Filter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/tab_festival" />
+            style="@style/Chip.Tab"
+            android:text="@string/tab_festival"/>
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipSpot"
-            style="@style/Widget.MaterialComponents.Chip.Filter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/tab_spot" />
+            style="@style/Chip.Tab"
+            android:text="@string/tab_spot"/>
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipNews"
-            style="@style/Widget.MaterialComponents.Chip.Filter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/tab_news" />
+            style="@style/Chip.Tab"
+            android:text="@string/tab_news"/>
     </com.google.android.material.chip.ChipGroup>
 
     <!-- 상단 버튼들 -->
@@ -102,30 +96,37 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:id="@+id/btnMarkMsgsRead"
-            android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="1"
-            android:gravity="center_vertical"
-            android:paddingStart="14dp"
-            android:text="@string/mark_msgs_read"
-            android:textColor="#111111"
-            android:background="@drawable/bg_edittext_round" />
+<!--        <TextView-->
+<!--            android:id="@+id/btnMarkMsgsRead"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="40dp"-->
+<!--            android:layout_weight="1"-->
+<!--            android:gravity="center_vertical"-->
+<!--            android:paddingStart="14dp"-->
+<!--            android:text="@string/mark_msgs_read"-->
+<!--            android:textColor="#111111"-->
+<!--             />-->
 
         <Space
             android:layout_width="12dp"
             android:layout_height="1dp" />
-
-        <TextView
-            android:id="@+id/btnMarkAllRead"
-            android:layout_width="96dp"
-            android:layout_height="40dp"
-            android:gravity="center"
-            android:text="@string/mark_all_read"
-            android:textColor="#111111"
-            android:background="@drawable/bg_edittext_round" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvSectionTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:text="@string/noti_header_all"
+        android:textColor="#111111"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        app:layout_constraintTop_toBottomOf="@id/actionsBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- 리스트 -->
     <androidx.recyclerview.widget.RecyclerView
@@ -133,9 +134,8 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:padding="12dp"
-        app:layout_constraintTop_toBottomOf="@id/actionsBar"
+        app:layout_constraintTop_toBottomOf="@id/tvSectionTitle"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>

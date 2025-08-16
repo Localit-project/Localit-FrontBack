@@ -4,12 +4,13 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.inhatc.localit.R;
 import com.inhatc.localit.databinding.FragmentAlarmSettingsBinding;
 import com.inhatc.localit.util.AlarmPrefs;
@@ -32,25 +33,30 @@ public class AlarmSettingsFragment extends Fragment {
         setupRow(binding.rowRegionSpot.getRoot(),    getString(R.string.spot),     AlarmPrefs.KEY_REGION_SPOT);
         setupRow(binding.rowRegionNews.getRoot(),    getString(R.string.news),     AlarmPrefs.KEY_REGION_NEWS);
 
-        binding.btnBack.setOnClickListener(v -> requireActivity()
-                .getOnBackPressedDispatcher().onBackPressed());
+        binding.btnBack.setOnClickListener(v ->
+                requireActivity().getOnBackPressedDispatcher().onBackPressed());
 
         return binding.getRoot();
     }
 
-    /** 공통 행 설정 */
+    /** 각 행 공통 바인딩 */
     private void setupRow(View row, String title, String prefKey) {
         TextView tv = row.findViewById(R.id.tvTitle);
-        SwitchMaterial sw = row.findViewById(R.id.sw);
+        Switch sw   = row.findViewById(R.id.sw);   // ← 플랫폼 Switch 로 캐스팅
 
         tv.setText(title);
 
-        // 기본값 true
         boolean enabled = AlarmPrefs.get(requireContext(), prefKey, true);
         sw.setChecked(enabled);
 
-        sw.setOnCheckedChangeListener((button, isChecked) ->
-                AlarmPrefs.put(requireContext(), prefKey, isChecked)
-        );
+        // setOnCheckedChangeListener 적용
+        sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                AlarmPrefs.put(requireContext(), prefKey, isChecked);
+            }
+        });
+        // 혹은 람다로:
+        // sw.setOnCheckedChangeListener((buttonView, isChecked) -> AlarmPrefs.put(requireContext(), prefKey, isChecked));
     }
 }

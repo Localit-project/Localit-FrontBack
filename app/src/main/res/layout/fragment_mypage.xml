@@ -16,7 +16,7 @@
         android:orientation="horizontal"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:layout_marginTop="25dp"
+        android:layout_marginTop="30dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -33,7 +33,7 @@
 
         <TextView
             android:id="@+id/tvTitle"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
@@ -47,13 +47,13 @@
 
         <!-- 알림 아이콘 + 뱃지 -->
         <FrameLayout
-            android:layout_width="28dp"
-            android:layout_height="28dp">
+            android:layout_width="24dp"
+            android:layout_height="24dp">
 
             <ImageButton
                 android:id="@+id/btnNotification"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/notifications"
                 app:srcCompat="@drawable/ic_notifications_24" />
@@ -104,15 +104,14 @@
                         android:id="@+id/imgAvatar"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:src="@drawable/bg_avatar_placeholder"
-                        android:scaleType="centerCrop"
                         android:background="@drawable/bg_avatar_circle"
-                        android:contentDescription="@string/profile" />
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/bg_avatar_placeholder" />
 
                     <ImageButton
                         android:id="@+id/btnAddPhoto"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
                         android:layout_gravity="end|bottom"
                         android:background="@drawable/bg_add_circle"
                         android:contentDescription="@string/add_photo"
@@ -127,9 +126,9 @@
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
                 android:text="닉네임"
-                android:textColor="#111111"
+                android:textColor="#242729"
                 android:textSize="16sp"
-                android:textStyle="bold"/>
+                android:textStyle="bold" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -141,14 +140,15 @@
                     android:id="@+id/etNickname"
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
-                    android:hint="2~10자로 입력해 주세요"
                     android:background="@drawable/bg_edittext_round"
+                    android:hint="2~10자로 입력해 주세요"
+                    android:imeOptions="actionDone"
+                    android:inputType="textPersonName"
+                    android:maxLength="10"
                     android:paddingStart="14dp"
                     android:paddingEnd="14dp"
-                    android:maxLength="10"
                     android:singleLine="true"
-                    android:imeOptions="actionDone"
-                    android:inputType="textPersonName" />
+                    android:textStyle="normal" />
 
                 <TextView
                     android:id="@+id/tvNickRule"
@@ -157,6 +157,7 @@
                     android:text="• 이모티콘 및 특수기호, 띄어쓰기 사용이 불가능합니다."
                     android:textColor="#6F6F6F"
                     android:textSize="12sp"
+                    android:layout_marginStart="5dp"
                     android:layout_marginTop="8dp"/>
             </LinearLayout>
 
@@ -171,7 +172,9 @@
                 style="@style/RowItemStyle">
                 <TextView
                     style="@style/RowItemTextStyle"
-                    android:text="알림 설정" />
+                    android:text="알림 설정"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
                 <ImageView
                     style="@style/RowChevronStyle"
                     app:srcCompat="@drawable/baseline_arrow_forward_ios_24"/>
@@ -184,7 +187,9 @@
                 style="@style/RowItemStyle">
                 <TextView
                     style="@style/RowItemTextStyle"
-                    android:text="로그아웃" />
+                    android:text="로그아웃"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
                 <ImageView
                     style="@style/RowChevronStyle"
                     app:srcCompat="@drawable/baseline_arrow_forward_ios_24" />
@@ -198,7 +203,9 @@
                 style="@style/RowItemStyle">
                 <TextView
                     style="@style/RowItemTextStyle"
-                    android:text="회원탈퇴" />
+                    android:text="회원탈퇴"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
                 <ImageView
                     style="@style/RowChevronStyle"
                     app:srcCompat="@drawable/baseline_arrow_forward_ios_24"/>

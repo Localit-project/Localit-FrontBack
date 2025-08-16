@@ -4,10 +4,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import com.inhatc.localit.util.AlarmPrefs;
 
 import androidx.annotation.NonNull;
-import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -37,7 +35,7 @@ public class NotificationsFragment extends Fragment {
         final Source source;
         final Type type;
         final String title;
-        Noti(Source s, Type t, String title) { this.source=s; this.type=t; this.title=title; }
+        Noti(Source s, Type t, String title) { this.source = s; this.type = t; this.title = title; }
     }
 
     @Override
@@ -52,38 +50,68 @@ public class NotificationsFragment extends Fragment {
         binding.rv.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rv.setAdapter(adapter);
 
-        seedDemo(); // 데모 데이터
+        // 데모 데이터 주입
+        seedDemo();
 
-        // Chip 보이기/숨기기 (해당 타입을 허용하지 않으면 Chip 숨김)
+        // 알림 허용 설정에 따라 칩 노출 제어
         boolean allowFestival = AlarmPrefs.allowFestival(requireContext());
         boolean allowSpot     = AlarmPrefs.allowSpot(requireContext());
         boolean allowNews     = AlarmPrefs.allowNews(requireContext());
-
         setVisible(binding.chipFestival, allowFestival);
         setVisible(binding.chipSpot,     allowSpot);
         setVisible(binding.chipNews,     allowNews);
 
-        // Chip 선택 리스너
-        binding.chipGroup.setOnCheckedStateChangeListener((group, ids) -> applyFilter());
+        // 칩 변경 리스너 (한 번만 등록)
+        binding.chipGroup.setOnCheckedStateChangeListener((ChipGroup group, List<Integer> checkedIds) -> {
+            int id = checkedIds.isEmpty() ? binding.chipAll.getId() : checkedIds.get(0);
+            updateHeaderForTab(id);   // 헤더 문구 변경
+            applyFilter();            // 리스트 필터링
+        });
 
-        // 처음 로딩 시: 남아있는 첫 번째 칩 선택 (없으면 "전체")
+        // 첫 로딩 시: 남아있는 첫 번째 칩을 선택, 없으면 '전체'
         if (!selectFirstVisibleChip(binding.chipGroup)) {
             binding.chipAll.setChecked(true);
+            updateHeaderForTab(binding.chipAll.getId());
+        } else {
+            // 첫 선택된 칩에 맞게 헤더 세팅
+            updateHeaderForTab(getCheckedId(binding.chipGroup));
         }
 
-        // 버튼들(읽음 처리)은 여기서 자유롭게 연결
-        binding.btnMarkMsgsRead.setOnClickListener(v -> {/* TODO */});
-        binding.btnMarkAllRead.setOnClickListener(v -> {/* TODO */});
+        // 버튼(읽음 처리 등) 연결
+        binding.btnMarkMsgsRead.setOnClickListener(v -> {
+            // TODO: 선택/전체 읽음 처리 로직 연동
+        });
 
-        // 필터 적용
+        // 초기 필터 적용
         applyFilter();
         return binding.getRoot();
     }
 
+    /** 탭에 따른 섹션 타이틀 변경 */
+    private void updateHeaderForTab(int id) {
+        if (id == binding.chipFestival.getId()) {
+            binding.tvSectionTitle.setText(R.string.noti_header_festival);
+        } else if (id == binding.chipSpot.getId()) {
+            binding.tvSectionTitle.setText(R.string.noti_header_spot);
+        } else if (id == binding.chipNews.getId()) {
+            binding.tvSectionTitle.setText(R.string.noti_header_news);
+        } else {
+            binding.tvSectionTitle.setText(R.string.noti_header_all);
+        }
+    }
+
+    /** 현재 체크된 칩의 id (없으면 '전체' 칩 id 반환) */
+    private int getCheckedId(ChipGroup group) {
+        List<Integer> ids = group.getCheckedChipIds();
+        return ids.isEmpty() ? binding.chipAll.getId() : ids.get(0);
+    }
+
+    /** 현재 칩/설정 상태에 따라 목록 필터링 */
     private void applyFilter() {
         // 현재 Chip
         int checkedId = getCheckedId(binding.chipGroup);
 
+        // 설정 상태
         boolean wishFest   = AlarmPrefs.isEnabled(requireContext(), AlarmPrefs.KEY_WISH_FESTIVAL);
         boolean wishSpot   = AlarmPrefs.isEnabled(requireContext(), AlarmPrefs.KEY_WISH_SPOT);
         boolean wishNews   = AlarmPrefs.isEnabled(requireContext(), AlarmPrefs.KEY_WISH_NEWS);
@@ -104,11 +132,11 @@ public class NotificationsFragment extends Fragment {
 
             if (!allowed) continue;
 
-            // 2) Chip 필터 (전체/축제/관광지/뉴스)
-            if (checkedId == R.id.chipAll
-                    || (checkedId == R.id.chipFestival && n.type == Type.FESTIVAL)
-                    || (checkedId == R.id.chipSpot     && n.type == Type.SPOT)
-                    || (checkedId == R.id.chipNews     && n.type == Type.NEWS)) {
+            // 2) Chip 필터 (전체/축제/관광지/뉴스) — ViewBinding의 id로 비교
+            if (checkedId == binding.chipAll.getId()
+                    || (checkedId == binding.chipFestival.getId() && n.type == Type.FESTIVAL)
+                    || (checkedId == binding.chipSpot.getId()     && n.type == Type.SPOT)
+                    || (checkedId == binding.chipNews.getId()     && n.type == Type.NEWS)) {
                 visible.add(n);
             }
         }
@@ -120,16 +148,12 @@ public class NotificationsFragment extends Fragment {
         v.setEnabled(visible);
     }
 
+    /** 처음 로딩 시: 남아있는 첫 번째 칩 선택 (없으면 false) */
     private boolean selectFirstVisibleChip(ChipGroup group) {
-        if (binding.chipFestival.getVisibility()==View.VISIBLE) { binding.chipFestival.setChecked(true); return true; }
-        if (binding.chipSpot.getVisibility()==View.VISIBLE)     { binding.chipSpot.setChecked(true);     return true; }
-        if (binding.chipNews.getVisibility()==View.VISIBLE)     { binding.chipNews.setChecked(true);     return true; }
+        if (binding.chipFestival.getVisibility() == View.VISIBLE) { binding.chipFestival.setChecked(true); return true; }
+        if (binding.chipSpot.getVisibility()     == View.VISIBLE) { binding.chipSpot.setChecked(true);     return true; }
+        if (binding.chipNews.getVisibility()     == View.VISIBLE) { binding.chipNews.setChecked(true);     return true; }
         return false;
-    }
-
-    private int getCheckedId(ChipGroup group) {
-        List<Integer> ids = group.getCheckedChipIds();
-        return ids.isEmpty() ? R.id.chipAll : ids.get(0);
     }
 
     private void seedDemo() {
@@ -160,24 +184,33 @@ public class NotificationsFragment extends Fragment {
             diff.dispatchUpdatesTo(this);
         }
 
-        @NonNull @Override public NotiVH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        @NonNull
+        @Override
+        public NotiVH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View v = LayoutInflater.from(parent.getContext())
                     .inflate(android.R.layout.simple_list_item_2, parent, false);
             return new NotiVH(v);
         }
 
-        @Override public void onBindViewHolder(@NonNull NotiVH h, int pos) { h.bind(items.get(pos)); }
-        @Override public int getItemCount() { return items.size(); }
+        @Override
+        public void onBindViewHolder(@NonNull NotiVH h, int pos) {
+            h.bind(items.get(pos));
+        }
+
+        @Override
+        public int getItemCount() {
+            return items.size();
+        }
 
         static class DiffCb extends DiffUtil.Callback {
-            final List<Noti> o,n;
-            DiffCb(List<Noti> o, List<Noti> n){this.o=o; this.n=n;}
-            @Override public int getOldListSize(){return o.size();}
-            @Override public int getNewListSize(){return n.size();}
-            @Override public boolean areItemsTheSame(int i, int j){ return o.get(i)==n.get(j); }
-            @Override public boolean areContentsTheSame(int i, int j){
-                Noti a=o.get(i), b=n.get(j);
-                return a.source==b.source && a.type==b.type && a.title.equals(b.title);
+            final List<Noti> o, n;
+            DiffCb(List<Noti> o, List<Noti> n) { this.o = o; this.n = n; }
+            @Override public int getOldListSize() { return o.size(); }
+            @Override public int getNewListSize() { return n.size(); }
+            @Override public boolean areItemsTheSame(int i, int j) { return o.get(i) == n.get(j); }
+            @Override public boolean areContentsTheSame(int i, int j) {
+                Noti a = o.get(i), b = n.get(j);
+                return a.source == b.source && a.type == b.type && a.title.equals(b.title);
             }
         }
     }
@@ -185,8 +218,8 @@ public class NotificationsFragment extends Fragment {
     private static class NotiVH extends RecyclerView.ViewHolder {
         private final android.widget.TextView t1 = itemView.findViewById(android.R.id.text1);
         private final android.widget.TextView t2 = itemView.findViewById(android.R.id.text2);
-        NotiVH(@NonNull View itemView){ super(itemView); }
-        void bind(Noti n){
+        NotiVH(@NonNull View itemView) { super(itemView); }
+        void bind(Noti n) {
             t1.setText(n.title);
             t2.setText(n.source + " • " + n.type);
         }
