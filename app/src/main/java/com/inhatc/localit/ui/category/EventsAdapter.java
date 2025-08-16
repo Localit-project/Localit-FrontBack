@@ -9,19 +9,19 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.inhatc.localit.R;
-import com.inhatc.localit.api.TourResponse;
+import com.inhatc.localit.api.SpotResponse;
 import java.util.List;
 
 public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.VH> {
 
-    public interface OnItemClick { void onEventClick(TourResponse.Item item, int position); }
-    public interface OnFavClick  { void onFavoriteClick(TourResponse.Item item, int position); }
+    public interface OnItemClick { void onEventClick(SpotResponse.Item item, int position); }
+    public interface OnFavClick  { void onFavoriteClick(SpotResponse.Item item, int position); }
 
-    private final List<TourResponse.Item> items;
+    private final List<SpotResponse.Item> items;
     private final OnItemClick onItemClick;
     private final OnFavClick onFavClick;
 
-    public EventsAdapter(List<TourResponse.Item> items, OnItemClick onItemClick, OnFavClick onFavClick) {
+    public EventsAdapter(List<SpotResponse.Item> items, OnItemClick onItemClick, OnFavClick onFavClick) {
         this.items = items;
         this.onItemClick = onItemClick;
         this.onFavClick = onFavClick;
@@ -29,13 +29,13 @@ public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.VH> {
 
     @NonNull @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_event, parent, false);
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_festival, parent, false);
         return new VH(v);
     }
 
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
-        TourResponse.Item it = items.get(position);
+        SpotResponse.Item it = items.get(position);
 
         h.title.setText(it.title != null ? it.title : "");
 

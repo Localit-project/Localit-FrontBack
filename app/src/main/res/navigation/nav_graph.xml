@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/mypageFragment">  <!-- 시작 목적지는 상황에 맞게 수정 -->
+
+    <fragment
+        android:id="@+id/mypageFragment"
+        android:name="com.inhatc.localit.Fragment.MypageFragment"
+        android:label="mypage">
+        <action
+            android:id="@+id/action_mypageFragment_to_notificationsFragment"
+            app:destination="@id/notificationsFragment" />
+        <action
+            android:id="@+id/action_mypageFragment_to_alarmSettingsFragment"
+            app:destination="@id/alarmSettingsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/notificationsFragment"
+        android:name="com.inhatc.localit.Fragment.NotificationsFragment"
+        android:label="notifications" />
+
+    <fragment
+        android:id="@+id/alarmSettingsFragment"
+        android:name="com.inhatc.localit.Fragment.AlarmSettingsFragment"
+        android:label="alarm_settings" />
+</navigation>

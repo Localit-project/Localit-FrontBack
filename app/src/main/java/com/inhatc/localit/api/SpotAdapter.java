@@ -14,10 +14,10 @@ import com.inhatc.localit.R;
 
 import java.util.List;
 
-public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder> {
-    private List<TourResponse.Item> itemList;
+public class SpotAdapter extends RecyclerView.Adapter<SpotAdapter.TourViewHolder> {
+    private List<SpotResponse.Item> itemList;
 
-    public TourAdapter(List<TourResponse.Item> itemList) {
+    public SpotAdapter(List<SpotResponse.Item> itemList) {
         this.itemList = itemList;
     }
 
@@ -25,13 +25,13 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
     @Override
     public TourViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_tourism_sub, parent, false);
+                .inflate(R.layout.item_spot_sub, parent, false);
         return new TourViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull TourViewHolder holder, int position) {
-        TourResponse.Item item = itemList.get(position);
+        SpotResponse.Item item = itemList.get(position);
 
         holder.textTitle.setText(item.title);
         holder.textAddr.setText(item.addr1 != null ? item.addr1 : "주소 정보 없음");

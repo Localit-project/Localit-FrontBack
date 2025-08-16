@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <!-- TopBar -->
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:layout_marginTop="25dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:baselineAligned="false"
+            android:clickable="true"
+            android:focusable="true"
+            android:src="@drawable/ic_arrow_back" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/alarm_settings"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:gravity="center"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- 섹션: 찜목록 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/wishlist_section"
+                android:textStyle="bold"
+                android:textSize="15sp"
+                android:padding="16dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <include layout="@layout/view_setting_row_switch"
+                    android:id="@+id/rowWishFestival"
+                    android:tag="@string/toggle_festival"/>
+
+                <include layout="@layout/view_setting_row_switch"
+                    android:id="@+id/rowWishSpot"
+                    android:tag="@string/toggle_spot"/>
+
+                <include layout="@layout/view_setting_row_switch"
+                    android:id="@+id/rowWishNews"
+                    android:tag="@string/toggle_news"/>
+            </LinearLayout>
+
+            <View style="@style/DividerStyle" />
+
+            <!-- 섹션: 관심 지역 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/interest_region_section"
+                android:textStyle="bold"
+                android:textSize="15sp"
+                android:padding="16dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <include layout="@layout/view_setting_row_switch"
+                    android:id="@+id/rowRegionFestival"
+                    android:tag="@string/toggle_festival"/>
+
+                <include layout="@layout/view_setting_row_switch"
+                    android:id="@+id/rowRegionSpot"
+                    android:tag="@string/toggle_spot"/>
+
+                <include layout="@layout/view_setting_row_switch"
+                    android:id="@+id/rowRegionNews"
+                    android:tag="@string/toggle_news"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -27,8 +27,8 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.inhatc.localit.R;
-import com.inhatc.localit.api.TourApiService;
-import com.inhatc.localit.api.TourResponse;
+import com.inhatc.localit.api.SpotApiService;
+import com.inhatc.localit.api.SpotResponse;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,7 +54,7 @@ public class SearchFragment extends Fragment {
     private View progress;
 
     private SearchAdapter adapter;
-    private TourApiService api;
+    private SpotApiService api;
 
     @Nullable
     @Override
@@ -99,7 +99,7 @@ public class SearchFragment extends Fragment {
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(client)
                 .build();
-        api = retrofit.create(TourApiService.class);
+        api = retrofit.create(SpotApiService.class);
 
         // 엔터/검색 아이콘 동작
         etSearch.setOnEditorActionListener((tv, action, event) -> {
@@ -166,27 +166,27 @@ public class SearchFragment extends Fragment {
         adapter.setItems(Collections.emptyList());
 
         AtomicInteger done = new AtomicInteger(0);
-        List<TourResponse.Item> merged = Collections.synchronizedList(new ArrayList<>());
+        List<SpotResponse.Item> merged = Collections.synchronizedList(new ArrayList<>());
 
         // 관광지
         api.searchKeyword(
                 SERVICE_KEY, "AND", "Localit", "json",
                 keyword, 12, 20, 1
-        ).enqueue(new Callback<TourResponse>() {
-            @Override public void onResponse(Call<TourResponse> call, Response<TourResponse> res) {
+        ).enqueue(new Callback<SpotResponse>() {
+            @Override public void onResponse(Call<SpotResponse> call, Response<SpotResponse> res) {
                 if (res.isSuccessful() && res.body() != null
                         && res.body().response != null
                         && res.body().response.body != null
                         && res.body().response.body.items != null) {
-                    List<TourResponse.Item> list = res.body().response.body.items.item;
+                    List<SpotResponse.Item> list = res.body().response.body.items.item;
                     if (list != null) {
-                        for (TourResponse.Item it : list) it.setLocalContentType(12);
+                        for (SpotResponse.Item it : list) it.setLocalContentType(12);
                         merged.addAll(list);
                     }
                 }
                 if (done.incrementAndGet() == 2) onBothFinished(merged);
             }
-            @Override public void onFailure(Call<TourResponse> call, Throwable t) {
+            @Override public void onFailure(Call<SpotResponse> call, Throwable t) {
                 Log.e(TAG, "관광지 검색 실패", t);
                 if (done.incrementAndGet() == 2) onBothFinished(merged);
             }
@@ -196,28 +196,28 @@ public class SearchFragment extends Fragment {
         api.searchKeyword(
                 SERVICE_KEY, "AND", "Localit", "json",
                 keyword, 15, 20, 1
-        ).enqueue(new Callback<TourResponse>() {
-            @Override public void onResponse(Call<TourResponse> call, Response<TourResponse> res) {
+        ).enqueue(new Callback<SpotResponse>() {
+            @Override public void onResponse(Call<SpotResponse> call, Response<SpotResponse> res) {
                 if (res.isSuccessful() && res.body() != null
                         && res.body().response != null
                         && res.body().response.body != null
                         && res.body().response.body.items != null) {
-                    List<TourResponse.Item> list = res.body().response.body.items.item;
+                    List<SpotResponse.Item> list = res.body().response.body.items.item;
                     if (list != null) {
-                        for (TourResponse.Item it : list) it.setLocalContentType(15);
+                        for (SpotResponse.Item it : list) it.setLocalContentType(15);
                         merged.addAll(list);
                     }
                 }
                 if (done.incrementAndGet() == 2) onBothFinished(merged);
             }
-            @Override public void onFailure(Call<TourResponse> call, Throwable t) {
+            @Override public void onFailure(Call<SpotResponse> call, Throwable t) {
                 Log.e(TAG, "축제 검색 실패", t);
                 if (done.incrementAndGet() == 2) onBothFinished(merged);
             }
         });
     }
 
-    private void onBothFinished(List<TourResponse.Item> merged) {
+    private void onBothFinished(List<SpotResponse.Item> merged) {
         Collections.sort(merged, (a, b) -> {
             String ta = a.getTitle() == null ? "" : a.getTitle();
             String tb = b.getTitle() == null ? "" : b.getTitle();

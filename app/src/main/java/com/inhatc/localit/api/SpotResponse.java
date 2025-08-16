@@ -2,7 +2,7 @@ package com.inhatc.localit.api;
 
 import java.util.List;
 
-public class TourResponse {
+public class SpotResponse {
     public Response response;
 
     public static class Response {

@@ -13,9 +13,9 @@ import androidx.cardview.widget.CardView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.inhatc.localit.api.TourApiHelper;
-import com.inhatc.localit.api.TourApiService;
-import com.inhatc.localit.api.TourResponse;
+import com.inhatc.localit.api.SpotApiHelper;
+import com.inhatc.localit.api.SpotApiService;
+import com.inhatc.localit.api.SpotResponse;
 import com.inhatc.localit.ui.category.NewsActivity;
 
 import java.text.SimpleDateFormat;
@@ -235,14 +235,14 @@ public class RegionDetailActivity extends AppCompatActivity {
         int areaCode = getAreaCode(regionName);
         Integer sigunguCode = getSigunguCodeIfGyeonggi();
 
-        TourApiService apiService = TourApiHelper.getApiService();
+        SpotApiService apiService = SpotApiHelper.getApiService();
         // 서버 필터 시도 (sigunguCode 전달)
-        Call<TourResponse> call = apiService.getTourList(
+        Call<SpotResponse> call = apiService.getTourList(
                 12, 1, "AND", "localit", "c", 12, areaCode, sigunguCode, "json", SERVICE_KEY
         );
 
-        call.enqueue(new Callback<TourResponse>() {
-            @Override public void onResponse(Call<TourResponse> call, Response<TourResponse> response) {
+        call.enqueue(new Callback<SpotResponse>() {
+            @Override public void onResponse(Call<SpotResponse> call, Response<SpotResponse> response) {
                 if (!(response.isSuccessful() && response.body()!=null &&
                         response.body().response!=null &&
                         response.body().response.body!=null &&
@@ -250,7 +250,7 @@ public class RegionDetailActivity extends AppCompatActivity {
                         response.body().response.body.items.item!=null)) {
                     return;
                 }
-                List<TourResponse.Item> items = response.body().response.body.items.item;
+                List<SpotResponse.Item> items = response.body().response.body.items.item;
 
                 //서버가 sigungu 무시하거나 코드가 틀릴 수 있으니 addr1로 한 번 더 거르기
                 if (sigunguCode != null && subRegionName != null) {
@@ -259,7 +259,7 @@ public class RegionDetailActivity extends AppCompatActivity {
 
                 bindTourismPreview(items);
             }
-            @Override public void onFailure(Call<TourResponse> call, Throwable t) { t.printStackTrace(); }
+            @Override public void onFailure(Call<SpotResponse> call, Throwable t) { t.printStackTrace(); }
         });
     }
 
@@ -268,13 +268,13 @@ public class RegionDetailActivity extends AppCompatActivity {
         int areaCode = getAreaCode(regionName);
         Integer sigunguCode = getSigunguCodeIfGyeonggi();
 
-        TourApiService apiService = TourApiHelper.getApiService();
-        Call<TourResponse> call = apiService.getFestivalList(
+        SpotApiService apiService = SpotApiHelper.getApiService();
+        Call<SpotResponse> call = apiService.getFestivalList(
                 10, 1, "AND", "localit", "json", areaCode, sigunguCode, startDate, "A", SERVICE_KEY
         );
 
-        call.enqueue(new Callback<TourResponse>() {
-            @Override public void onResponse(Call<TourResponse> call, Response<TourResponse> response) {
+        call.enqueue(new Callback<SpotResponse>() {
+            @Override public void onResponse(Call<SpotResponse> call, Response<SpotResponse> response) {
                 if (!(response.isSuccessful() && response.body()!=null &&
                         response.body().response!=null &&
                         response.body().response.body!=null &&
@@ -282,7 +282,7 @@ public class RegionDetailActivity extends AppCompatActivity {
                         response.body().response.body.items.item!=null)) {
                     return;
                 }
-                List<TourResponse.Item> items = response.body().response.body.items.item;
+                List<SpotResponse.Item> items = response.body().response.body.items.item;
 
                 // 보조 필터
                 if (sigunguCode != null && subRegionName != null) {
@@ -291,17 +291,17 @@ public class RegionDetailActivity extends AppCompatActivity {
 
                 bindFestivalPreview(items);
             }
-            @Override public void onFailure(Call<TourResponse> call, Throwable t) { t.printStackTrace(); }
+            @Override public void onFailure(Call<SpotResponse> call, Throwable t) { t.printStackTrace(); }
         });
     }
 
     /** addr1에 하위도시명이 포함된 것만 남기기 (fallback) */
-    private List<TourResponse.Item> filterByAddr(List<TourResponse.Item> src, String key) {
+    private List<SpotResponse.Item> filterByAddr(List<SpotResponse.Item> src, String key) {
         if (src == null) return new ArrayList<>();
         if (key == null || key.trim().isEmpty()) return src;
         String k = key.trim();
-        List<TourResponse.Item> out = new ArrayList<>();
-        for (TourResponse.Item it : src) {
+        List<SpotResponse.Item> out = new ArrayList<>();
+        for (SpotResponse.Item it : src) {
             String addr = it != null && it.addr1 != null ? it.addr1 : "";
             if (addr.startsWith(k) || addr.contains(" " + k) || addr.contains(k + " ")) {
                 out.add(it);
@@ -310,11 +310,11 @@ public class RegionDetailActivity extends AppCompatActivity {
         return out;
     }
 
-    private void bindTourismPreview(List<TourResponse.Item> items) {
+    private void bindTourismPreview(List<SpotResponse.Item> items) {
         if (items == null) items = new ArrayList<>();
         if (items.size() >= 2) {
-            TourResponse.Item item1 = items.get(0);
-            TourResponse.Item item2 = items.get(1);
+            SpotResponse.Item item1 = items.get(0);
+            SpotResponse.Item item2 = items.get(1);
 
             textTourism1Title.setText(safe(item1.title));
             textTourism1Location.setText(safe(item1.addr1));
@@ -326,7 +326,7 @@ public class RegionDetailActivity extends AppCompatActivity {
             textTourism2Date.setText(formatDate(item2.createdtime));
             Glide.with(this).load(safe(item2.firstimage)).placeholder(R.drawable.sample1).error(R.drawable.sample1).into(imageTourism2);
         } else if (items.size() == 1) {
-            TourResponse.Item item1 = items.get(0);
+            SpotResponse.Item item1 = items.get(0);
             textTourism1Title.setText(safe(item1.title));
             textTourism1Location.setText(safe(item1.addr1));
             textTourism1Date.setText(formatDate(item1.createdtime));
@@ -344,11 +344,11 @@ public class RegionDetailActivity extends AppCompatActivity {
         }
     }
 
-    private void bindFestivalPreview(List<TourResponse.Item> items) {
+    private void bindFestivalPreview(List<SpotResponse.Item> items) {
         if (items == null) items = new ArrayList<>();
         if (items.size() >= 2) {
-            TourResponse.Item item1 = items.get(0);
-            TourResponse.Item item2 = items.get(1);
+            SpotResponse.Item item1 = items.get(0);
+            SpotResponse.Item item2 = items.get(1);
 
             textFestival1Title.setText(safe(item1.title));
             textFestival1Date.setText("시작일: " + formatDate(item1.eventstartdate));
@@ -360,7 +360,7 @@ public class RegionDetailActivity extends AppCompatActivity {
             textFestival2DateInfo.setText("종료일: " + formatDate(item2.eventenddate));
             Glide.with(this).load(safe(item2.firstimage)).placeholder(R.drawable.sample1).error(R.drawable.sample1).into(imageFestival2);
         } else if (items.size() == 1) {
-            TourResponse.Item item1 = items.get(0);
+            SpotResponse.Item item1 = items.get(0);
             textFestival1Title.setText(safe(item1.title));
             textFestival1Date.setText("시작일: " + formatDate(item1.eventstartdate));
             textFestival1DateInfo.setText("종료일: " + formatDate(item1.eventenddate));

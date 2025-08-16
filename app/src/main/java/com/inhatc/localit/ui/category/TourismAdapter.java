@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.inhatc.localit.R;
-import com.inhatc.localit.api.TourResponse;
+import com.inhatc.localit.api.SpotResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,18 +20,18 @@ import java.util.List;
 public class TourismAdapter extends RecyclerView.Adapter<TourismAdapter.VH> {
 
     public interface OnItemClick {
-        void onTourismClick(TourResponse.Item item, int position);
+        void onTourismClick(SpotResponse.Item item, int position);
     }
 
     public interface OnFavClick {
-        void onFavoriteClick(TourResponse.Item item, int position);
+        void onFavoriteClick(SpotResponse.Item item, int position);
     }
 
-    private final List<TourResponse.Item> items = new ArrayList<>();
+    private final List<SpotResponse.Item> items = new ArrayList<>();
     private final OnItemClick onItemClick;
     private final OnFavClick onFavClick;
 
-    public TourismAdapter(List<TourResponse.Item> initial,
+    public TourismAdapter(List<SpotResponse.Item> initial,
                           OnItemClick onItemClick,
                           OnFavClick onFavClick) {
         if (initial != null) items.addAll(initial);
@@ -39,7 +39,7 @@ public class TourismAdapter extends RecyclerView.Adapter<TourismAdapter.VH> {
         this.onFavClick  = onFavClick;
     }
 
-    public void submitList(List<TourResponse.Item> newItems) {
+    public void submitList(List<SpotResponse.Item> newItems) {
         items.clear();
         if (newItems != null) items.addAll(newItems);
         notifyDataSetChanged();
@@ -48,13 +48,13 @@ public class TourismAdapter extends RecyclerView.Adapter<TourismAdapter.VH> {
     @NonNull @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_tourism, parent, false);
+                .inflate(R.layout.item_spot, parent, false);
         return new VH(v);
     }
 
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
-        final TourResponse.Item it = items.get(position);
+        final SpotResponse.Item it = items.get(position);
 
         // 제목
         h.title.setText(it != null && it.title != null && !it.title.isEmpty()

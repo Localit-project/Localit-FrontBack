@@ -3,13 +3,13 @@ package com.inhatc.localit.api;
 import java.util.*;
 
 // 이미 있는 클래스에 아래 내용만 보강
-public class TourApiHelper {
+public class SpotApiHelper {
 
     // 이미 있는 줄: Retrofit 서비스 싱글턴
-    private static final TourApiService apiService =
-            RetrofitClient.getInstance().create(TourApiService.class);
+    private static final SpotApiService apiService =
+            RetrofitClient.getInstance().create(SpotApiService.class);
 
-    public static TourApiService getApiService() {
+    public static SpotApiService getApiService() {
         return apiService;
     }
 

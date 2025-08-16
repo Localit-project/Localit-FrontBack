@@ -11,7 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.inhatc.localit.R;
-import com.inhatc.localit.model.Event;   // 뉴스도 임시로 Event 모델 재사용
+import com.inhatc.localit.model.Festival;   // 뉴스도 임시로 Event 모델 재사용
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,18 +20,18 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.VH> {
 
     /** TourismAdapter 패턴과 동일한 콜백 2종 */
     public interface OnItemClick {
-        void onNewsClick(Event news, int position);
+        void onNewsClick(Festival news, int position);
     }
     public interface OnFavClick {
-        void onFavoriteClick(Event news, int position);
+        void onFavoriteClick(Festival news, int position);
     }
 
-    private final List<Event> items = new ArrayList<>();
+    private final List<Festival> items = new ArrayList<>();
     private final OnItemClick onItemClick;
     private final OnFavClick onFavClick;
 
     /** TourismAdapter와 동일하게: 초기 리스트 + 콜백 2개 */
-    public NewsAdapter(List<Event> initial,
+    public NewsAdapter(List<Festival> initial,
                        OnItemClick onItemClick,
                        OnFavClick onFavClick) {
         if (initial != null) items.addAll(initial);
@@ -40,7 +40,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.VH> {
     }
 
     /** 리스트 갱신 (TourismAdapter의 submitList와 동일) */
-    public void submitList(List<Event> newItems) {
+    public void submitList(List<Festival> newItems) {
         items.clear();
         if (newItems != null) items.addAll(newItems);
         notifyDataSetChanged();
@@ -50,13 +50,13 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.VH> {
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
                 // item_event 레이아웃 재사용 (imageEvent, textEventTitle, textEventDate, btnFavorite)
-                .inflate(R.layout.item_event, parent, false);
+                .inflate(R.layout.item_festival, parent, false);
         return new VH(v);
     }
 
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
-        final Event it = items.get(position);
+        final Festival it = items.get(position);
 
         // 제목/날짜 바인딩
         h.title.setText(it != null && it.getTitle() != null ? it.getTitle() : "");

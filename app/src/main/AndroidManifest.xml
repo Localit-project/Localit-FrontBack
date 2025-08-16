@@ -1,15 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.inhatc.localit">
 
-    <!-- 인터넷 권한 추가. 구글 로그인 등에 필요 -->
+    <!-- Permissions must be direct children of <manifest> -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- 카카오 SDK AppKey -->
-    <meta-data
-        android:name="com.kakao.sdk.AppKey"
-        android:value="47032f657514090a03eb23e26657b152" />
+    <!-- Android 13+ -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Android 12L 이하 전용 -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
 
     <application
+        android:name=".GlobalApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -18,11 +25,15 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Localit"
-        tools:targetApi="31"
-        android:name=".GlobalApplication"
-        android:networkSecurityConfig="@xml/network_security_config">
+        android:networkSecurityConfig="@xml/network_security_config"
+        tools:targetApi="31">
 
-        <!-- StartActivity를 앱 실행 시 시작하도록 설정 -->
+        <!-- Kakao SDK AppKey -->
+        <meta-data
+            android:name="com.kakao.sdk.AppKey"
+            android:value="47032f657514090a03eb23e26657b152" />
+
+        <!-- Launcher -->
         <activity
             android:name=".StartActivity"
             android:exported="true"
@@ -33,72 +44,83 @@
             </intent-filter>
         </activity>
 
-        <!-- LoginActivity는 StartActivity에서 이동 -->
+        <!-- Login -->
         <activity
             android:name=".LoginActivity"
             android:exported="true"
             android:label="@string/app_name" />
 
-        <!-- MainActivity는 로그인 후 이동 -->
+        <!-- Main -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name" />
 
-        <!-- 회원가입 버튼 누르면 이동 -->
+        <!-- Sign Up -->
         <activity
             android:name=".SignUpActivity"
             android:exported="true"
             android:label="@string/app_name" />
 
-        <!-- 아이디/비밀번호 찾기 버튼 누르면 이동 -->
+        <!-- Find ID/PW -->
         <activity
             android:name=".FindIdActivity"
             android:exported="true"
             android:label="@string/app_name" />
 
-        <!-- 비밀번호 찾기 버튼 누르면 이동 -->
         <activity
             android:name=".ChangePwActivity"
             android:exported="true"
             android:label="@string/app_name" />
 
-        <activity android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
+        <!-- Kakao Auth handler -->
+        <activity
+            android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-
-                <!-- 여기 URI Scheme은 kakao{네이티브 앱 키} 로 설정 -->
                 <data
                     android:host="oauth"
-                    android:scheme="kakao47032f657514090a03eb23e26657b152"/>
+                    android:scheme="kakao47032f657514090a03eb23e26657b152" />
             </intent-filter>
         </activity>
 
-        <!-- 지역 상세 정보 페이지 -->
-        <activity android:name=".RegionDetailActivity"
+        <!-- Region / Category screens -->
+        <activity
+            android:name=".RegionDetailActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".ui.category.NewsActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".ui.category.EventsActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".ui.category.TourismActivity"
             android:exported="true"
             android:label="@string/app_name" />
 
-        <activity android:name=".ui.category.NewsActivity"
-            android:exported="true"
-            android:label="@string/app_name" />
-
-        <activity android:name=".ui.category.EventsActivity"
-            android:exported="true"
-            android:label="@string/app_name" />
-
-        <activity android:name=".ui.category.TourismActivity"
-            android:exported="true"
-            android:label="@string/app_name" />
-
+        <!-- API demo -->
         <activity
             android:name="com.inhatc.localit.api.ApiMainActivity"
             android:exported="true"
             android:label="@string/app_name" />
 
+        <!--  카메라 촬영 -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 

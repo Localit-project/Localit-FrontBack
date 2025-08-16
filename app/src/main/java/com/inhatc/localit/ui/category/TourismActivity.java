@@ -14,12 +14,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.inhatc.localit.EventDetailActivity;
+import com.inhatc.localit.FestivalDetailActivity;
 import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
-import com.inhatc.localit.api.TourApiHelper;
-import com.inhatc.localit.api.TourApiService;
-import com.inhatc.localit.api.TourResponse;
+import com.inhatc.localit.api.SpotApiHelper;
+import com.inhatc.localit.api.SpotApiService;
+import com.inhatc.localit.api.SpotResponse;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,7 +38,7 @@ public class TourismActivity extends AppCompatActivity {
 
     private RecyclerView recyclerViewTourism;
     private TourismAdapter tourismAdapter;
-    private final List<TourResponse.Item> apiItems = new ArrayList<>();
+    private final List<SpotResponse.Item> apiItems = new ArrayList<>();
 
     private TextView textRegionTitle;
     private ImageView btnBack;
@@ -135,7 +135,7 @@ public class TourismActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_tourism);
+        setContentView(R.layout.activity_spot);
 
         initViews();
         getRegionNameFromIntent();
@@ -168,7 +168,7 @@ public class TourismActivity extends AppCompatActivity {
         tourismAdapter = new TourismAdapter(
                 apiItems,
                 (item, position) -> {
-                    Intent intent = new Intent(TourismActivity.this, EventDetailActivity.class);
+                    Intent intent = new Intent(TourismActivity.this, FestivalDetailActivity.class);
                     intent.putExtra("event_title", item.title != null ? item.title : "");
                     String sub = (item.addr1 != null && !item.addr1.isEmpty()) ? item.addr1
                             : (item.createdtime != null ? item.createdtime : "");
@@ -212,9 +212,9 @@ public class TourismActivity extends AppCompatActivity {
         Log.d(TAG, "[CHECK] region=" + regionName + ", sub=" + subRegionName
                 + ", areaCode=" + areaCode + ", sigungu=" + sigunguCode);
 
-        TourApiService api = TourApiHelper.getApiService();
+        SpotApiService api = SpotApiHelper.getApiService();
 
-        Call<TourResponse> call = api.getTourList(
+        Call<SpotResponse> call = api.getTourList(
                 30, 1, "AND", "localit", "A",
                 12, areaCode, sigunguCode,
                 "json", SERVICE_KEY
@@ -222,9 +222,9 @@ public class TourismActivity extends AppCompatActivity {
 
         Log.d(TAG, "REQ URL: " + call.request().url());
 
-        call.enqueue(new Callback<TourResponse>() {
+        call.enqueue(new Callback<SpotResponse>() {
             @Override
-            public void onResponse(Call<TourResponse> call, Response<TourResponse> response) {
+            public void onResponse(Call<SpotResponse> call, Response<SpotResponse> response) {
                 if (!response.isSuccessful() || response.body() == null ||
                         response.body().response == null ||
                         response.body().response.body == null ||
@@ -233,7 +233,7 @@ public class TourismActivity extends AppCompatActivity {
                     Toast.makeText(TourismActivity.this, "관광지 데이터를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                List<TourResponse.Item> items = response.body().response.body.items.item;
+                List<SpotResponse.Item> items = response.body().response.body.items.item;
 
                 // 서버가 sigungu를 무시/불일치하면 addr1로 보조 필터
                 if (sigunguCode != null && !TextUtils.isEmpty(subRegionName)) {
@@ -244,7 +244,7 @@ public class TourismActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<TourResponse> call, Throwable t) {
+            public void onFailure(Call<SpotResponse> call, Throwable t) {
                 t.printStackTrace();
                 Toast.makeText(TourismActivity.this, "네트워크 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();
             }
@@ -262,12 +262,12 @@ public class TourismActivity extends AppCompatActivity {
     }
 
     /** addr1에 하위도시명이 포함돼 있는지로 2차 필터 */
-    private List<TourResponse.Item> filterByAddr(List<TourResponse.Item> src, String key) {
+    private List<SpotResponse.Item> filterByAddr(List<SpotResponse.Item> src, String key) {
         if (src == null) return new ArrayList<>();
         if (TextUtils.isEmpty(key)) return src;
         String k = key.trim();
-        List<TourResponse.Item> out = new ArrayList<>();
-        for (TourResponse.Item it : src) {
+        List<SpotResponse.Item> out = new ArrayList<>();
+        for (SpotResponse.Item it : src) {
             String addr = it != null && it.addr1 != null ? it.addr1 : "";
             if (addr.startsWith(k) || addr.contains(" " + k) || addr.contains(k + " ")) {
                 out.add(it);

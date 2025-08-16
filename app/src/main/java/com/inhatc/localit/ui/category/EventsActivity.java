@@ -13,12 +13,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.inhatc.localit.EventDetailActivity;
+import com.inhatc.localit.FestivalDetailActivity;
 import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
-import com.inhatc.localit.api.TourApiHelper;
-import com.inhatc.localit.api.TourApiService;
-import com.inhatc.localit.api.TourResponse;
+import com.inhatc.localit.api.SpotApiHelper;
+import com.inhatc.localit.api.SpotApiService;
+import com.inhatc.localit.api.SpotResponse;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ public class EventsActivity extends AppCompatActivity {
 
     private RecyclerView recyclerViewEvents;
     private EventsAdapter eventsAdapter;
-    private final List<TourResponse.Item> apiItems = new ArrayList<>();
+    private final List<SpotResponse.Item> apiItems = new ArrayList<>();
 
     private TextView textRegionTitle;
     private ImageView btnBack;
@@ -140,7 +140,7 @@ public class EventsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_events);
+        setContentView(R.layout.activity_festival);
 
         initViews();
         getRegionNameFromIntent();
@@ -171,7 +171,7 @@ public class EventsActivity extends AppCompatActivity {
 
     private void setupRecyclerView() {
         eventsAdapter = new EventsAdapter(apiItems, (item, position) -> {
-            Intent intent = new Intent(EventsActivity.this, EventDetailActivity.class);
+            Intent intent = new Intent(EventsActivity.this, FestivalDetailActivity.class);
             intent.putExtra("event_title", safe(item.title));
             intent.putExtra("event_date", buildDateText(formatDate(item.eventstartdate), formatDate(item.eventenddate)));
             intent.putExtra("event_image_url", safe(item.firstimage));
@@ -209,8 +209,8 @@ public class EventsActivity extends AppCompatActivity {
 
         Log.d(TAG, "[Festival] areaCode=" + areaCode + ", sigungu=" + sigunguCode + ", region=" + regionName + ", sub=" + subRegionName);
 
-        TourApiService api = TourApiHelper.getApiService();
-        Call<TourResponse> call = api.getFestivalList(
+        SpotApiService api = SpotApiHelper.getApiService();
+        Call<SpotResponse> call = api.getFestivalList(
                 30, 1, "AND", "localit", "json",
                 areaCode,
                 sigunguCode,
@@ -221,9 +221,9 @@ public class EventsActivity extends AppCompatActivity {
 
         Log.d(TAG, "REQ URL: " + call.request().url());
 
-        call.enqueue(new Callback<TourResponse>() {
+        call.enqueue(new Callback<SpotResponse>() {
             @Override
-            public void onResponse(Call<TourResponse> call, Response<TourResponse> response) {
+            public void onResponse(Call<SpotResponse> call, Response<SpotResponse> response) {
                 if (!response.isSuccessful() || response.body() == null ||
                         response.body().response == null ||
                         response.body().response.body == null ||
@@ -232,7 +232,7 @@ public class EventsActivity extends AppCompatActivity {
                     Toast.makeText(EventsActivity.this, "축제 데이터를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                List<TourResponse.Item> items = response.body().response.body.items.item;
+                List<SpotResponse.Item> items = response.body().response.body.items.item;
 
                 // 서버가 sigungu를 무시/불일치할 대비 보조 필터
                 if (sigunguCode != null && !TextUtils.isEmpty(subRegionName)) {
@@ -245,7 +245,7 @@ public class EventsActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<TourResponse> call, Throwable t) {
+            public void onFailure(Call<SpotResponse> call, Throwable t) {
                 t.printStackTrace();
                 Toast.makeText(EventsActivity.this, "네트워크 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();
             }
@@ -263,12 +263,12 @@ public class EventsActivity extends AppCompatActivity {
     }
 
     /** addr1 보조 필터 */
-    private List<TourResponse.Item> filterByAddr(List<TourResponse.Item> src, String key) {
+    private List<SpotResponse.Item> filterByAddr(List<SpotResponse.Item> src, String key) {
         if (src == null) return new ArrayList<>();
         if (TextUtils.isEmpty(key)) return src;
         String k = key.trim();
-        List<TourResponse.Item> out = new ArrayList<>();
-        for (TourResponse.Item it : src) {
+        List<SpotResponse.Item> out = new ArrayList<>();
+        for (SpotResponse.Item it : src) {
             String addr = it != null && it.addr1 != null ? it.addr1 : "";
             if (addr.startsWith(k) || addr.contains(" " + k) || addr.contains(k + " ")) {
                 out.add(it);

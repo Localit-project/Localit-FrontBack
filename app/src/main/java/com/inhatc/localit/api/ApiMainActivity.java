@@ -27,8 +27,8 @@ public class ApiMainActivity extends AppCompatActivity {
 
     private static final String TAG = "ApiMainActivity";
     private RecyclerView recyclerViewTourism;
-    private TourAdapter tourAdapter;
-    private final List<TourResponse.Item> itemList = new ArrayList<>();
+    private SpotAdapter spotAdapter;
+    private final List<SpotResponse.Item> itemList = new ArrayList<>();
 
     private TextView textTourismTitle;
 
@@ -131,12 +131,12 @@ public class ApiMainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_tourism);
+        setContentView(R.layout.activity_spot);
 
         recyclerViewTourism = findViewById(R.id.recyclerViewTourism);
         recyclerViewTourism.setLayoutManager(new LinearLayoutManager(this));
-        tourAdapter = new TourAdapter(itemList);
-        recyclerViewTourism.setAdapter(tourAdapter);
+        spotAdapter = new SpotAdapter(itemList);
+        recyclerViewTourism.setAdapter(spotAdapter);
 
         textTourismTitle = findViewById(R.id.textTourismTitle);
 
@@ -192,8 +192,8 @@ public class ApiMainActivity extends AppCompatActivity {
     }
 
     private void fetchTourList(int areaCode, Integer sigunguCode) {
-        TourApiService apiService = TourApiHelper.getApiService();
-        Call<TourResponse> call = apiService.getTourList(
+        SpotApiService apiService = SpotApiHelper.getApiService();
+        Call<SpotResponse> call = apiService.getTourList(
                 100, 1, "AND", "localit", "c", 12, areaCode, sigunguCode, "json", SERVICE_KEY
         );
 
@@ -204,8 +204,8 @@ public class ApiMainActivity extends AppCompatActivity {
     private void fetchFestivalList(int areaCode, Integer sigunguCode) {
         String today = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
 
-        TourApiService apiService = TourApiHelper.getApiService();
-        Call<TourResponse> call = apiService.getFestivalList(
+        SpotApiService apiService = SpotApiHelper.getApiService();
+        Call<SpotResponse> call = apiService.getFestivalList(
                 100, 1, "AND", "localit", "json",
                 areaCode,
                 sigunguCode,
@@ -219,17 +219,17 @@ public class ApiMainActivity extends AppCompatActivity {
     }
 
     /** 서버가 sigunguCode를 무시하거나 코드가 맞지 않을 경우 addr1로 보조 필터 */
-    private Callback<TourResponse> makeCallback(Integer sigunguCode) {
-        return new Callback<TourResponse>() {
+    private Callback<SpotResponse> makeCallback(Integer sigunguCode) {
+        return new Callback<SpotResponse>() {
             @Override
-            public void onResponse(Call<TourResponse> call, Response<TourResponse> response) {
+            public void onResponse(Call<SpotResponse> call, Response<SpotResponse> response) {
                 if (response.isSuccessful() && response.body() != null &&
                         response.body().response != null &&
                         response.body().response.body != null &&
                         response.body().response.body.items != null &&
                         response.body().response.body.items.item != null) {
 
-                    List<TourResponse.Item> items = response.body().response.body.items.item;
+                    List<SpotResponse.Item> items = response.body().response.body.items.item;
 
                     if (sigunguCode != null && subRegionName != null && !subRegionName.trim().isEmpty()) {
                         items = filterByAddr(items, subRegionName.trim());
@@ -237,27 +237,27 @@ public class ApiMainActivity extends AppCompatActivity {
 
                     itemList.clear();
                     itemList.addAll(items);
-                    tourAdapter.notifyDataSetChanged();
+                    spotAdapter.notifyDataSetChanged();
                 } else {
                     Toast.makeText(ApiMainActivity.this, "API 응답 오류", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
-            public void onFailure(Call<TourResponse> call, Throwable t) {
+            public void onFailure(Call<SpotResponse> call, Throwable t) {
                 Toast.makeText(ApiMainActivity.this, "API 호출 실패: " + t.getMessage(), Toast.LENGTH_LONG).show();
                 Log.e(TAG, "API 호출 실패", t);
             }
         };
     }
 
-    private List<TourResponse.Item> filterByAddr(List<TourResponse.Item> src, String key) {
+    private List<SpotResponse.Item> filterByAddr(List<SpotResponse.Item> src, String key) {
         if (src == null) return new ArrayList<>();
         if (key == null || key.isEmpty()) return src;
 
         String k = key.trim();
-        List<TourResponse.Item> out = new ArrayList<>();
-        for (TourResponse.Item it : src) {
+        List<SpotResponse.Item> out = new ArrayList<>();
+        for (SpotResponse.Item it : src) {
             String addr = (it != null && it.addr1 != null) ? it.addr1 : "";
             if (addr.startsWith(k) || addr.contains(" " + k) || addr.contains(k + " ")) {
                 out.add(it);

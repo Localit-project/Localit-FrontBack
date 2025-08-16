@@ -1,10 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Localit</string>
+
     <string name="title_category">카테고리</string>
     <string name="title_home">홈</string>
     <string name="title_search">검색</string>
     <string name="title_favorite">찜</string>
     <string name="title_mypage">마이</string>
+
     <string name="hint_user_id">아이디 (example@email.com)</string>
     <string name="hint_password">비밀번호</string>
     <string name="btn_login">로그인</string>
@@ -13,9 +16,10 @@
     <string name="login_kakao">카카오로 로그인</string>
     <string name="forgot_password">아이디/비밀번호 찾기</string>
     <string name="sign_up">회원가입</string>
+
     <string name="default_web_client_id">820308975341-treemo59ba156b4rlo234het9umo7uj3.apps.googleusercontent.com</string>
     <string name="naver_client_id">XjKX66OIxZPMPqnulSoy</string>
-    <string name="naver_client_secret">BS64ivicIw</string>ㅋ
+    <string name="naver_client_secret">BS64ivicIw</string>
     <string name="naver_client_name">Localit</string>
     <string name="kakao_app_key">47032f657514090a03eb23e26657b152</string>
 
@@ -39,17 +43,55 @@
         <item>제주특별자치도</item>
     </string-array>
 
-    <!-- FavoriteFragment에서 사용 -->
-    <string name="back">뒤로</string>
+    <!-- FavoriteFragment -->
     <string name="favorite_title">찜 목록</string>
     <string name="empty_message">찜 목록이 비어있습니다.</string>
 
     <!-- 탭 제목 -->
-    <string name="tab_festival">축제 · 행사</string>
     <string name="tab_tourism">관광지</string>
-    <string name="tab_news">뉴스</string>
     <string name="tab_empty">   </string>
 
     <!-- 접근성/검색 -->
     <string name="search">검색</string>
+
+    <!-- Mypage -->
+    <string name="back">뒤로가기</string>
+    <string name="notifications">알림</string>
+    <string name="profile">프로필</string>
+    <string name="add_photo">사진 추가</string>
+    <string name="mypage">마이페이지</string>
+    <string name="nickname">닉네임</string>
+    <string name="nickname_hint">2~10자로 입력해 주세요</string>
+    <string name="nickname_rule_default">• 이모티콘 및 특수기호, 띄어쓰기 사용이 불가능합니다.</string>
+    <string name="nickname_ok">사용 가능한 닉네임입니다.</string>
+    <string name="nickname_bad">2~10자, 공백/특수문자/이모지 불가</string>
+
+    <!-- Settings -->
+    <string name="alarm_settings">알림 설정</string>
+    <string name="wishlist_section">찜목록</string>
+    <string name="interest_region_section">관심 지역</string>
+    <string name="toggle_festival">축제·행사 알림 동의</string>
+    <string name="toggle_spot">관광지 알림 동의</string>
+    <string name="toggle_news">뉴스 알림 동의</string>
+
+    <!-- AlarmSettingsFragment에서 제목으로 사용 (필수 추가) -->
+    <string name="festival">축제·행사</string>
+    <string name="spot">관광지</string>
+    <string name="news">뉴스</string>
+
+    <!-- Notifications -->
+    <string name="notifications_title">알림</string>
+    <string name="tab_all">전체</string>
+    <string name="tab_festival">축제·행사</string>
+    <string name="tab_spot">관광지</string>
+    <string name="tab_news">뉴스</string>
+    <string name="mark_all_read">모두 읽기</string>
+    <string name="mark_msgs_read">메시지 모두 읽기</string>
+    <string name="new_badge">방금</string>
+
+    <!-- 이미지/권한 -->
+    <string name="choose_profile_photo">프로필 사진</string>
+    <string name="pick_from_gallery">갤러리에서 선택</string>
+    <string name="take_with_camera">카메라로 촬영</string>
+    <string name="permission_needed">권한이 필요합니다.</string>
 </resources>

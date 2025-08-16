@@ -4,11 +4,11 @@ import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 
-public interface TourApiService {
+public interface SpotApiService {
 
     // 관광지 목록
     @GET("areaBasedList2")
-    Call<TourResponse> getTourList(
+    Call<SpotResponse> getTourList(
             @Query("numOfRows") int numOfRows,
             @Query("pageNo") int pageNo,
             @Query("MobileOS") String os,
@@ -23,7 +23,7 @@ public interface TourApiService {
 
     // 축제 목록
     @GET("searchFestival2")
-    Call<TourResponse> getFestivalList(
+    Call<SpotResponse> getFestivalList(
             @Query("numOfRows") int numOfRows,
             @Query("pageNo") int pageNo,
             @Query("MobileOS") String mobileOS,
@@ -39,7 +39,7 @@ public interface TourApiService {
 
     // 반드시 KorService2 + searchKeyword2
     @GET("searchKeyword2")
-    Call<TourResponse> searchKeyword(
+    Call<SpotResponse> searchKeyword(
             @Query("serviceKey") String serviceKey,
             @Query("MobileOS") String mobileOS,
             @Query("MobileApp") String mobileApp,

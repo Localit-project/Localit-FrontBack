@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.inhatc.localit.R;
-import com.inhatc.localit.api.TourResponse;
+import com.inhatc.localit.api.SpotResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,14 +23,14 @@ import java.util.List;
 public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.VH> {
 
     public interface OnItemClickListener {
-        void onItemClick(TourResponse.Item item);
+        void onItemClick(SpotResponse.Item item);
     }
     public interface OnFavoriteClickListener {
-        void onFavoriteClick(TourResponse.Item item);
+        void onFavoriteClick(SpotResponse.Item item);
     }
 
     private final Context context;
-    private final List<TourResponse.Item> data = new ArrayList<>();
+    private final List<SpotResponse.Item> data = new ArrayList<>();
     private final OnItemClickListener itemClickListener;
     private final OnFavoriteClickListener favoriteClickListener;
 
@@ -42,7 +42,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.VH> {
         this.favoriteClickListener = favoriteClickListener;
     }
 
-    public void setItems(List<TourResponse.Item> items) {
+    public void setItems(List<SpotResponse.Item> items) {
         data.clear();
         if (items != null) data.addAll(items);
         notifyDataSetChanged();
@@ -51,13 +51,13 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.VH> {
     @NonNull @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_tourism, parent, false);
+                .inflate(R.layout.item_spot, parent, false);
         return new VH(v);
     }
 
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
-        TourResponse.Item item = data.get(position);
+        SpotResponse.Item item = data.get(position);
 
         h.textTourismTitle.setText(item.getTitle() == null ? "" : item.getTitle());
         String addr = !TextUtils.isEmpty(item.getAddr1()) ? item.getAddr1()

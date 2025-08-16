@@ -2,17 +2,20 @@ package com.inhatc.localit;
 
 import android.os.Bundle;
 
+import androidx.annotation.IdRes;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.inhatc.localit.Fragment.CategoryFragment;
 import com.inhatc.localit.Fragment.FavoriteFragment;
 import com.inhatc.localit.Fragment.HomeFragment;
 import com.inhatc.localit.Fragment.MypageFragment;
+import com.inhatc.localit.Fragment.NotificationsFragment;
+import com.inhatc.localit.Fragment.AlarmSettingsFragment;
 import com.inhatc.localit.Fragment.SearchFragment;
 import com.inhatc.localit.databinding.ActivityMainBinding;
-
-import androidx.fragment.app.Fragment;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,47 +27,48 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        BottomNavigationView navView = findViewById(R.id.nav_view);
+        BottomNavigationView navView = binding.navView;
 
-        // ✅ 인텐트로 받은 start_fragment 값 확인 (없으면 기본값 0)
+        // 인텐트로 받은 start_fragment 값 확인 (없으면 기본값 0)
         int startFragmentIndex = getIntent().getIntExtra("start_fragment", 0);
 
-        // ✅ start_fragment 값에 따라 첫 화면 프래그먼트 바로 띄우기
+        // start_fragment 값에 따라 첫 화면 프래그먼트 선택
         Fragment initialFragment = null;
+        @IdRes int initialMenuId = R.id.navigation_home;
+
         switch (startFragmentIndex) {
             case 0:
                 initialFragment = new HomeFragment();
-                navView.setSelectedItemId(R.id.navigation_home);
+                initialMenuId = R.id.navigation_home;
                 break;
             case 1:
                 initialFragment = new CategoryFragment();
-                navView.setSelectedItemId(R.id.navigation_category);
+                initialMenuId = R.id.navigation_category;
                 break;
             case 2:
                 initialFragment = new SearchFragment();
-                navView.setSelectedItemId(R.id.navigation_search);
+                initialMenuId = R.id.navigation_search;
                 break;
             case 3:
                 initialFragment = new FavoriteFragment();
-                navView.setSelectedItemId(R.id.navigation_favorite);
+                initialMenuId = R.id.navigation_favorite;
                 break;
             case 4:
                 initialFragment = new MypageFragment();
-                navView.setSelectedItemId(R.id.navigation_mypage);
+                initialMenuId = R.id.navigation_mypage;
                 break;
         }
 
-        // ✅ 첫 화면 프래그먼트 교체
         if (initialFragment != null) {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, initialFragment)
-                    .commit();
+            replaceFragment(initialFragment, false);
+            navView.setSelectedItemId(initialMenuId);
         }
 
-        // ✅ 네비게이션 클릭 시 프래그먼트 전환
+        // 하단 네비게이션 클릭 시 프래그먼트 전환
         setupBottomNavigationView();
     }
 
+    /** 하단 네비게이션 클릭 핸들러 */
     private void setupBottomNavigationView() {
         binding.navView.setOnItemSelectedListener(item -> {
             Fragment selectedFragment = null;
@@ -83,11 +87,31 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if (selectedFragment != null) {
-                getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.fragment_container, selectedFragment)
-                        .commit();
+                replaceFragment(selectedFragment, false);
             }
             return true;
         });
+    }
+
+    /** 공통 프래그먼트 교체 유틸리티 */
+    public void replaceFragment(Fragment fragment, boolean addToBackStack) {
+        FragmentTransaction tx = getSupportFragmentManager()
+                .beginTransaction()
+                .setReorderingAllowed(true)
+                .replace(R.id.fragment_container, fragment);
+        if (addToBackStack) {
+            tx.addToBackStack(fragment.getClass().getSimpleName());
+        }
+        tx.commit();
+    }
+
+    /** 마이페이지의 알림 버튼에서 호출할 메서드 */
+    public void openNotifications() {
+        replaceFragment(new NotificationsFragment(), true);
+    }
+
+    /** 마이페이지의 '알림 설정' 메뉴에서 호출할 메서드 */
+    public void openAlarmSettings() {
+        replaceFragment(new AlarmSettingsFragment(), true);
     }
 }
