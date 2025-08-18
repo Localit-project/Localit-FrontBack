@@ -30,14 +30,14 @@ import retrofit2.Response;
 public class NewsActivity extends AppCompatActivity {
 
     private RecyclerView recyclerViewNews;
-    private NaverNewsAdapter newsAdapter; // ✅ 어댑터 클래스 이름 변경
-    private List<NaverNewsResponse.Item> newsList; // ✅ 데이터 모델 변경
+    private NaverNewsAdapter newsAdapter;
+    private List<NaverNewsResponse.Item> newsList;
 
     private TextView textRegionTitle;
     private ImageView btnBack;
     private BottomNavigationView navView;
 
-    // ✅ API 호출을 위한 변수 추가
+
     private NaverApiService apiService;
     private final String NAVER_CLIENT_ID = "hjVfnk_wdgYqW0xT86Ts";
     private final String NAVER_CLIENT_SECRET = "yFyvd5aHZ9";
@@ -94,7 +94,6 @@ public class NewsActivity extends AppCompatActivity {
         return query;
     }
 
-    //  임시 데이터 메서드 삭제됨
 
     //  실제 API 데이터를 받아 처리하는 메서드
     private void fetchNaverNews(String query) {
@@ -107,8 +106,8 @@ public class NewsActivity extends AppCompatActivity {
                 NAVER_CLIENT_ID,
                 NAVER_CLIENT_SECRET,
                 query,
-                30, // 30개까지 표시
-                "sim" // 관련도순 정렬
+                30,
+                "sim"
         );
 
         call.enqueue(new Callback<NaverNewsResponse>() {
@@ -135,15 +134,17 @@ public class NewsActivity extends AppCompatActivity {
         newsAdapter = new NaverNewsAdapter(newsList, new NaverNewsAdapter.OnNewsClickListener() {
             @Override
             public void onNewsClick(NaverNewsResponse.Item item, int position) {
-                //  클릭 시 뉴스 원문 링크로 이동 (웹 브라우저 실행)
                 if (item.getLink() != null && !item.getLink().isEmpty()) {
+
+                    Toast.makeText(NewsActivity.this, "뉴스 페이지로 넘어갑니다", Toast.LENGTH_SHORT).show();
+
+
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(item.getLink()));
                     startActivity(intent);
                 } else {
                     Toast.makeText(NewsActivity.this, "기사 링크가 없습니다.", Toast.LENGTH_SHORT).show();
                 }
             }
-
             @Override
             public void onFavoriteClick(NaverNewsResponse.Item item, int position) {
                 // 즐겨찾기 기능은 별도 구현 필요

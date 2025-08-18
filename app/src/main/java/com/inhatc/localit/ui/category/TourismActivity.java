@@ -1,4 +1,3 @@
-
 package com.inhatc.localit.ui.category;
 
 import android.content.Intent;
@@ -10,17 +9,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.inhatc.localit.FestivalDetailActivity;
 import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
 import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -91,7 +91,7 @@ public class TourismActivity extends AppCompatActivity {
         alias("경상남도", "경남");
         alias("제주특별자치도", "제주", "제주도");
 
-        // 경기도 하위 시/군 → sigunguCode (예시값, 실제 API로 갱신 권장)
+        // 경기도 하위 시/군 → sigunguCode (예시)
         GG_SIGUNGU.put("수원시", 13);
         GG_SIGUNGU.put("성남시", 12);
         GG_SIGUNGU.put("고양시", 2);
@@ -168,13 +168,8 @@ public class TourismActivity extends AppCompatActivity {
         tourismAdapter = new TourismAdapter(
                 apiItems,
                 (item, position) -> {
-                    Intent intent = new Intent(TourismActivity.this, FestivalDetailActivity.class);
-                    intent.putExtra("event_title", item.title != null ? item.title : "");
-                    String sub = (item.addr1 != null && !item.addr1.isEmpty()) ? item.addr1
-                            : (item.createdtime != null ? item.createdtime : "");
-                    intent.putExtra("event_date", sub);
-                    intent.putExtra("event_image_url", item.firstimage != null ? item.firstimage : "");
-                    startActivity(intent);
+
+                    openHomepageFor(item);
                 },
                 (item, position) -> Toast.makeText(
                         TourismActivity.this,
@@ -187,7 +182,9 @@ public class TourismActivity extends AppCompatActivity {
         recyclerViewTourism.setAdapter(tourismAdapter);
     }
 
-    private void setupClickListeners() { btnBack.setOnClickListener(v -> finish()); }
+    private void setupClickListeners() {
+        btnBack.setOnClickListener(v -> finish());
+    }
 
     private void setupBottomNavigationView() {
         if (navView == null) return;
@@ -249,6 +246,58 @@ public class TourismActivity extends AppCompatActivity {
                 Toast.makeText(TourismActivity.this, "네트워크 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    /** 아이템 클릭 시 홈페이지 열기 (없으면 '대한민국 구석구석' 검색으로 Fallback) */
+    private void openHomepageFor(SpotResponse.Item item) {
+        if (item == null) return;
+
+        String contentId = item.contentid;
+        if (TextUtils.isEmpty(contentId)) {
+            Toast.makeText(this, "콘텐츠 ID가 없어 이동할 수 없습니다.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 관광지 탭이므로 기본은 12, 응답에 contenttypeid가 있으면 사용
+        String contentTypeId = !TextUtils.isEmpty(item.contenttypeid) ? item.contenttypeid : "12";
+
+        // 제목 (검색 Fallback에 사용) - final 변수로 고정
+        String t = item.title;
+        final String titleFinal = (t == null ? "" : t);
+
+        SpotApiHelper.fetchHomepageUrl(
+                SpotApiHelper.getApiService(),
+                SERVICE_KEY,
+                contentId,
+                contentTypeId,
+                url -> {
+                    if (url != null && url.startsWith("http")) {
+                        openInCustomTab(url);
+                    } else {
+                        String q;
+                        try {
+                            q = URLEncoder.encode(titleFinal, "UTF-8");
+                        } catch (Exception e) {
+                            q = titleFinal;
+                        }
+                        String gukSearch = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + q;
+                        openInCustomTab(gukSearch);
+                        Toast.makeText(this, "'대한민국 구석구석' 검색으로 이동합니다.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+    }
+
+    /** Custom Tabs로 URL 열기 (실패 시 브라우저) */
+    private void openInCustomTab(String url) {
+        try {
+            new CustomTabsIntent.Builder().build()
+                    .launchUrl(this, android.net.Uri.parse(url));
+        } catch (Exception e) {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)));
+            } catch (Exception ignored) {}
+        }
     }
 
     /** 경기도 하위 시/군 코드 매핑 ("전체"면 null). 약칭(경기) 대응을 위해 areaCode==31로 판정 */

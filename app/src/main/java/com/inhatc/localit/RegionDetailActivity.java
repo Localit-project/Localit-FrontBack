@@ -1,4 +1,5 @@
 package com.inhatc.localit;
+
 import com.inhatc.localit.api.ApiMainActivity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -7,9 +8,11 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.AdapterView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.browser.customtabs.CustomTabsIntent;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -17,6 +20,7 @@ import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
 import com.inhatc.localit.ui.category.NewsActivity;
+
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -46,6 +50,10 @@ public class RegionDetailActivity extends AppCompatActivity {
     private TextView textFestival1Title, textFestival1Date, textFestival1DateInfo;
     private TextView textFestival2Title, textFestival2Date, textFestival2DateInfo;
 
+    // 미리보기 아이템 저장(클릭 시 contentId 사용)
+    private List<SpotResponse.Item> tourismPreview = new ArrayList<>();
+    private List<SpotResponse.Item> festivalPreview = new ArrayList<>();
+
     private static final String SERVICE_KEY =
             "wL/Ry8EMiMg43mPRl3wyQhKosVExsJbLLDcZebat4S4eedobtNuBG+eqrj5GPKHvEAxy4NjYPz25Parbyeg8PA==";
 
@@ -71,10 +79,8 @@ public class RegionDetailActivity extends AppCompatActivity {
         AREA_CODE_MAP.put("제주특별자치도", 39);
     }
 
-
     private static final Map<String, Integer> GG_SIGUNGU = new HashMap<>();
     static {
-        // 일부 예시. 꼭 실제 값으로 갱신하세요!
         GG_SIGUNGU.put("수원시", 13);
         GG_SIGUNGU.put("성남시", 12);
         GG_SIGUNGU.put("고양시", 2);
@@ -126,25 +132,19 @@ public class RegionDetailActivity extends AppCompatActivity {
         if ("경기도".equals(regionName)) {
             cardSubRegion.setVisibility(View.VISIBLE);
 
-            // 스피너 초깃값 반영
             if (spinnerSubRegion.getSelectedItem() != null) {
                 subRegionName = spinnerSubRegion.getSelectedItem().toString();
             }
 
             spinnerSubRegion.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                     subRegionName = (String) parent.getItemAtPosition(position);
                     fetchTourismPreview();
                     fetchFestivalPreview();
                 }
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) {
-                    subRegionName = null;
-                }
+                @Override public void onNothingSelected(AdapterView<?> parent) { subRegionName = null; }
             });
 
-            // 최초 로드
             fetchTourismPreview();
             fetchFestivalPreview();
         } else {
@@ -182,6 +182,20 @@ public class RegionDetailActivity extends AppCompatActivity {
         textFestival2Title = findViewById(R.id.textFestival2Title);
         textFestival2Date = findViewById(R.id.textFestival2Date);
         textFestival2DateInfo = findViewById(R.id.textFestival2DateInfo);
+
+        // ====== 클릭 → 홈페이지 열기(관광) ======
+        View[] tourismClickTargets = new View[]{ imageTourism1, textTourism1Title, imageTourism2, textTourism2Title };
+        for (int i = 0; i < tourismClickTargets.length; i++) {
+            final int idx = i < 2 ? 0 : 1; // 0번 카드/1번 카드
+            tourismClickTargets[i].setOnClickListener(v -> onClickTourismCard(idx));
+        }
+
+        // ====== 클릭 → 홈페이지 열기(축제) ======
+        View[] festivalClickTargets = new View[]{ imageFestival1, textFestival1Title, imageFestival2, textFestival2Title };
+        for (int i = 0; i < festivalClickTargets.length; i++) {
+            final int idx = i < 2 ? 0 : 1;
+            festivalClickTargets[i].setOnClickListener(v -> onClickFestivalCard(idx));
+        }
     }
 
     private void setClickListeners() {
@@ -224,7 +238,6 @@ public class RegionDetailActivity extends AppCompatActivity {
         });
     }
 
-
     private Integer getSigunguCodeIfGyeonggi() {
         if (!"경기도".equals(regionName)) return null;
         if (subRegionName == null || subRegionName.trim().isEmpty()) return null;
@@ -236,7 +249,6 @@ public class RegionDetailActivity extends AppCompatActivity {
         Integer sigunguCode = getSigunguCodeIfGyeonggi();
 
         SpotApiService apiService = SpotApiHelper.getApiService();
-        // 서버 필터 시도 (sigunguCode 전달)
         Call<SpotResponse> call = apiService.getTourList(
                 12, 1, "AND", "localit", "c", 12, areaCode, sigunguCode, "json", SERVICE_KEY
         );
@@ -248,18 +260,23 @@ public class RegionDetailActivity extends AppCompatActivity {
                         response.body().response.body!=null &&
                         response.body().response.body.items!=null &&
                         response.body().response.body.items.item!=null)) {
+                    tourismPreview = new ArrayList<>();
+                    bindTourismPreview(tourismPreview);
                     return;
                 }
                 List<SpotResponse.Item> items = response.body().response.body.items.item;
 
-                //서버가 sigungu 무시하거나 코드가 틀릴 수 있으니 addr1로 한 번 더 거르기
                 if (sigunguCode != null && subRegionName != null) {
                     items = filterByAddr(items, subRegionName);
                 }
 
+                tourismPreview = items; // 저장
                 bindTourismPreview(items);
             }
-            @Override public void onFailure(Call<SpotResponse> call, Throwable t) { t.printStackTrace(); }
+            @Override public void onFailure(Call<SpotResponse> call, Throwable t) {
+                tourismPreview = new ArrayList<>();
+                t.printStackTrace();
+            }
         });
     }
 
@@ -280,18 +297,23 @@ public class RegionDetailActivity extends AppCompatActivity {
                         response.body().response.body!=null &&
                         response.body().response.body.items!=null &&
                         response.body().response.body.items.item!=null)) {
+                    festivalPreview = new ArrayList<>();
+                    bindFestivalPreview(festivalPreview);
                     return;
                 }
                 List<SpotResponse.Item> items = response.body().response.body.items.item;
 
-                // 보조 필터
                 if (sigunguCode != null && subRegionName != null) {
                     items = filterByAddr(items, subRegionName);
                 }
 
+                festivalPreview = items; // 저장
                 bindFestivalPreview(items);
             }
-            @Override public void onFailure(Call<SpotResponse> call, Throwable t) { t.printStackTrace(); }
+            @Override public void onFailure(Call<SpotResponse> call, Throwable t) {
+                festivalPreview = new ArrayList<>();
+                t.printStackTrace();
+            }
         });
     }
 
@@ -375,6 +397,55 @@ public class RegionDetailActivity extends AppCompatActivity {
 
             textFestival2Title.setText(""); textFestival2Date.setText(""); textFestival2DateInfo.setText("");
             imageFestival2.setImageResource(R.drawable.sample1);
+        }
+    }
+
+    // ---------- 카드 클릭 핸들러 ----------
+    private void onClickTourismCard(int idx) {
+        if (tourismPreview == null || tourismPreview.size() <= idx) return;
+        SpotResponse.Item item = tourismPreview.get(idx);
+        openHomepageFor(item.contentid, "12", item.title);
+    }
+
+    private void onClickFestivalCard(int idx) {
+        if (festivalPreview == null || festivalPreview.size() <= idx) return;
+        SpotResponse.Item item = festivalPreview.get(idx);
+        openHomepageFor(item.contentid, "15", item.title);
+    }
+
+    private void openHomepageFor(String contentId, String contentTypeId, String titleForFallback) {
+        SpotApiService api = SpotApiHelper.getApiService();
+        SpotApiHelper.fetchHomepageUrl(api, SERVICE_KEY, contentId, contentTypeId, url -> {
+            if (url != null) {
+                openInCustomTab(url);
+            } else {
+                // 1차 Fallback: 대한민국 구석구석 검색 페이지로 이동
+                String q;
+                try {
+                    q = java.net.URLEncoder.encode(titleForFallback == null ? "" : titleForFallback, "UTF-8");
+                } catch (Exception e) {
+                    q = titleForFallback == null ? "" : titleForFallback;
+                }
+                String gukSearch = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + q;
+                openInCustomTab(gukSearch);
+
+                // (선택) 결과가 없을 때 대비한 안내 토스트
+                android.widget.Toast.makeText(this, "'대한민국 구석구석' 검색으로 이동합니다.", android.widget.Toast.LENGTH_SHORT).show();
+
+                // (옵션) 2차 Fallback: site 검색(구글)
+                // String googleSiteSearch = "https://www.google.com/search?q=site:korean.visitkorea.or.kr+" + q;
+                // openInCustomTab(googleSiteSearch);
+            }
+        });
+    }
+
+    private void openInCustomTab(String url) {
+        try {
+            CustomTabsIntent intent = new CustomTabsIntent.Builder().build();
+            intent.launchUrl(this, android.net.Uri.parse(url));
+        } catch (Exception e) {
+            Intent i = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url));
+            startActivity(i);
         }
     }
 

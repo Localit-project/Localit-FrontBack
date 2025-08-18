@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.Toast;
 import android.view.ViewGroup.LayoutParams;
 
 import androidx.annotation.NonNull;
@@ -27,9 +28,11 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.inhatc.localit.R;
+import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,7 +40,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
-import retrofit2.*;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class SearchFragment extends Fragment {
@@ -53,7 +59,7 @@ public class SearchFragment extends Fragment {
     private RecyclerView recyclerResults;
     private View progress;
 
-    private SearchAdapter adapter;
+    private SearchAdapter adapter; // 프로젝트의 기존 어댑터 사용
     private SpotApiService api;
 
     @Nullable
@@ -84,12 +90,12 @@ public class SearchFragment extends Fragment {
         recyclerResults.setLayoutManager(new LinearLayoutManager(ctx));
         adapter = new SearchAdapter(
                 ctx,
-                item -> { /* 아이템 클릭 시 상세 이동 등 처리 */ },
+                this::openHomepageFor,     // ✅ 결과 클릭 → 홈페이지(또는 구석구석 검색)
                 favItem -> { /* 즐겨찾기 토글/저장 처리 */ }
         );
         recyclerResults.setAdapter(adapter);
 
-        // Retrofit (Gson)
+        // Retrofit
         HttpLoggingInterceptor log = new HttpLoggingInterceptor();
         log.setLevel(HttpLoggingInterceptor.Level.BASIC);
         OkHttpClient client = new OkHttpClient.Builder().addInterceptor(log).build();
@@ -112,7 +118,7 @@ public class SearchFragment extends Fragment {
         });
         til.setEndIconOnClickListener(view -> performSearchFromInput());
 
-        // 칩들
+        // 추천 칩
         setChipClick(v, R.id.chip_busan, "부산");
         setChipClick(v, R.id.chip_seoul, "서울");
         setChipClick(v, R.id.chip_gangneung, "강릉");
@@ -247,5 +253,79 @@ public class SearchFragment extends Fragment {
         } catch (Exception ignored) {}
         BottomNavigationView bottom = requireActivity().findViewById(R.id.nav_view);
         if (bottom != null) bottom.setSelectedItemId(R.id.navigation_home);
+    }
+
+    // ----------------------- ⬇⬇ 홈페이지 열기 로직 -----------------------
+
+    /** 검색 결과 아이템 클릭 -> 홈페이지(또는 '대한민국 구석구석' 검색)로 이동 */
+    private void openHomepageFor(SpotResponse.Item item) {
+        if (item == null) return;
+
+        // contentId
+        String contentId = null;
+        try {
+            if (item.contentid != null) contentId = String.valueOf(item.contentid);
+            else if (item.getContentid() != null) contentId = String.valueOf(item.getContentid());
+        } catch (Throwable ignored) {}
+        if (TextUtils.isEmpty(contentId)) {
+            Toast.makeText(requireContext(), "콘텐츠 ID가 없어 이동할 수 없습니다.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // contentTypeId (우선 localContentType, 없으면 원본)
+        String contentTypeId = null;
+        try {
+            Integer local = null;
+            try { local = item.getLocalContentType(); } catch (Throwable ignored) {}
+            if (local != null && local > 0) {
+                contentTypeId = String.valueOf(local); // 12 or 15
+            } else if (item.contenttypeid != null) {
+                contentTypeId = String.valueOf(item.contenttypeid);
+            } else if (item.getContenttypeid() != null) {
+                contentTypeId = String.valueOf(item.getContenttypeid());
+            }
+        } catch (Throwable ignored) {}
+        if (TextUtils.isEmpty(contentTypeId)) contentTypeId = "12";
+
+        // 제목 (구석구석 검색 Fallback에 사용)
+        String t = null;
+        try { t = item.getTitle(); } catch (Throwable ignored) {}
+        if (TextUtils.isEmpty(t)) t = item.title;
+        final String titleFinal = t; // ✅ 람다에서 쓸 final 변수
+
+        // detailCommon2 호출 → homepage 있으면 열기, 없으면 대한민국 구석구석 검색으로
+        SpotApiHelper.fetchHomepageUrl(
+                api,
+                SERVICE_KEY,
+                contentId,
+                contentTypeId,
+                url -> {
+                    if (url != null && url.startsWith("http")) {
+                        openInCustomTab(url);
+                    } else {
+                        String q;
+                        try {
+                            q = URLEncoder.encode(titleFinal == null ? "" : titleFinal, "UTF-8");
+                        } catch (Exception e) {
+                            q = titleFinal == null ? "" : titleFinal;
+                        }
+                        String gukSearch = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + q;
+                        openInCustomTab(gukSearch);
+                        Toast.makeText(requireContext(), "공식 홈페이지가 없어 '대한민국 구석구석' 검색으로 이동합니다.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+    }
+
+    /** CustomTabs로 URL 열기 (실패 시 기본 브라우저) */
+    private void openInCustomTab(String url) {
+        try {
+            new androidx.browser.customtabs.CustomTabsIntent.Builder().build()
+                    .launchUrl(requireContext(), android.net.Uri.parse(url));
+        } catch (Exception e) {
+            try {
+                startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)));
+            } catch (Exception ignored) {}
+        }
     }
 }

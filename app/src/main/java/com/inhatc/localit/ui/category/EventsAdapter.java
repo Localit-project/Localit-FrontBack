@@ -1,82 +1,120 @@
 package com.inhatc.localit.ui.category;
 
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ImageButton;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.inhatc.localit.R;
 import com.inhatc.localit.api.SpotResponse;
+
 import java.util.List;
 
-public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.VH> {
+public class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.ViewHolder> {
 
-    public interface OnItemClick { void onEventClick(SpotResponse.Item item, int position); }
-    public interface OnFavClick  { void onFavoriteClick(SpotResponse.Item item, int position); }
-
-    private final List<SpotResponse.Item> items;
-    private final OnItemClick onItemClick;
-    private final OnFavClick onFavClick;
-
-    public EventsAdapter(List<SpotResponse.Item> items, OnItemClick onItemClick, OnFavClick onFavClick) {
-        this.items = items;
-        this.onItemClick = onItemClick;
-        this.onFavClick = onFavClick;
+    public interface OnItemClick {
+        void onClick(SpotResponse.Item item, int position);
     }
 
-    @NonNull @Override
-    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_festival, parent, false);
-        return new VH(v);
+    public interface OnFavClick {
+        void onClick(SpotResponse.Item item, int position);
+    }
+
+    private final List<SpotResponse.Item> items;
+    private final OnItemClick itemClick;
+    private final OnFavClick favClick;
+
+    public EventsAdapter(List<SpotResponse.Item> items,
+                         OnItemClick itemClick,
+                         OnFavClick favClick) {
+        this.items = items;
+        this.itemClick = itemClick;
+        this.favClick = favClick;
+    }
+
+    @NonNull
+    @Override
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_festival, parent, false); // ← 방금 올린 XML 파일명
+        return new ViewHolder(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull VH h, int position) {
-        SpotResponse.Item it = items.get(position);
+    public void onBindViewHolder(@NonNull ViewHolder h, int position) {
+        SpotResponse.Item item = items.get(position);
 
-        h.title.setText(it.title != null ? it.title : "");
+        // 제목
+        h.textTitle.setText(item.title == null ? "" : item.title);
 
-        String start = formatDate(it.eventstartdate);
-        String end   = formatDate(it.eventenddate);
-        String dateText = (!start.isEmpty() && !end.isEmpty()) ? (start + " ~ " + end)
-                : (!start.isEmpty() ? start : (!end.isEmpty() ? end : "일정 미정"));
-        h.date.setText(dateText);
-
-        if (it.firstimage != null && !it.firstimage.isEmpty()) {
-            Glide.with(h.itemView.getContext())
-                    .load(it.firstimage)
-                    .centerCrop()
-                    .placeholder(R.drawable.sample1)
-                    .error(R.drawable.sample1)
-                    .into(h.image);
+        // 날짜
+        String start = formatDate(item.eventstartdate);
+        String end   = formatDate(item.eventenddate);
+        if (!TextUtils.isEmpty(start) && !TextUtils.isEmpty(end)) {
+            h.textDate.setText(start + " ~ " + end);
+        } else if (!TextUtils.isEmpty(start)) {
+            h.textDate.setText(start);
+        } else if (!TextUtils.isEmpty(end)) {
+            h.textDate.setText(end);
         } else {
-            h.image.setImageResource(R.drawable.sample1);
+            h.textDate.setText("일정 미정");
         }
 
-        h.itemView.setOnClickListener(v -> { if (onItemClick != null) onItemClick.onEventClick(it, h.getBindingAdapterPosition()); });
-        h.btnFavorite.setOnClickListener(v -> { if (onFavClick != null) onFavClick.onFavoriteClick(it, h.getBindingAdapterPosition()); });
+        // 이미지
+        if (!TextUtils.isEmpty(item.firstimage)) {
+            Glide.with(h.itemView.getContext())
+                    .load(item.firstimage)
+                    .placeholder(R.drawable.sample1)
+                    .error(R.drawable.sample1)
+                    .into(h.imageThumb);
+        } else {
+            h.imageThumb.setImageResource(R.drawable.sample1);
+        }
+
+        // 클릭: 카드 전체
+        h.itemView.setOnClickListener(v -> {
+            if (itemClick != null) itemClick.onClick(item, h.getBindingAdapterPosition());
+        });
+
+        // 클릭: 즐겨찾기 버튼
+        h.btnFavorite.setOnClickListener(v -> {
+            if (favClick != null) favClick.onClick(item, h.getBindingAdapterPosition());
+        });
     }
 
-    @Override public int getItemCount() { return items == null ? 0 : items.size(); }
+    @Override
+    public int getItemCount() {
+        return items == null ? 0 : items.size();
+    }
 
-    static class VH extends RecyclerView.ViewHolder {
-        ImageView image;
-        TextView title;
-        TextView date;
-        ImageView btnFavorite;
-        VH(@NonNull View v) {
+    static class ViewHolder extends RecyclerView.ViewHolder {
+        ImageView imageThumb;
+        TextView textTitle, textDate;
+        ImageView btnFavorite; // XML에서 ImageView로 정의됨
+
+        ViewHolder(@NonNull View v) {
             super(v);
-            image = v.findViewById(R.id.imageEvent);
-            title = v.findViewById(R.id.textEventTitle);
-            date = v.findViewById(R.id.textEventDate);
+            imageThumb  = v.findViewById(R.id.imageEvent);
+            textTitle   = v.findViewById(R.id.textEventTitle);
+            textDate    = v.findViewById(R.id.textEventDate);
             btnFavorite = v.findViewById(R.id.btnFavorite);
         }
     }
 
-    private String formatDate(String raw) {
-        return (raw != null && raw.length() >= 8) ? raw.substring(0,4)+"."+raw.substring(4,6)+"."+raw.substring(6,8) : "";
+    // yyyyMMdd → yyyy.MM.dd
+    private static String formatDate(String raw) {
+        if (TextUtils.isEmpty(raw) || raw.length() < 8) return "";
+        try {
+            return raw.substring(0, 4) + "." + raw.substring(4, 6) + "." + raw.substring(6, 8);
+        } catch (Exception e) {
+            return "";
+        }
     }
 }

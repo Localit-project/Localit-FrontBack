@@ -9,17 +9,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.inhatc.localit.FestivalDetailActivity;
 import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
 import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
 
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -49,13 +50,13 @@ public class EventsActivity extends AppCompatActivity {
     private String regionName;
     private String subRegionName;
 
-    // ===== 코드/매핑 =====
+
     private static final Map<String, Integer> AREA_CODE_MAP = new HashMap<>();
     private static final Map<String, String>  REGION_ALIAS  = new HashMap<>();
     private static final Map<String, Integer> GG_SIGUNGU    = new HashMap<>();
 
     static {
-        // 시/도 → areaCode
+
         AREA_CODE_MAP.put("서울특별시", 1);
         AREA_CODE_MAP.put("인천광역시", 2);
         AREA_CODE_MAP.put("대전광역시", 3);
@@ -74,7 +75,7 @@ public class EventsActivity extends AppCompatActivity {
         AREA_CODE_MAP.put("경상남도", 38);
         AREA_CODE_MAP.put("제주특별자치도", 39);
 
-        // 별칭/약칭 → 표준명
+
         alias("서울특별시", "서울", "서울시");
         alias("인천광역시", "인천", "인천시");
         alias("대전광역시", "대전", "대전시");
@@ -132,10 +133,6 @@ public class EventsActivity extends AppCompatActivity {
         REGION_ALIAS.put(clean(standard), standard);
         for (String a : aliases) REGION_ALIAS.put(clean(a), standard);
     }
-    private static String clean(String s) { return s == null ? "" : s.replaceAll("\\s+", ""); }
-    private static String stripSuffix(String k) {
-        return k.replaceAll("(광역시|특별자치시|특별자치도|특별시|자치시|자치도|시|도)$", "");
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -170,16 +167,14 @@ public class EventsActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        eventsAdapter = new EventsAdapter(apiItems, (item, position) -> {
-            Intent intent = new Intent(EventsActivity.this, FestivalDetailActivity.class);
-            intent.putExtra("event_title", safe(item.title));
-            intent.putExtra("event_date", buildDateText(formatDate(item.eventstartdate), formatDate(item.eventenddate)));
-            intent.putExtra("event_image_url", safe(item.firstimage));
-            startActivity(intent);
-        }, (item, position) -> {
-            // TODO: 즐겨찾기 저장
-        });
+        eventsAdapter = new EventsAdapter(
+                apiItems,
 
+                (item, position) -> openHomepageFor(item),
+                (item, position) -> {
+                    // TODO: 즐겨찾기 저장
+                }
+        );
         recyclerViewEvents.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewEvents.setAdapter(eventsAdapter);
     }
@@ -201,7 +196,7 @@ public class EventsActivity extends AppCompatActivity {
         });
     }
 
-    /** 축제 호출 (경기도 하위 시/군 코드 적용 + 약칭 대응) */
+
     private void fetchFestivalListFromApi() {
         int areaCode = getAreaCode(regionName);
         String startDate = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
@@ -234,7 +229,7 @@ public class EventsActivity extends AppCompatActivity {
                 }
                 List<SpotResponse.Item> items = response.body().response.body.items.item;
 
-                // 서버가 sigungu를 무시/불일치할 대비 보조 필터
+
                 if (sigunguCode != null && !TextUtils.isEmpty(subRegionName)) {
                     items = filterByAddr(items, subRegionName);
                 }
@@ -250,6 +245,57 @@ public class EventsActivity extends AppCompatActivity {
                 Toast.makeText(EventsActivity.this, "네트워크 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    /** 아이템 클릭 시: homepage 있으면 열고, 없으면 '대한민국 구석구석' 검색으로 이동 */
+    private void openHomepageFor(SpotResponse.Item item) {
+        if (item == null) return;
+
+        String contentId = item.contentid;
+        if (TextUtils.isEmpty(contentId)) {
+            Toast.makeText(this, "콘텐츠 ID가 없어 이동할 수 없습니다.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 축제 탭이므로 기본은 15, 응답에 contenttypeid가 있으면 그 값을 사용
+        String contentTypeId = !TextUtils.isEmpty(item.contenttypeid) ? item.contenttypeid : "15";
+
+        // 검색 폴백용 제목(람다에서 final 필요)
+        final String titleFinal = item.title == null ? "" : item.title;
+
+        SpotApiHelper.fetchHomepageUrl(
+                SpotApiHelper.getApiService(),
+                SERVICE_KEY,
+                contentId,
+                contentTypeId,
+                url -> {
+                    if (url != null && url.startsWith("http")) {
+                        openInCustomTab(url);
+                    } else {
+                        String q;
+                        try {
+                            q = URLEncoder.encode(titleFinal, "UTF-8"); // API 26 호환
+                        } catch (Exception e) {
+                            q = titleFinal;
+                        }
+                        String gukSearch = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + q;
+                        openInCustomTab(gukSearch);
+                        Toast.makeText(this, "'대한민국 구석구석' 검색으로 이동합니다.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+    }
+
+    /** Custom Tabs로 URL 열기 (실패 시 브라우저 폴백) */
+    private void openInCustomTab(String url) {
+        try {
+            new CustomTabsIntent.Builder().build()
+                    .launchUrl(this, android.net.Uri.parse(url));
+        } catch (Exception e) {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)));
+            } catch (Exception ignored) {}
+        }
     }
 
     /** 경기도일 때만 하위도시 코드를 매핑 ("전체"면 null). 약칭 대응을 위해 areaCode==31 판정 */
@@ -295,6 +341,11 @@ public class EventsActivity extends AppCompatActivity {
         }
         Integer code = AREA_CODE_MAP.get(standard);
         return code != null ? code : 1;
+    }
+
+    private static String clean(String s) { return s == null ? "" : s.replaceAll("\\s+", ""); }
+    private static String stripSuffix(String k) {
+        return k.replaceAll("(광역시|특별자치시|특별자치도|특별시|자치시|자치도|시|도)$", "");
     }
 
     private String formatDate(String raw) {

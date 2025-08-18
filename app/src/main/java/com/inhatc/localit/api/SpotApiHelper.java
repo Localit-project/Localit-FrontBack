@@ -1,11 +1,20 @@
 package com.inhatc.localit.api;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-// 이미 있는 클래스에 아래 내용만 보강
+import retrofit2.Call;
+
+/**
+ * SpotApiHelper
+ * - RetrofitClient 싱글턴 사용
+ * - detailCommon2 호출하여 homepage URL 추출(fetchHomepageUrl)
+ * - 지역/시군구 유틸 포함
+ */
 public class SpotApiHelper {
 
-    // 이미 있는 줄: Retrofit 서비스 싱글턴
+    // =============== Retrofit 서비스 싱글턴 ===============
     private static final SpotApiService apiService =
             RetrofitClient.getInstance().create(SpotApiService.class);
 
@@ -13,11 +22,92 @@ public class SpotApiHelper {
         return apiService;
     }
 
-
+    // =============== 공통 상수 ===============
     public static final String SERVICE_KEY =
             "wL/Ry8EMiMg43mPRl3wyQhKosVExsJbLLDcZebat4S4eedobtNuBG+eqrj5GPKHvEAxy4NjYPz25Parbyeg8PA==";
 
-    // --- (선택) 지역/시군구 유틸: SearchFragment에서 필요하면 사용 ---
+    // =================== NEW: 홈페이지 추출 ===================
+
+    /** 간단 콜백 타입 */
+    public interface SimpleCallback<T> { void onResult(T value); }
+
+    /**
+     * 편의 오버로드: 내부 apiService와 공용 SERVICE_KEY 사용
+     * @param contentId      Tour API contentId
+     * @param contentTypeId  "12"(관광) 또는 "15"(축제)
+     */
+    public static void fetchHomepageUrl(
+            String contentId,
+            String contentTypeId,
+            SimpleCallback<String> callback
+    ) {
+        fetchHomepageUrl(apiService, SERVICE_KEY, contentId, contentTypeId, callback);
+    }
+
+    /**
+     * detailCommon2 호출 → homepage 필드에서 첫 번째 URL 추출
+     * @param api            SpotApiService
+     * @param serviceKey     인증키(인코딩 그대로 전달)
+     * @param contentId      Tour API contentId
+     * @param contentTypeId  "12" 또는 "15"
+     */
+    public static void fetchHomepageUrl(
+            SpotApiService api,
+            String serviceKey,
+            String contentId,
+            String contentTypeId,
+            SimpleCallback<String> callback
+    ) {
+        Call<SpotDetailCommonResponse> call = api.getDetailCommon(
+                "AND",           // MobileOS
+                "localit",       // MobileApp
+                "json",          // _type
+                contentId,
+                contentTypeId,
+                "Y",             // defaultYN
+                "Y",             // overviewYN (homepage 포함)
+                serviceKey
+        );
+
+        call.enqueue(new retrofit2.Callback<SpotDetailCommonResponse>() {
+            @Override
+            public void onResponse(Call<SpotDetailCommonResponse> call,
+                                   retrofit2.Response<SpotDetailCommonResponse> resp) {
+                String url = null;
+                try {
+                    SpotDetailCommonResponse body = resp.body();
+                    if (body != null &&
+                            body.response != null &&
+                            body.response.body != null &&
+                            body.response.body.items != null &&
+                            body.response.body.items.item != null &&
+                            !body.response.body.items.item.isEmpty()) {
+
+                        String homepage = body.response.body.items.item.get(0).homepage;
+                        url = extractFirstHref(homepage);
+                    }
+                } catch (Exception ignore) {}
+                if (callback != null) callback.onResult(url);
+            }
+
+            @Override
+            public void onFailure(Call<SpotDetailCommonResponse> call, Throwable t) {
+                if (callback != null) callback.onResult(null);
+            }
+        });
+    }
+
+    /** homepage가 <a href="...">text</a> 형태로 올 때 href만 추출. 순수 URL 문자열도 대응 */
+    private static String extractFirstHref(String homepageHtml) {
+        if (homepageHtml == null) return null;
+        Matcher m = Pattern.compile("href\\s*=\\s*\"([^\"]+)\"", Pattern.CASE_INSENSITIVE).matcher(homepageHtml);
+        if (m.find()) return m.group(1);
+        if (homepageHtml.startsWith("http")) return homepageHtml.trim();
+        return null;
+    }
+
+    // =================== 지역/시군구 유틸 (기존 유지) ===================
+
     private static final Map<String, Integer> AREA_CODE_MAP = new HashMap<>();
     private static final Map<String, String> REGION_ALIAS = new HashMap<>();
     private static final Map<String, Integer> GG_SIGUNGU = new HashMap<>();
@@ -59,7 +149,6 @@ public class SpotApiHelper {
         alias("경상남도", "경남");
         alias("제주특별자치도", "제주", "제주도");
 
-        // 경기도 시군구(예시)
         GG_SIGUNGU.put("수원시", 13);
         GG_SIGUNGU.put("성남시", 12);
         GG_SIGUNGU.put("고양시", 2);
