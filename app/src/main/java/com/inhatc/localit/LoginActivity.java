@@ -4,6 +4,8 @@ import static java.lang.System.getProperties;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -13,31 +15,19 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.FirebaseNetworkException;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
-import com.google.firebase.auth.FirebaseAuthUserCollisionException;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.GoogleAuthProvider;
-import com.google.firebase.firestore.FirebaseFirestore;
-
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.*;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
-import android.util.Log;
-import com.google.firebase.auth.AuthCredential;
-import com.navercorp.nid.NaverIdLoginSDK;
-import com.navercorp.nid.oauth.OAuthLoginCallback;
-import android.view.View;
-
+import com.google.firebase.FirebaseNetworkException;
+import com.google.firebase.auth.*;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 import com.kakao.sdk.auth.model.OAuthToken;
 import com.kakao.sdk.user.UserApiClient;
-
-import kotlin.Unit;
-import kotlin.jvm.functions.Function2;
+import com.kakao.sdk.user.model.User;
+import com.navercorp.nid.NaverIdLoginSDK;
+import com.navercorp.nid.oauth.OAuthLoginCallback;
 
 import org.json.JSONObject;
 
@@ -51,6 +41,8 @@ import java.util.Map;
 public class LoginActivity extends AppCompatActivity {
 
     private static final int RC_KAKAO_SIGN_IN = 64206;
+    private static final String TAG = "LOGIN";
+
     private EditText etId, etPassword;
     private Button btnLogin;
     private TextView tvForgotPassword, tvSignUp;
@@ -72,49 +64,90 @@ public class LoginActivity extends AppCompatActivity {
         initViews();
         setClickListeners();
 
+        // Google
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
-
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
         findViewById(R.id.googleSignInButton).setOnClickListener(view -> {
+            signOutAllSessions(); // 기존 세션 정리
             Intent signInIntent = mGoogleSignInClient.getSignInIntent();
             startActivityForResult(signInIntent, RC_SIGN_IN);
         });
 
+        // Naver
         NaverIdLoginSDK.INSTANCE.initialize(this, "XjKX66OIxZPMPqnulSoy", "BS64ivicIw", "Localit");
-
         ImageButton btnNaver = findViewById(R.id.btn_naver);
         btnNaver.setOnClickListener(v -> {
+            signOutAllSessions(); // 기존 세션 정리
             NaverIdLoginSDK.INSTANCE.authenticate(LoginActivity.this, new OAuthLoginCallback() {
                 @Override
                 public void onSuccess() {
                     String accessToken = NaverIdLoginSDK.INSTANCE.getAccessToken();
-                    fetchNaverUserProfile(accessToken);
+                    fetchNaverUserProfile(accessToken); // 성공 시 → Firebase 세션 보장 후 메인
                 }
-
                 @Override
                 public void onFailure(int httpStatus, @NonNull String message) {
                     Toast.makeText(LoginActivity.this, "네이버 로그인 실패", Toast.LENGTH_SHORT).show();
                     Log.e("NaverLogin", "실패: " + httpStatus + " / " + message);
                 }
-
                 @Override
-                public void onError(int errorCode, @NonNull String message) {
-                    onFailure(errorCode, message);
-                }
+                public void onError(int errorCode, @NonNull String message) { onFailure(errorCode, message); }
             });
         });
 
+        // Kakao
         setupKakaoLogin();
     }
+
+    /* ========== 공통 유틸 ========== */
+
+    /** 모든 로그인 세션 정리(이메일/Firebase/구글/네이버/카카오) */
+    private void signOutAllSessions() {
+        try { FirebaseAuth.getInstance().signOut(); } catch (Throwable ignore) {}
+        try {
+            if (mGoogleSignInClient == null) {
+                GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestIdToken(getString(R.string.default_web_client_id))
+                        .requestEmail()
+                        .build();
+                mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+            }
+            mGoogleSignInClient.signOut();
+        } catch (Throwable ignore) {}
+        try { NaverIdLoginSDK.INSTANCE.logout(); } catch (Throwable ignore) {}
+        try { UserApiClient.getInstance().logout(throwable -> null); } catch (Throwable ignore) {}
+    }
+
+    /** 소셜 로그인 후 Firebase 세션 없으면 익명 로그인으로 세션 보장 */
+    private void ensureFirebaseSessionForSocial(Runnable onReady) {
+        FirebaseUser cur = FirebaseAuth.getInstance().getCurrentUser();
+        if (cur != null) { onReady.run(); return; }
+        FirebaseAuth.getInstance().signInAnonymously()
+                .addOnSuccessListener(res -> onReady.run())
+                .addOnFailureListener(e -> {
+                    String code = (e instanceof FirebaseAuthException) ? ((FirebaseAuthException) e).getErrorCode() : "unknown";
+                    Log.e("LOGIN", "Anonymous sign-in failed, code=" + code, e);
+                    Toast.makeText(this, "세션 생성 실패: " + code, Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    /** 메인 이동(+스택 정리, 소셜 여부 전달) */
+    private void goMainWithSocial(boolean isSocial) {
+        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+        intent.putExtra("isSocial", isSocial);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    /* ========== Google ========== */
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
         if (requestCode == RC_SIGN_IN) {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
@@ -133,10 +166,18 @@ public class LoginActivity extends AppCompatActivity {
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
-                        Log.d("FirebaseAuth", "signInWithCredential:success, user: " + user.getEmail());
-                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                        startActivity(intent);
-                        finish();
+                        // ★ 소셜 플래그 & 고정키 저장 (구글은 Firebase UID가 고정)
+                        if (user != null) {
+                            getSharedPreferences("auth", MODE_PRIVATE)
+                                    .edit()
+                                    .putBoolean("is_social", true)
+                                    .putString("provider", "google")
+                                    .putString("social_uid", user.getUid())
+                                    .putString("social_email", user.getEmail())
+                                    .apply();
+                        }
+                        Log.d("FirebaseAuth", "Google 로그인 성공");
+                        goMainWithSocial(true); // 소셜
                     } else {
                         Exception e = task.getException();
                         if (e != null) {
@@ -155,21 +196,14 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    /* ========== 이메일/비번 ========== */
+
     private void performLogin() {
         String email = etId.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
-        if (email.isEmpty()) {
-            etId.setError("이메일을 입력해주세요");
-            etId.requestFocus();
-            return;
-        }
-
-        if (password.isEmpty()) {
-            etPassword.setError("비밀번호를 입력해주세요");
-            etPassword.requestFocus();
-            return;
-        }
+        if (email.isEmpty()) { etId.setError("이메일을 입력해주세요"); etId.requestFocus(); return; }
+        if (password.isEmpty()) { etPassword.setError("비밀번호를 입력해주세요"); etPassword.requestFocus(); return; }
 
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
@@ -183,26 +217,22 @@ public class LoginActivity extends AppCompatActivity {
                                             .addOnSuccessListener(document -> {
                                                 if (!document.exists()) {
                                                     Map<String, Object> userMap = new HashMap<>();
-                                                    userMap.put("email", user.getEmail());
                                                     userMap.put("uid", user.getUid());
-                                                    userMap.put("name", "");
-                                                    userMap.put("gender", "");
-                                                    userMap.put("phone", "");
+                                                    userMap.put("provider", "password");
+                                                    userMap.put("providerUid", user.getUid());
+                                                    userMap.put("email", user.getEmail());
+                                                    userMap.put("displayName", "");
+                                                    userMap.put("photoUrl", null);
+                                                    userMap.put("createdAt", FieldValue.serverTimestamp());
+                                                    userMap.put("updatedAt", FieldValue.serverTimestamp());
 
                                                     db.collection("users").document(user.getUid())
-                                                            .set(userMap)
-                                                            .addOnSuccessListener(aVoid -> {
-                                                                Toast.makeText(this, "로그인 성공!", Toast.LENGTH_SHORT).show();
-                                                                startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                                                                finish();
-                                                            })
-                                                            .addOnFailureListener(e -> {
-                                                                Toast.makeText(this, "유저 정보 저장 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                                            });
+                                                            .set(userMap, SetOptions.merge())
+                                                            .addOnSuccessListener(aVoid -> goMainWithSocial(false))
+                                                            .addOnFailureListener(e ->
+                                                                    Toast.makeText(this, "유저 정보 저장 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                                                 } else {
-                                                    Toast.makeText(this, "로그인 성공!", Toast.LENGTH_SHORT).show();
-                                                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                                                    finish();
+                                                    goMainWithSocial(false);
                                                 }
                                             });
                                 } else {
@@ -216,6 +246,8 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 });
     }
+
+    /* ========== View ========== */
 
     private void initViews() {
         etId = findViewById(R.id.et_id);
@@ -231,6 +263,8 @@ public class LoginActivity extends AppCompatActivity {
         tvSignUp.setOnClickListener(v -> startActivity(new Intent(this, SignUpActivity.class)));
     }
 
+    /* ========== Naver ========== */
+
     private void fetchNaverUserProfile(String token) {
         new Thread(() -> {
             try {
@@ -244,25 +278,48 @@ public class LoginActivity extends AppCompatActivity {
                     BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                     StringBuilder response = new StringBuilder();
                     String line;
-                    while ((line = br.readLine()) != null) {
-                        response.append(line);
-                    }
+                    while ((line = br.readLine()) != null) response.append(line);
                     br.close();
 
                     JSONObject json = new JSONObject(response.toString());
                     JSONObject responseJson = json.getJSONObject("response");
-                    String email = responseJson.getString("email");
-                    String name = responseJson.optString("name", "네이버사용자");
+                    String email = responseJson.optString("email", null);
+                    String name  = responseJson.optString("name", "네이버사용자");
 
                     runOnUiThread(() -> {
-                        saveNaverUserToFirestore(email, name);
-                        Toast.makeText(this, "네이버 로그인 성공", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(this, MainActivity.class));
-                        finish();
+                        // ★ 소셜 고정키 저장
+                        if (email != null) {
+                            getSharedPreferences("auth", MODE_PRIVATE)
+                                    .edit()
+                                    .putBoolean("is_social", true)
+                                    .putString("provider", "naver")
+                                    .putString("social_uid", "naver_" + email)
+                                    .putString("social_email", email)
+                                    .apply();
+                        } else {
+                            getSharedPreferences("auth", MODE_PRIVATE)
+                                    .edit()
+                                    .putBoolean("is_social", true)
+                                    .putString("provider", "naver")
+                                    .apply();
+                        }
+
+                        // (선택) Firestore에도 저장하고 싶으면 사용
+                        // saveNaverUserToFirestore(email, name);
+
+                        // ★ Firebase 세션 보장 후 메인 이동
+                        ensureFirebaseSessionForSocial(() -> goMainWithSocial(true));
                     });
+                } else {
+                    runOnUiThread(() ->
+                            Toast.makeText(this, "네이버 로그인 실패(" + responseCode + ")", Toast.LENGTH_SHORT).show()
+                    );
                 }
             } catch (Exception e) {
                 Log.e("NaverAPI", "프로필 요청 실패", e);
+                runOnUiThread(() ->
+                        Toast.makeText(this, "네이버 로그인 실패", Toast.LENGTH_SHORT).show()
+                );
             }
         }).start();
     }
@@ -282,54 +339,80 @@ public class LoginActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> Log.e("Firestore", "저장 실패: " + e.getMessage()));
     }
 
-    private static final String TAG = "KAKAO_LOGIN";
+    /* ========== Kakao ========== */
 
     private void setupKakaoLogin() {
         ImageButton kakaoLoginBtn = findViewById(R.id.btn_kakao);
         kakaoLoginBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                signOutAllSessions(); // 기존 세션 정리
+
                 if (UserApiClient.getInstance().isKakaoTalkLoginAvailable(LoginActivity.this)) {
-                    UserApiClient.getInstance().loginWithKakaoTalk(LoginActivity.this, new Function2<OAuthToken, Throwable, Unit>() {
-                        @Override
-                        public Unit invoke(OAuthToken token, Throwable error) {
-                            if (error != null) {
-                                Log.e(TAG, "카카오톡 로그인 실패", error);
-                                runOnUiThread(() ->
-                                        Toast.makeText(LoginActivity.this, "카카오톡 로그인 실패: " + error.getMessage(), Toast.LENGTH_SHORT).show()
-                                );
-                            } else if (token != null) {
-                                Log.i(TAG, "카카오톡 로그인 성공: " + token.getAccessToken());
-                                runOnUiThread(() ->
-                                        Toast.makeText(LoginActivity.this, "카카오톡 로그인 성공", Toast.LENGTH_SHORT).show()
-                                );
-                                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                                startActivity(intent);
-                                finish();
-                            }
-                            return null;
+                    UserApiClient.getInstance().loginWithKakaoTalk(LoginActivity.this, (OAuthToken token, Throwable error) -> {
+                        if (error != null) {
+                            Log.e(TAG, "카카오톡 로그인 실패", error);
+                            runOnUiThread(() ->
+                                    Toast.makeText(LoginActivity.this, "카카오톡 로그인 실패: " + error.getMessage(), Toast.LENGTH_SHORT).show()
+                            );
+                        } else if (token != null) {
+                            Log.i(TAG, "카카오톡 로그인 성공: " + token.getAccessToken());
+
+                            // ★ 사용자 정보 조회 → 고정키 저장
+                            UserApiClient.getInstance().me((User user, Throwable err) -> {
+                                if (err != null || user == null) {
+                                    Toast.makeText(LoginActivity.this, "카카오 사용자 정보 조회 실패", Toast.LENGTH_SHORT).show();
+                                    return null;
+                                }
+                                String kakaoKey = "kakao_" + user.getId();
+                                String email = (user.getKakaoAccount() != null) ? user.getKakaoAccount().getEmail() : null;
+
+                                getSharedPreferences("auth", MODE_PRIVATE)
+                                        .edit()
+                                        .putBoolean("is_social", true)
+                                        .putString("provider", "kakao")
+                                        .putString("social_uid", kakaoKey)
+                                        .putString("social_email", email)
+                                        .apply();
+
+                                ensureFirebaseSessionForSocial(() -> goMainWithSocial(true));
+                                return null;
+                            });
                         }
+                        return null;
                     });
                 } else {
-                    UserApiClient.getInstance().loginWithKakaoAccount(LoginActivity.this, new Function2<OAuthToken, Throwable, Unit>() {
-                        @Override
-                        public Unit invoke(OAuthToken token, Throwable error) {
-                            if (error != null) {
-                                Log.e(TAG, "카카오계정 로그인 실패", error);
-                                runOnUiThread(() ->
-                                        Toast.makeText(LoginActivity.this, "카카오계정 로그인 실패: " + error.getMessage(), Toast.LENGTH_SHORT).show()
-                                );
-                            } else if (token != null) {
-                                Log.i(TAG, "카카오계정 로그인 성공: " + token.getAccessToken());
-                                runOnUiThread(() ->
-                                        Toast.makeText(LoginActivity.this, "카카오계정 로그인 성공", Toast.LENGTH_SHORT).show()
-                                );
-                                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                                startActivity(intent);
-                                finish();
-                            }
-                            return null;
+                    UserApiClient.getInstance().loginWithKakaoAccount(LoginActivity.this, (OAuthToken token, Throwable error) -> {
+                        if (error != null) {
+                            Log.e(TAG, "카카오계정 로그인 실패", error);
+                            runOnUiThread(() ->
+                                    Toast.makeText(LoginActivity.this, "카카오계정 로그인 실패: " + error.getMessage(), Toast.LENGTH_SHORT).show()
+                            );
+                        } else if (token != null) {
+                            Log.i(TAG, "카카오계정 로그인 성공: " + token.getAccessToken());
+
+                            // ★ 사용자 정보 조회 → 고정키 저장
+                            UserApiClient.getInstance().me((User user, Throwable err) -> {
+                                if (err != null || user == null) {
+                                    Toast.makeText(LoginActivity.this, "카카오 사용자 정보 조회 실패", Toast.LENGTH_SHORT).show();
+                                    return null;
+                                }
+                                String kakaoKey = "kakao_" + user.getId();
+                                String email = (user.getKakaoAccount() != null) ? user.getKakaoAccount().getEmail() : null;
+
+                                getSharedPreferences("auth", MODE_PRIVATE)
+                                        .edit()
+                                        .putBoolean("is_social", true)
+                                        .putString("provider", "kakao")
+                                        .putString("social_uid", kakaoKey)
+                                        .putString("social_email", email)
+                                        .apply();
+
+                                ensureFirebaseSessionForSocial(() -> goMainWithSocial(true));
+                                return null;
+                            });
                         }
+                        return null;
                     });
                 }
             }

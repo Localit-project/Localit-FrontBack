@@ -78,9 +78,9 @@ public class NotificationsFragment extends Fragment {
         }
 
         // 버튼(읽음 처리 등) 연결
-        binding.btnMarkMsgsRead.setOnClickListener(v -> {
+      /*  binding.btnMarkMsgsRead.setOnClickListener(v -> {
             // TODO: 선택/전체 읽음 처리 로직 연동
-        });
+        }); */
 
         // 초기 필터 적용
         applyFilter();
