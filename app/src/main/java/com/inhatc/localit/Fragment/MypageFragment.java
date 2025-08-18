@@ -63,6 +63,10 @@ public class MypageFragment extends Fragment {
     private Pending pending = Pending.NONE;
 
     private Uri cameraPhotoUri;
+    private boolean isValidNickname(@NonNull String s) {
+        // 영문/숫자/한글만 허용, 2~10자
+        return s.matches("^[A-Za-z0-9가-힣]{2,10}$");
+    }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -88,6 +92,17 @@ public class MypageFragment extends Fragment {
 
         // 프로필 사진 추가(갤러리/카메라)
         binding.btnAddPhoto.setOnClickListener(v -> showImagePickDialog());
+
+        // 닉네임 저장: 버튼 클릭
+        binding.btnSaveNickname.setOnClickListener(v -> {
+            String nick = binding.etNickname.getText().toString().trim();
+            if (!isValidNickname(nick)) {
+                Toast.makeText(requireContext(),
+                        "닉네임은 2~10자, 공백/특수기호/이모지 불가", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            saveDisplayName(nick);
+        });
 
         // 로그아웃
         binding.rowLogout.setOnClickListener(v -> confirmLogout());

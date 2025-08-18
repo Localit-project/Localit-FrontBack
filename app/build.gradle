@@ -37,7 +37,6 @@ android {
 dependencies {
     // Firebase BoM 추가
     implementation platform('com.google.firebase:firebase-bom:34.0.0')
-    implementation 'com.google.firebase:firebase-firestore-ktx:24.7.1' // 버전은 최신으로
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-auth'
     implementation 'androidx.appcompat:appcompat:1.6.1'
@@ -56,6 +55,14 @@ dependencies {
     implementation libs.recyclerview
     implementation 'com.google.firebase:firebase-storage'
 
+    // 사용 모듈
+    implementation 'com.google.firebase:firebase-storage'
+    implementation 'com.google.firebase:firebase-firestore'
+    implementation 'com.google.firebase:firebase-auth'
+
+    // Glide (이미지 로더)
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
     
 
     testImplementation 'junit:junit:4.13.2'
