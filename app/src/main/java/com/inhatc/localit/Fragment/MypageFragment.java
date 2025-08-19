@@ -7,11 +7,13 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -21,11 +23,14 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.bumptech.glide.Glide;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
@@ -58,6 +63,7 @@ public class MypageFragment extends Fragment {
     private ActivityResultLauncher<String>  galleryLauncher;
     private ActivityResultLauncher<Uri>     cameraLauncher;
     private ActivityResultLauncher<String[]> permissionLauncher;
+    private ImageButton btnBack;
 
     private enum Pending { NONE, GALLERY, CAMERA }
     private Pending pending = Pending.NONE;
@@ -75,10 +81,12 @@ public class MypageFragment extends Fragment {
 
         initActivityResultLaunchers();
 
-        // 뒤로가기 (Navigation 사용)
-        binding.btnBack.setOnClickListener(v ->
-                NavHostFragment.findNavController(this).navigateUp()
-        );
+        // 뒤로가기(홈으로 singleTop)
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> goHomeSingleTop());
+        } else {
+            Log.e("MypageFragment", "btn_back is null. Check MypageFragment.xml id.");
+        }
 
         // 알림 화면
         binding.btnNotification.setOnClickListener(v ->
@@ -122,6 +130,29 @@ public class MypageFragment extends Fragment {
         loadUserProfile();
 
         return root;
+    }
+
+    /** 홈으로 이동(중복 쌓임 방지) */
+    private void goHomeSingleTop() {
+        try {
+            NavController nav = NavHostFragment.findNavController(this);
+            int homeId = nav.getGraph().getStartDestinationId();
+
+            NavOptions opts = new NavOptions.Builder()
+                    .setPopUpTo(homeId, false)
+                    .setLaunchSingleTop(true)
+                    .build();
+
+            if (nav.getCurrentDestination() == null ||
+                    nav.getCurrentDestination().getId() != homeId) {
+                nav.navigate(homeId, null, opts);
+            }
+        } catch (Exception ignored) { }
+
+        BottomNavigationView bottom = requireActivity().findViewById(R.id.nav_view);
+        if (bottom != null) {
+            bottom.setSelectedItemId(R.id.navigation_home);
+        }
     }
 
     /* ───────────── 공통: 현재 프로필 문서키 결정 ─────────────

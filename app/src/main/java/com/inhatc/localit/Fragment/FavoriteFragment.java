@@ -101,7 +101,7 @@ public class FavoriteFragment extends Fragment {
         outState.putInt("selectedTab", selectedTab);
     }
 
-    // ✅ 최소 수정: 프래그먼트/뷰 살아있을 때만 Resources 접근
+    // 최소 수정: 프래그먼트/뷰 살아있을 때만 Resources 접근
     private int dpToPx(int dp) {
         if (!isAdded() || getView() == null) return dp; // 가드
         float density = requireView().getResources().getDisplayMetrics().density;

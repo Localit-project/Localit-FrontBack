@@ -97,7 +97,7 @@ public class CategoryFragment extends Fragment {
             targetRegion = selectedRegion;
         }
 
-        Intent intent = new Intent(getContext(), activityClass);  // 💡 해당 액티비티로 이동
+        Intent intent = new Intent(getContext(), activityClass);  // 해당 액티비티로 이동
         intent.putExtra("regionName", selectedRegion);
         if (selectedSubRegion != null) {
             intent.putExtra("subRegionName", selectedSubRegion);
