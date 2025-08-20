@@ -20,7 +20,7 @@ import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
 import com.inhatc.localit.ui.category.FestivalActivity;
-//import com.inhatc.localit.ui.category.FestivalDetailActivity;
+import com.inhatc.localit.ui.category.FestivalDetailActivity;
 import com.inhatc.localit.ui.category.NewsActivity;
 import com.inhatc.localit.ui.category.SpotActivity;
 import com.inhatc.localit.ui.category.SpotDetailActivity;
@@ -195,7 +195,7 @@ public class RegionDetailActivity extends AppCompatActivity {
         View[] festivalTargets = new View[]{ imageFestival1, textFestival1Title, imageFestival2, textFestival2Title };
         for (int i = 0; i < festivalTargets.length; i++) {
             final int idx = (i < 2) ? 0 : 1;
-//            if (festivalTargets[i] != null) festivalTargets[i].setOnClickListener(v -> onClickFestivalCard(idx));
+            if (festivalTargets[i] != null) festivalTargets[i].setOnClickListener(v -> onClickFestivalCard(idx));
         }
     }
 
@@ -419,21 +419,21 @@ public class RegionDetailActivity extends AppCompatActivity {
         startActivity(i);
     }
 
-//    private void onClickFestivalCard(int idx) {
-//        if (festivalPreview == null || festivalPreview.size() <= idx) return;
-//        SpotResponse.Item it = festivalPreview.get(idx);
-//
-//        Intent i = new Intent(this, FestivalDetailActivity.class);
-//        i.putExtra(FestivalDetailActivity.EXTRA_CONTENT_ID, it.contentid);
-//        i.putExtra(FestivalDetailActivity.EXTRA_CONTENT_TYPE_ID,
-//                TextUtils.isEmpty(it.contenttypeid) ? "15" : it.contenttypeid);
-//        // (선표시용) 선택사항
-//        i.putExtra(FestivalDetailActivity.EXTRA_TITLE,       it.title != null ? it.title : "");
-//        i.putExtra(FestivalDetailActivity.EXTRA_ADDR1,       it.addr1 != null ? it.addr1 : "");
-//        i.putExtra(FestivalDetailActivity.EXTRA_FIRST_IMAGE, it.firstimage != null ? it.firstimage : "");
-//
-//        startActivity(i);
-//    }
+    private void onClickFestivalCard(int idx) {
+        if (festivalPreview == null || festivalPreview.size() <= idx) return;
+        SpotResponse.Item it = festivalPreview.get(idx);
+
+        Intent i = new Intent(this, FestivalDetailActivity.class);
+        i.putExtra(FestivalDetailActivity.EXTRA_CONTENT_ID, it.contentid);
+        i.putExtra(FestivalDetailActivity.EXTRA_CONTENT_TYPE_ID,
+                TextUtils.isEmpty(it.contenttypeid) ? "15" : it.contenttypeid);
+        i.putExtra(FestivalDetailActivity.EXTRA_TITLE,       it.title != null ? it.title : "");
+        i.putExtra(FestivalDetailActivity.EXTRA_ADDR1,       it.addr1 != null ? it.addr1 : "");
+        i.putExtra(FestivalDetailActivity.EXTRA_FIRST_IMAGE, it.firstimage != null ? it.firstimage : "");
+        startActivity(i);
+    }
+
+
 
     // ----------------------------- Utils -----------------------------
     private String normalizeRegionName(String r) {

@@ -133,6 +133,10 @@
             android:name=".ui.category.SpotDetailActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".ui.category.FestivalDetailActivity"
+            android:exported="false" />
+
         <meta-data
             android:name="com.naver.maps.map.NCP_KEY_ID"
             android:value="YOUR_NCP_KEY_ID_HERE" />
