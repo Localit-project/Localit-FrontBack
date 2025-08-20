@@ -203,8 +203,6 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         textTitle      = findViewById(R.id.textTitle);
         textOverview   = findViewById(R.id.textOverview);
         textAddr       = findViewById(R.id.textAddr);
-        labelZip       = findViewById(R.id.labelZip);
-        textZipcode    = findViewById(R.id.textZipcode);
         textTel        = findViewById(R.id.textTel);
         textRestdate   = findViewById(R.id.textRestdate);
         textUsetime    = findViewById(R.id.textUsetime);

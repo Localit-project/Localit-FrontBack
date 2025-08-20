@@ -117,37 +117,6 @@
                 android:textColor="#444"
                 android:lineSpacingExtra="4dp" />
 
-            <!-- 주소 -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="ㆍ위치"
-                android:textStyle="bold" />
-            <TextView
-                android:id="@+id/textAddr"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingStart="15dp"
-                android:textColor="#444" />
-
-            <!-- 우편번호(필요 시 표시) -->
-            <TextView
-                android:id="@+id/labelZip"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="ㆍ우편번호"
-                android:textStyle="bold"
-                android:visibility="gone"/>
-            <TextView
-                android:id="@+id/textZipcode"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingStart="15dp"
-                android:textColor="#444"
-                android:visibility="gone"/>
-
             <!-- 문의 및 안내 -->
             <TextView
                 android:layout_width="wrap_content"
@@ -229,6 +198,20 @@
                 android:layout_height="1dp"
                 android:layout_marginTop="12dp"
                 android:background="#E0E0E0" />
+
+            <!-- 주소 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="ㆍ위치"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/textAddr"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="15dp"
+                android:textColor="#444" />
 
             <!-- 지도 -->
             <com.naver.maps.map.MapView

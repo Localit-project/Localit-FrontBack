@@ -5,20 +5,22 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
 import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotDetailCommonResponse;
 import com.inhatc.localit.api.SpotDetailIntroResponse;
-
-// 지도
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapView;
@@ -33,29 +35,35 @@ import java.util.concurrent.Executors;
 
 public class FestivalDetailActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    public static final String EXTRA_CONTENT_ID = "extra_content_id";
+    public static final String EXTRA_CONTENT_ID      = "extra_content_id";
     public static final String EXTRA_CONTENT_TYPE_ID = "extra_content_type_id";
-    public static final String EXTRA_TITLE = "extra_title";
-    public static final String EXTRA_ADDR1 = "extra_addr1";
-    public static final String EXTRA_FIRST_IMAGE = "extra_first_image";
+    public static final String EXTRA_TITLE           = "extra_title";
+    public static final String EXTRA_ADDR1           = "extra_addr1";
+    public static final String EXTRA_FIRST_IMAGE     = "extra_first_image";
 
-    private ImageView imageMain;
-    private TextView textTitle;
+    // 상단/본문
+    private ImageView imageMain, btnBack;
+    private TextView  textTitle;
 
-    // 공통
+    // 공통(detailCommon2)
     private TextView tvZipcode, tvTelName, tvTel, tvAddr, tvOverview;
 
-    // 인트로(축제)
-    private TextView tvSponsor1, tvSponsor1Tel, tvSponsor2, tvStartDate, tvEndDate,
-            tvPlaytime, tvProgress, tvFestivalType, tvProgram, tvContent;
+    // 인트로(detailIntro2: 축제)
+    private TextView tvSponsor1, tvSponsor1Tel, tvSponsor2,
+            tvStartDate, tvEndDate, tvPlaytime,
+            tvProgress, tvFestivalType, tvProgram, tvContent;
+
+    // 네비
+    private BottomNavigationView navView;
 
     // 지도
     private MapView mapView;
     private NaverMap naverMap;
     private Marker marker;
-    private Double lat; // mapy(위도)
-    private Double lng; // mapx(경도)
+    private Double lat;  // mapy(위도)
+    private Double lng;  // mapx(경도)
 
+    // 전달값
     private String contentId, contentTypeId, passedTitle, passedAddr1, passedFirstImage;
 
     @Override
@@ -65,50 +73,104 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
 
         bindViews();
 
+        // 뒤로가기(ESC처럼)
+        if (btnBack != null) btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
+
+        setupBottomNavigationView();
+
         // 지도 준비
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
-        // 인텐트
+        // 인텐트 파싱
         Intent intent = getIntent();
         if (intent == null) { finishWithError("잘못된 접근입니다."); return; }
-        contentId        = safe(intent.getStringExtra(EXTRA_CONTENT_ID));
-        contentTypeId    = safe(intent.getStringExtra(EXTRA_CONTENT_TYPE_ID));
-        passedTitle      = safe(intent.getStringExtra(EXTRA_TITLE));
-        passedAddr1      = safe(intent.getStringExtra(EXTRA_ADDR1));
-        passedFirstImage = safe(intent.getStringExtra(EXTRA_FIRST_IMAGE));
+        contentId        = s(intent.getStringExtra(EXTRA_CONTENT_ID));
+        contentTypeId    = nvl(intent.getStringExtra(EXTRA_CONTENT_TYPE_ID), "15");
+        passedTitle      = s(intent.getStringExtra(EXTRA_TITLE));
+        passedAddr1      = s(intent.getStringExtra(EXTRA_ADDR1));
+        passedFirstImage = s(intent.getStringExtra(EXTRA_FIRST_IMAGE));
         if (TextUtils.isEmpty(contentId)) { finishWithError("contentId 없음"); return; }
-        if (TextUtils.isEmpty(contentTypeId)) contentTypeId = "15";
 
         // 선표시
-        if (!TextUtils.isEmpty(passedTitle)) textTitle.setText(passedTitle);
-        if (!TextUtils.isEmpty(passedAddr1)) tvAddr.setText(passedAddr1);
+        setTextOrGone(textTitle,  passedTitle);
+        setTextOrGone(tvAddr,     passedAddr1);
         if (!TextUtils.isEmpty(passedFirstImage)) {
             Glide.with(this).load(passedFirstImage)
                     .placeholder(R.drawable.sample1).error(R.drawable.sample1).into(imageMain);
+        } else {
+            imageMain.setImageResource(R.drawable.sample1);
         }
 
         // 공통 상세
-        SpotApiHelper.fetchDetailCommon(contentId, contentTypeId, item -> {
+        SpotApiHelper.fetchDetailCommon(contentId, contentTypeId, item -> runOnUiThread(() -> {
             if (item == null) return;
-            runOnUiThread(() -> bindCommon(item));
-        });
+
+            // XML 순서에 맞춰 노출
+            setTextWithBrOrGone(tvOverview, item.overview);                 // 개요
+            setTextOrGone(tvAddr, joinAddr(item.addr1, item.addr2));        // 주소
+            setTextOrGone(tvZipcode, item.zipcode);                         // 우편번호
+            setTextWithBrOrGone(tvTel, item.tel);                           // 전화번호
+            setTextOrGone(tvTelName, rf(item, "telname"));                  // 전화명(있을 때만)
+
+            if (!TextUtils.isEmpty(item.title)) setTextOrGone(textTitle, item.title);
+
+            // 대표 이미지 교체
+            String img = !TextUtils.isEmpty(item.firstimage) ? item.firstimage : item.firstimage2;
+            if (!TextUtils.isEmpty(img)) {
+                Glide.with(this).load(img)
+                        .placeholder(R.drawable.sample1).error(R.drawable.sample1).into(imageMain);
+            }
+
+            // 좌표
+            try {
+                if (!TextUtils.isEmpty(item.mapy) && !TextUtils.isEmpty(item.mapx)) {
+                    lat = Double.parseDouble(item.mapy); // mapy=위도
+                    lng = Double.parseDouble(item.mapx); // mapx=경도
+                    updateMapMarker();
+                } else {
+                    // 좌표 없으면 주소 지오코딩
+                    String addr = joinAddr(item.addr1, item.addr2);
+                    if (!TextUtils.isEmpty(addr)) geocodeAndMove(addr);
+                }
+            } catch (Exception ignore) {}
+        }));
 
         // 축제 인트로
         int ctid = 15;
         try { ctid = Integer.parseInt(contentTypeId); } catch (Exception ignore) {}
-        SpotApiHelper.fetchDetailIntro(contentId, ctid, item -> {
-            if (item == null) return;
-            runOnUiThread(() -> bindIntroFestival(item));
-        });
+        SpotApiHelper.fetchDetailIntro(contentId, ctid, it -> runOnUiThread(() -> {
+            if (it == null) return;
+
+            String sponsor1     = rf(it, "sponsor1");
+            String sponsor1tel  = rf(it, "sponsor1tel");
+            String sponsor2     = rf(it, "sponsor2");
+            String startDate    = rf(it, "eventstartdate");
+            String endDate      = rf(it, "eventenddate");
+            String playtime     = rf(it, "playtime");
+            String subevent     = rf(it, "subevent");          // 진행형태/진행내용
+            String festivalType = rf(it, "festivalgrade");     // 축제형태
+            String program      = rf(it, "program");           // 행사소개
+            String placeinfo    = rf(it, "placeinfo");         // 행사내용(장소/상세)
+
+            setTextOrGone(tvSponsor1,    sponsor1);
+            setTextOrGone(tvSponsor1Tel, sponsor1tel);
+            setTextOrGone(tvSponsor2,    sponsor2);
+            setTextOrGone(tvStartDate,   fmtDate(startDate));
+            setTextOrGone(tvEndDate,     fmtDate(endDate));
+            setTextOrGone(tvPlaytime,    playtime);
+            setTextWithBrOrGone(tvProgress,     subevent);
+            setTextOrGone(tvFestivalType, festivalType);
+            setTextWithBrOrGone(tvProgram,      program);
+            setTextWithBrOrGone(tvContent,      placeinfo);
+        }));
     }
 
     private void bindViews() {
         imageMain = findViewById(R.id.imageMain);
+        btnBack   = findViewById(R.id.btnBack);
         textTitle = findViewById(R.id.textTitle);
 
-        tvZipcode  = findViewById(R.id.tvZipcode);
-        tvTelName  = findViewById(R.id.tvTelName);
         tvTel      = findViewById(R.id.tvTel);
         tvAddr     = findViewById(R.id.tvAddr);
         tvOverview = findViewById(R.id.tvOverview);
@@ -124,69 +186,12 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
         tvProgram      = findViewById(R.id.tvProgram);
         tvContent      = findViewById(R.id.tvContent);
 
-        mapView        = findViewById(R.id.mapView);
+        mapView = findViewById(R.id.mapView);
+        navView = findViewById(R.id.nav_view); // 없으면 null일 수 있음
     }
 
-    // ----- 공통 상세 -----
-    private void bindCommon(SpotDetailCommonResponse.Item it) {
-        if (!TextUtils.isEmpty(it.title)) textTitle.setText(it.title);
-        tvOverview.setText(nl(it.overview));
-        tvAddr.setText(joinAddr(it.addr1, it.addr2));
-        tvZipcode.setText(safe(it.zipcode));
-        tvTel.setText(safe(it.tel));
-
-        // 전화명(telname) – 있을 때만
-        tvTelName.setText(safe(rf(it, "telname")));
-
-        // 대표 이미지
-        String img = !TextUtils.isEmpty(it.firstimage) ? it.firstimage : it.firstimage2;
-        if (!TextUtils.isEmpty(img)) {
-            Glide.with(this).load(img).placeholder(R.drawable.sample1)
-                    .error(R.drawable.sample1).into(imageMain);
-        } else if (TextUtils.isEmpty(passedFirstImage)) {
-            imageMain.setImageResource(R.drawable.sample1);
-        }
-
-        // 지도 좌표 적용 (없으면 지오코딩으로 주소 → 좌표)
-        try {
-            if (!TextUtils.isEmpty(it.mapy) && !TextUtils.isEmpty(it.mapx)) {
-                lat = Double.parseDouble(it.mapy);
-                lng = Double.parseDouble(it.mapx);
-                updateMapMarker();
-            } else {
-                String addr = joinAddr(it.addr1, it.addr2);
-                if (!TextUtils.isEmpty(addr)) geocodeAndMove(addr);
-            }
-        } catch (Exception ignore) {}
-    }
-
-    // ----- 인트로(축제) -----
-    private void bindIntroFestival(SpotDetailIntroResponse.Item it) {
-        String sponsor1     = rf(it, "sponsor1");
-        String sponsor1tel  = rf(it, "sponsor1tel");
-        String sponsor2     = rf(it, "sponsor2");
-        String startDate    = rf(it, "eventstartdate");
-        String endDate      = rf(it, "eventenddate");
-        String playtime     = rf(it, "playtime");
-        String subevent     = rf(it, "subevent");
-        String festivalType = rf(it, "festivalgrade");
-        String program      = rf(it, "program");
-        String placeinfo    = rf(it, "placeinfo");
-
-        tvSponsor1.setText(safe(sponsor1));
-        tvSponsor1Tel.setText(safe(sponsor1tel));
-        tvSponsor2.setText(safe(sponsor2));
-        tvStartDate.setText(fmtDate(startDate));
-        tvEndDate.setText(fmtDate(endDate));
-        tvPlaytime.setText(safe(playtime));
-        tvProgress.setText(nl(subevent));
-        tvFestivalType.setText(safe(festivalType));
-        tvProgram.setText(nl(program));
-        tvContent.setText(nl(placeinfo));
-    }
-
-    // ----- 지도 -----
-    @Override public void onMapReady(NaverMap map) {
+    // ---------- 지도 ----------
+    @Override public void onMapReady(@NonNull NaverMap map) {
         naverMap = map;
         naverMap.getUiSettings().setScaleBarEnabled(false);
         naverMap.getUiSettings().setZoomControlEnabled(true);
@@ -216,7 +221,7 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
         naverMap.moveCamera(CameraUpdate.scrollAndZoomTo(pos, 15.0));
     }
 
-    // MapView lifecycle
+    // ---------- MapView lifecycle ----------
     @Override protected void onStart()   { super.onStart();   mapView.onStart(); }
     @Override protected void onResume()  { super.onResume();  mapView.onResume(); }
     @Override protected void onPause()   { mapView.onPause(); super.onPause(); }
@@ -224,25 +229,77 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
     @Override protected void onDestroy() { mapView.onDestroy(); super.onDestroy(); }
     @Override public void onLowMemory()  { super.onLowMemory(); mapView.onLowMemory(); }
 
-    // ----- 유틸 -----
-    private void finishWithError(String msg) { Toast.makeText(this, msg, Toast.LENGTH_SHORT).show(); finish(); }
-    private String safe(String s) { return s == null ? "" : s; }
+    // ---------- 네비 ----------
+    private void setupBottomNavigationView() {
+        if (navView == null) return;
+        navView.setOnItemSelectedListener(item -> {
+            int start =
+                    item.getItemId() == R.id.navigation_home     ? 0 :
+                            item.getItemId() == R.id.navigation_category ? 1 :
+                                    item.getItemId() == R.id.navigation_search   ? 2 :
+                                            item.getItemId() == R.id.navigation_favorite ? 3 : 4;
+            startActivity(new Intent(this, MainActivity.class).putExtra("start_fragment", start));
+            finish();
+            return true;
+        });
+    }
+
+    // ---------- 유틸 ----------
+    private void finishWithError(String msg) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        finish();
+    }
+    private String s(String v) { return v == null ? "" : v; }
+    private String nvl(String a, String b) { return TextUtils.isEmpty(a) ? b : a; }
+
+    /** <br> → 줄바꿈, 기타 태그 제거 */
     private String nl(String v) {
         if (v == null) return "";
         return v.replaceAll("(?i)<br\\s*/?>", "\n")
                 .replaceAll("(?i)</p>", "\n")
-                .replaceAll("<[^>]*>", "").trim();
+                .replaceAll("(?s)<[^>]*>", "")
+                .trim();
     }
+
+    /** 비어있으면 GONE, 아니면 보이기 */
+    private void setTextOrGone(TextView tv, String value) {
+        String val = s(value).trim();
+        if (val.isEmpty()) {
+            tv.setText("");
+            tv.setVisibility(View.GONE);
+        } else {
+            tv.setVisibility(View.VISIBLE);
+            tv.setText(val);
+        }
+    }
+
+    /** HTML <br> 처리 + GONE */
+    private void setTextWithBrOrGone(TextView tv, String value) {
+        String cooked = nl(value);
+        if (cooked.trim().isEmpty()) {
+            tv.setText("");
+            tv.setVisibility(View.GONE);
+        } else {
+            tv.setVisibility(View.VISIBLE);
+            tv.setText(cooked);
+            tv.setSingleLine(false);
+            tv.setEllipsize(null);
+        }
+    }
+
     private String joinAddr(String a1, String a2) {
-        if (TextUtils.isEmpty(a2)) return safe(a1);
-        if (TextUtils.isEmpty(a1)) return safe(a2);
+        if (TextUtils.isEmpty(a1)) return s(a2);
+        if (TextUtils.isEmpty(a2)) return s(a1);
         return a1 + " " + a2;
     }
+
     private String fmtDate(String raw) {
-        if (TextUtils.isEmpty(raw) || raw.length() < 8) return safe(raw);
+        if (TextUtils.isEmpty(raw) || raw.length() < 8) return s(raw);
         try { return raw.substring(0,4)+"."+raw.substring(4,6)+"."+raw.substring(6,8); }
-        catch (Exception e) { return safe(raw); }
+        catch (Exception e) { return s(raw); }
     }
+
+    /** 리플렉션으로 필드 꺼내기(필드명이 응답마다 다를 수 있어 안전하게 처리) */
     private String rf(Object obj, String field) {
         if (obj == null || TextUtils.isEmpty(field)) return "";
         try {
