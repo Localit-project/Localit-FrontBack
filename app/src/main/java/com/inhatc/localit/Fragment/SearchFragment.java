@@ -266,7 +266,8 @@ public class SearchFragment extends Fragment {
         try {
             if (item.contentid != null) contentId = String.valueOf(item.contentid);
             else if (item.getContentid() != null) contentId = String.valueOf(item.getContentid());
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+        }
         if (TextUtils.isEmpty(contentId)) {
             Toast.makeText(requireContext(), "콘텐츠 ID가 없어 이동할 수 없습니다.", Toast.LENGTH_SHORT).show();
             return;
@@ -276,7 +277,10 @@ public class SearchFragment extends Fragment {
         String contentTypeId = null;
         try {
             Integer local = null;
-            try { local = item.getLocalContentType(); } catch (Throwable ignored) {}
+            try {
+                local = item.getLocalContentType();
+            } catch (Throwable ignored) {
+            }
             if (local != null && local > 0) {
                 contentTypeId = String.valueOf(local); // 12 or 15
             } else if (item.contenttypeid != null) {
@@ -284,48 +288,16 @@ public class SearchFragment extends Fragment {
             } else if (item.getContenttypeid() != null) {
                 contentTypeId = String.valueOf(item.getContenttypeid());
             }
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+        }
         if (TextUtils.isEmpty(contentTypeId)) contentTypeId = "12";
 
         // 제목 (구석구석 검색 Fallback에 사용)
         String t = null;
-        try { t = item.getTitle(); } catch (Throwable ignored) {}
-        if (TextUtils.isEmpty(t)) t = item.title;
-        final String titleFinal = t; // ✅ 람다에서 쓸 final 변수
-
-        // detailCommon2 호출 → homepage 있으면 열기, 없으면 대한민국 구석구석 검색으로
-        SpotApiHelper.fetchHomepageUrl(
-                api,
-                SERVICE_KEY,
-                contentId,
-                contentTypeId,
-                url -> {
-                    if (url != null && url.startsWith("http")) {
-                        openInCustomTab(url);
-                    } else {
-                        String q;
-                        try {
-                            q = URLEncoder.encode(titleFinal == null ? "" : titleFinal, "UTF-8");
-                        } catch (Exception e) {
-                            q = titleFinal == null ? "" : titleFinal;
-                        }
-                        String gukSearch = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + q;
-                        openInCustomTab(gukSearch);
-                        Toast.makeText(requireContext(), "공식 홈페이지가 없어 '대한민국 구석구석' 검색으로 이동합니다.", Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
-    }
-
-    /** CustomTabs로 URL 열기 (실패 시 기본 브라우저) */
-    private void openInCustomTab(String url) {
         try {
-            new androidx.browser.customtabs.CustomTabsIntent.Builder().build()
-                    .launchUrl(requireContext(), android.net.Uri.parse(url));
-        } catch (Exception e) {
-            try {
-                startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)));
-            } catch (Exception ignored) {}
+            t = item.getTitle();
+        } catch (Throwable ignored) {
         }
-    }
-}
+        if (TextUtils.isEmpty(t)) t = item.title;
+        final String titleFinal = t; //
+    }}

@@ -1,13 +1,12 @@
 package com.inhatc.localit.api;
 
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.inhatc.localit.BuildConfig;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -35,27 +34,33 @@ public class SpotApiHelper {
         API.getDetailCommon(
                 "AND", "localit", "json",
                 contentId, contentTypeId,
-                "Y","Y","Y","Y","Y","Y","Y",   // 7개의 YN 모두
+                "Y","Y","Y","Y","Y","Y","Y",   // defaultYN ~ overviewYN 모두 Y
                 SERVICE_KEY
         ).enqueue(new Callback<SpotDetailCommonResponse>() {
-            @Override public void onResponse(Call<SpotDetailCommonResponse> call,
-                                             Response<SpotDetailCommonResponse> resp) {
+            @Override
+            public void onResponse(Call<SpotDetailCommonResponse> call,
+                                   Response<SpotDetailCommonResponse> resp) {
                 SpotDetailCommonResponse.Item out = null;
                 try {
                     if (resp.isSuccessful()
-                            && resp.body()!=null
-                            && resp.body().response!=null
-                            && resp.body().response.body!=null
-                            && resp.body().response.body.items!=null
-                            && resp.body().response.body.items.item!=null
+                            && resp.body() != null
+                            && resp.body().response != null
+                            && resp.body().response.body != null
+                            && resp.body().response.body.items != null
+                            && resp.body().response.body.items.item != null
                             && !resp.body().response.body.items.item.isEmpty()) {
                         out = resp.body().response.body.items.item.get(0);
                     }
-                } catch (Exception ignore) {}
-                if (cb!=null) cb.onResult(out);
+                } catch (Exception e) {
+                    Log.e("DETAIL_COMMON", "parse error", e);
+                }
+                if (cb != null) cb.onResult(out);
             }
-            @Override public void onFailure(Call<SpotDetailCommonResponse> call, Throwable t) {
-                if (cb!=null) cb.onResult(null);
+
+            @Override
+            public void onFailure(Call<SpotDetailCommonResponse> call, Throwable t) {
+                Log.e("DETAIL_COMMON", "request fail", t);
+                if (cb != null) cb.onResult(null);
             }
         });
     }
@@ -71,66 +76,30 @@ public class SpotApiHelper {
                 contentId, contentTypeId,
                 SERVICE_KEY
         ).enqueue(new Callback<SpotDetailIntroResponse>() {
-            @Override public void onResponse(Call<SpotDetailIntroResponse> call,
-                                             Response<SpotDetailIntroResponse> resp) {
+            @Override
+            public void onResponse(Call<SpotDetailIntroResponse> call,
+                                   Response<SpotDetailIntroResponse> resp) {
                 SpotDetailIntroResponse.Item out = null;
                 try {
                     if (resp.isSuccessful()
-                            && resp.body()!=null
-                            && resp.body().response!=null
-                            && resp.body().response.body!=null
-                            && resp.body().response.body.items!=null
-                            && resp.body().response.body.items.item!=null
+                            && resp.body() != null
+                            && resp.body().response != null
+                            && resp.body().response.body != null
+                            && resp.body().response.body.items != null
+                            && resp.body().response.body.items.item != null
                             && !resp.body().response.body.items.item.isEmpty()) {
                         out = resp.body().response.body.items.item.get(0);
                     }
-                } catch (Exception ignore) {}
-                if (cb!=null) cb.onResult(out);
+                } catch (Exception e) {
+                    Log.e("DETAIL_INTRO", "parse error", e);
+                }
+                if (cb != null) cb.onResult(out);
             }
-            @Override public void onFailure(Call<SpotDetailIntroResponse> call, Throwable t) {
-                if (cb!=null) cb.onResult(null);
-            }
-        });
-    }
 
-    // -------------------- homepage URL만 추출 --------------------
-    public static void fetchHomepageUrl(
-            SpotApiService api,
-            String serviceKey,
-            String contentId,
-            String contentTypeId,
-            SimpleCallback<String> cb
-    ) {
-        api.getDetailCommon(
-                "AND", "localit", "json",
-                contentId, contentTypeId,
-                "Y","Y","Y","Y","Y","Y","Y",   // 7개의 YN 모두
-                SERVICE_KEY
-        ).enqueue(new Callback<SpotDetailCommonResponse>() {
-            @Override public void onResponse(Call<SpotDetailCommonResponse> call,
-                                             Response<SpotDetailCommonResponse> resp) {
-                String url = null;
-                try {
-                    if (resp.isSuccessful()
-                            && resp.body()!=null
-                            && resp.body().response!=null
-                            && resp.body().response.body!=null
-                            && resp.body().response.body.items!=null
-                            && resp.body().response.body.items.item!=null
-                            && !resp.body().response.body.items.item.isEmpty()) {
-                        String homepage = resp.body().response.body.items.item.get(0).homepage;
-                        url = extractFirstHref(homepage);
-                        if (url != null) {
-                            if (url.startsWith("//")) url = "https:" + url;
-                            if (url.startsWith("http://")) url = "https://" + url.substring(7);
-                            url = url.replace("m.visitkorea.or.kr","korean.visitkorea.or.kr");
-                        }
-                    }
-                } catch (Exception ignore) {}
-                if (cb!=null) cb.onResult(url);
-            }
-            @Override public void onFailure(Call<SpotDetailCommonResponse> call, Throwable t) {
-                if (cb!=null) cb.onResult(null);
+            @Override
+            public void onFailure(Call<SpotDetailIntroResponse> call, Throwable t) {
+                Log.e("DETAIL_INTRO", "request fail", t);
+                if (cb != null) cb.onResult(null);
             }
         });
     }
@@ -138,45 +107,40 @@ public class SpotApiHelper {
     // -------------------- 추가 이미지: URL 리스트로 반환 --------------------
     public static void fetchDetailImages(
             String contentId,
-            SimpleCallback<java.util.List<String>> cb
+            SimpleCallback<List<String>> cb
     ) {
-        SpotApiService api = getApiService();
-        Call<SpotDetailImageResponse> call = api.getDetailImages(
+        Call<SpotDetailImageResponse> call = API.getDetailImages(
                 30, 1, "AND", "localit", "json",
                 "Y", "Y", contentId, SERVICE_KEY
         );
         call.enqueue(new Callback<SpotDetailImageResponse>() {
-            @Override public void onResponse(Call<SpotDetailImageResponse> call,
-                                             Response<SpotDetailImageResponse> res) {
-                java.util.List<String> urls = new java.util.ArrayList<>();
+            @Override
+            public void onResponse(Call<SpotDetailImageResponse> call,
+                                   Response<SpotDetailImageResponse> res) {
+                List<String> urls = new ArrayList<>();
                 try {
-                    java.util.List<SpotDetailImageResponse.Item> items =
-                            res.body().response.body.items.item;
-                    if (items != null) {
-                        for (SpotDetailImageResponse.Item it : items) {
+                    if (res.isSuccessful() && res.body() != null
+                            && res.body().response != null
+                            && res.body().response.body != null
+                            && res.body().response.body.items != null
+                            && res.body().response.body.items.item != null) {
+                        for (SpotDetailImageResponse.Item it : res.body().response.body.items.item) {
                             String u = !TextUtils.isEmpty(it.originimgurl)
                                     ? it.originimgurl : it.smallimageurl;
                             if (!TextUtils.isEmpty(u)) urls.add(u);
                         }
                     }
-                } catch (Exception ignore) {}
+                } catch (Exception e) {
+                    Log.e("DETAIL_IMAGE", "parse error", e);
+                }
                 if (cb != null) cb.onResult(urls);
             }
-            @Override public void onFailure(Call<SpotDetailImageResponse> call, Throwable t) {
-                if (cb != null) cb.onResult(new java.util.ArrayList<>());
+
+            @Override
+            public void onFailure(Call<SpotDetailImageResponse> call, Throwable t) {
+                Log.e("DETAIL_IMAGE", "request fail", t);
+                if (cb != null) cb.onResult(new ArrayList<>());
             }
         });
-    }
-
-    // <a href="...">..</a> 또는 순수 URL 모두 대응
-    private static String extractFirstHref(String homepageHtml) {
-        if (homepageHtml == null) return null;
-        Matcher m = Pattern.compile("href\\s*=\\s*\"([^\"]+)\"", Pattern.CASE_INSENSITIVE)
-                .matcher(homepageHtml);
-        if (m.find()) return m.group(1);
-        String s = homepageHtml.trim();
-        if (s.startsWith("http")) return s;
-        if (s.startsWith("//")) return "https:" + s;
-        return null;
     }
 }

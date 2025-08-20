@@ -1,23 +1,31 @@
 package com.inhatc.localit.api;
 
+import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
 /** TourAPI detailCommon2 응답 모델 */
 public class SpotDetailCommonResponse {
-    @SerializedName("response") public Response response;
+
+    @SerializedName("response")
+    public Response response;
 
     public static class Response {
-        @SerializedName("body") public Body body;
+        @SerializedName("body")
+        public Body body;
     }
-    public static class Body {
-        @SerializedName("items") public Items items;
-    }
-    public static class Items {
-        @SerializedName("item") public List<Item> item;
-    }
-    public String firstimage, firstimage2, overview, addr1, addr2, zipcode, tel, mapx, mapy, title;
 
+    public static class Body {
+        @SerializedName("items")
+        public Items items;
+    }
+
+    public static class Items {
+        /** 단일/배열 혼용 대응 */
+        @SerializedName("item")
+        @JsonAdapter(SingleOrArrayAdapter.class)
+        public List<Item> item;
+    }
 
     /** 실제 상세 1건 데이터 */
     public static class Item {
@@ -30,7 +38,7 @@ public class SpotDetailCommonResponse {
         @SerializedName("firstimage")    public String firstimage;
         @SerializedName("firstimage2")   public String firstimage2;
 
-        // 홈페이지(종종 <a href="..."> 링크 형식)
+        // 홈페이지(종종 <a href="...">링크 형식)
         @SerializedName("homepage")      public String homepage;
 
         // 개요
@@ -42,9 +50,8 @@ public class SpotDetailCommonResponse {
         @SerializedName("zipcode")       public String zipcode;
         @SerializedName("tel")           public String tel;
 
-        // 좌표(선택)
+        // 좌표
         @SerializedName("mapx")          public String mapx;
         @SerializedName("mapy")          public String mapy;
-
     }
 }

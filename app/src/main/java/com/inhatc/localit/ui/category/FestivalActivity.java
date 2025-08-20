@@ -306,25 +306,6 @@ public class FestivalActivity extends AppCompatActivity {
         }
         String contentTypeId = !TextUtils.isEmpty(item.contenttypeid) ? item.contenttypeid : "15";
         final String titleFinal = item.title == null ? "" : item.title;
-
-        SpotApiHelper.fetchHomepageUrl(
-                SpotApiHelper.getApiService(),
-                SERVICE_KEY,
-                contentId,
-                contentTypeId,
-                url -> {
-                    if (url != null && url.startsWith("http")) {
-                        openInCustomTab(url);
-                    } else {
-                        String q;
-                        try { q = URLEncoder.encode(titleFinal, "UTF-8"); }
-                        catch (Exception e) { q = titleFinal; }
-                        String gukSearch = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + q;
-                        openInCustomTab(gukSearch);
-                        Toast.makeText(this, "'대한민국 구석구석' 검색으로 이동합니다.", Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
     }
 
     private void openInCustomTab(String url) {

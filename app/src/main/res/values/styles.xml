@@ -12,6 +12,13 @@
         <item name="android:textStyle">bold</item>
     </style>
 
+    <!-- 줄바꿈-->
+    <style name="TextMultiline">
+        <item name="android:singleLine">false</item>
+        <item name="android:ellipsize">none</item>
+        <item name="android:scrollHorizontally">false</item>
+    </style>
+
     <style name="CategoryItem">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
