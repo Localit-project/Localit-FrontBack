@@ -35,8 +35,7 @@ public class SpotApiHelper {
         API.getDetailCommon(
                 "AND", "localit", "json",
                 contentId, contentTypeId,
-                "Y", "Y",        // defaultYN, firstImageYN
-                "Y", "Y", "Y",   // addrinfoYN, mapinfoYN, overviewYN   ⬅⬅⬅ 추가!
+                "Y","Y","Y","Y","Y","Y","Y",   // 7개의 YN 모두
                 SERVICE_KEY
         ).enqueue(new Callback<SpotDetailCommonResponse>() {
             @Override public void onResponse(Call<SpotDetailCommonResponse> call,
@@ -105,8 +104,7 @@ public class SpotApiHelper {
         api.getDetailCommon(
                 "AND", "localit", "json",
                 contentId, contentTypeId,
-                "Y", "Y",        // defaultYN, firstImageYN
-                "Y", "Y", "Y",   // addrinfoYN, mapinfoYN, overviewYN   ⬅⬅⬅ 추가!
+                "Y","Y","Y","Y","Y","Y","Y",   // 7개의 YN 모두
                 SERVICE_KEY
         ).enqueue(new Callback<SpotDetailCommonResponse>() {
             @Override public void onResponse(Call<SpotDetailCommonResponse> call,

@@ -1,6 +1,8 @@
 //package com.inhatc.localit.ui.category;
 //
 //import android.content.Intent;
+//import android.location.Address;
+//import android.location.Geocoder;
 //import android.os.Bundle;
 //import android.text.TextUtils;
 //import android.widget.ImageView;
@@ -16,65 +18,45 @@
 //import com.inhatc.localit.api.SpotDetailCommonResponse;
 //import com.inhatc.localit.api.SpotDetailIntroResponse;
 //
+//// 지도
+//import com.naver.maps.geometry.LatLng;
+//import com.naver.maps.map.CameraUpdate;
+//import com.naver.maps.map.MapView;
+//import com.naver.maps.map.NaverMap;
+//import com.naver.maps.map.OnMapReadyCallback;
+//import com.naver.maps.map.overlay.Marker;
+//
 //import java.lang.reflect.Field;
+//import java.util.List;
+//import java.util.Locale;
+//import java.util.concurrent.Executors;
 //
-///**
-// * 축제( contentTypeId = 15 ) 전용 상세 화면
-// * 표시 항목:
-// *  1) 우편번호 (zipcode)
-// *  2) 전화명 (telname - 공통상세에 있을 수 있음 / 없으면 공백)
-// *  3) 전화번호 (tel)
-// *  4) 주소 (addr1/addr2)
-// *  5) 개요 (overview)
-// *  6) 주최자 정보 (sponsor1)
-// *  7) 주최자 연락처 (sponsor1tel)
-// *  8) 주관사 정보 (sponsor2)
-// *  9) 행사시작일 (eventstartdate)
-// * 10) 행사종료일 (eventenddate)
-// * 11) 공연시간 (playtime)
-// * 12) 진행형태 (subevent)
-// * 13) 축제형태 (festivalgrade)
-// * 14) 행사소개 (program)
-// * 15) 행사내용 (placeinfo 등)
-// *
-// * 주의: 일부 필드는 API/모델에 없을 수 있어 리플렉션으로 안전 접근(rf)합니다.
-// */
-//public class FestivalDetailActivity extends AppCompatActivity {
+//public class FestivalDetailActivity extends AppCompatActivity implements OnMapReadyCallback {
 //
-//    // SpotDetailActivity와 호환되는 키(그대로 사용 가능)
-//    public static final String EXTRA_CONTENT_ID       = SpotDetailActivity.EXTRA_CONTENT_ID;
-//    public static final String EXTRA_CONTENT_TYPE_ID  = SpotDetailActivity.EXTRA_CONTENT_TYPE_ID;
-//    public static final String EXTRA_TITLE            = SpotDetailActivity.EXTRA_TITLE;
-//    public static final String EXTRA_ADDR1            = SpotDetailActivity.EXTRA_ADDR1;
-//    public static final String EXTRA_FIRST_IMAGE      = SpotDetailActivity.EXTRA_FIRST_IMAGE;
+//    public static final String EXTRA_CONTENT_ID = "extra_content_id";
+//    public static final String EXTRA_CONTENT_TYPE_ID = "extra_content_type_id";
+//    public static final String EXTRA_TITLE = "extra_title";
+//    public static final String EXTRA_ADDR1 = "extra_addr1";
+//    public static final String EXTRA_FIRST_IMAGE = "extra_first_image";
 //
 //    private ImageView imageMain;
 //    private TextView textTitle;
 //
 //    // 공통
-//    private TextView tvZipcode;     // 1
-//    private TextView tvTelName;     // 2 (공통 상세의 telname 이 있으면 표시)
-//    private TextView tvTel;         // 3
-//    private TextView tvAddr;        // 4
-//    private TextView tvOverview;    // 5
+//    private TextView tvZipcode, tvTelName, tvTel, tvAddr, tvOverview;
 //
 //    // 인트로(축제)
-//    private TextView tvSponsor1;    // 6
-//    private TextView tvSponsor1Tel; // 7
-//    private TextView tvSponsor2;    // 8
-//    private TextView tvStartDate;   // 9
-//    private TextView tvEndDate;     // 10
-//    private TextView tvPlaytime;    // 11
-//    private TextView tvProgress;    // 12 (subevent)
-//    private TextView tvFestivalType;// 13 (festivalgrade)
-//    private TextView tvProgram;     // 14 (program)
-//    private TextView tvContent;     // 15 (placeinfo 등을 묶어서 소개)
+//    private TextView tvSponsor1, tvSponsor1Tel, tvSponsor2, tvStartDate, tvEndDate,
+//            tvPlaytime, tvProgress, tvFestivalType, tvProgram, tvContent;
 //
-//    private String contentId;
-//    private String contentTypeId; // 기본 15
-//    private String passedTitle;
-//    private String passedAddr1;
-//    private String passedFirstImage;
+//    // 지도
+//    private MapView mapView;
+//    private NaverMap naverMap;
+//    private Marker marker;
+//    private Double lat; // mapy(위도)
+//    private Double lng; // mapx(경도)
+//
+//    private String contentId, contentTypeId, passedTitle, passedAddr1, passedFirstImage;
 //
 //    @Override
 //    protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -83,41 +65,36 @@
 //
 //        bindViews();
 //
-//        // 인텐트 읽기 (onCreate에서만)
+//        // 지도 준비
+//        mapView.onCreate(savedInstanceState);
+//        mapView.getMapAsync(this);
+//
+//        // 인텐트
 //        Intent intent = getIntent();
-//        if (intent == null) {
-//            finishWithError("잘못된 접근입니다.");
-//            return;
-//        }
+//        if (intent == null) { finishWithError("잘못된 접근입니다."); return; }
 //        contentId        = safe(intent.getStringExtra(EXTRA_CONTENT_ID));
 //        contentTypeId    = safe(intent.getStringExtra(EXTRA_CONTENT_TYPE_ID));
 //        passedTitle      = safe(intent.getStringExtra(EXTRA_TITLE));
 //        passedAddr1      = safe(intent.getStringExtra(EXTRA_ADDR1));
 //        passedFirstImage = safe(intent.getStringExtra(EXTRA_FIRST_IMAGE));
+//        if (TextUtils.isEmpty(contentId)) { finishWithError("contentId 없음"); return; }
+//        if (TextUtils.isEmpty(contentTypeId)) contentTypeId = "15";
 //
-//        if (TextUtils.isEmpty(contentId)) {
-//            finishWithError("상세 조회에 필요한 contentId 가 없습니다.");
-//            return;
-//        }
-//        if (TextUtils.isEmpty(contentTypeId)) contentTypeId = "15"; // 축제 기본값
-//
-//        // 전달값 선표시
+//        // 선표시
 //        if (!TextUtils.isEmpty(passedTitle)) textTitle.setText(passedTitle);
 //        if (!TextUtils.isEmpty(passedAddr1)) tvAddr.setText(passedAddr1);
 //        if (!TextUtils.isEmpty(passedFirstImage)) {
 //            Glide.with(this).load(passedFirstImage)
-//                    .placeholder(R.drawable.sample1)
-//                    .error(R.drawable.sample1)
-//                    .into(imageMain);
+//                    .placeholder(R.drawable.sample1).error(R.drawable.sample1).into(imageMain);
 //        }
 //
-//        // 공통 상세 호출(대표사진/개요/주소/우편/연락처/전화명 등)
+//        // 공통 상세
 //        SpotApiHelper.fetchDetailCommon(contentId, contentTypeId, item -> {
 //            if (item == null) return;
 //            runOnUiThread(() -> bindCommon(item));
 //        });
 //
-//        // 축제 인트로 호출
+//        // 축제 인트로
 //        int ctid = 15;
 //        try { ctid = Integer.parseInt(contentTypeId); } catch (Exception ignore) {}
 //        SpotApiHelper.fetchDetailIntro(contentId, ctid, item -> {
@@ -127,28 +104,30 @@
 //    }
 //
 //    private void bindViews() {
-//        imageMain     = findViewById(R.id.imageMain);
-//        textTitle     = findViewById(R.id.textTitle);
+//        imageMain = findViewById(R.id.imageMain);
+//        textTitle = findViewById(R.id.textTitle);
 //
-//        tvZipcode     = findViewById(R.id.tvZipcode);
-//        tvTelName     = findViewById(R.id.tvTelName);
-//        tvTel         = findViewById(R.id.tvTel);
-//        tvAddr        = findViewById(R.id.tvAddr);
-//        tvOverview    = findViewById(R.id.tvOverview);
+//        tvZipcode  = findViewById(R.id.tvZipcode);
+//        tvTelName  = findViewById(R.id.tvTelName);
+//        tvTel      = findViewById(R.id.tvTel);
+//        tvAddr     = findViewById(R.id.tvAddr);
+//        tvOverview = findViewById(R.id.tvOverview);
 //
-//        tvSponsor1    = findViewById(R.id.tvSponsor1);
-//        tvSponsor1Tel = findViewById(R.id.tvSponsor1Tel);
-//        tvSponsor2    = findViewById(R.id.tvSponsor2);
-//        tvStartDate   = findViewById(R.id.tvStartDate);
-//        tvEndDate     = findViewById(R.id.tvEndDate);
-//        tvPlaytime    = findViewById(R.id.tvPlaytime);
-//        tvProgress    = findViewById(R.id.tvProgressType);
-//        tvFestivalType= findViewById(R.id.tvFestivalType);
-//        tvProgram     = findViewById(R.id.tvProgram);
-//        tvContent     = findViewById(R.id.tvContent);
+//        tvSponsor1     = findViewById(R.id.tvSponsor1);
+//        tvSponsor1Tel  = findViewById(R.id.tvSponsor1Tel);
+//        tvSponsor2     = findViewById(R.id.tvSponsor2);
+//        tvStartDate    = findViewById(R.id.tvStartDate);
+//        tvEndDate      = findViewById(R.id.tvEndDate);
+//        tvPlaytime     = findViewById(R.id.tvPlaytime);
+//        tvProgress     = findViewById(R.id.tvProgressType);
+//        tvFestivalType = findViewById(R.id.tvFestivalType);
+//        tvProgram      = findViewById(R.id.tvProgram);
+//        tvContent      = findViewById(R.id.tvContent);
+//
+//        mapView        = findViewById(R.id.mapView);
 //    }
 //
-//    // ---------- 공통 상세 바인딩 ----------
+//    // ----- 공통 상세 -----
 //    private void bindCommon(SpotDetailCommonResponse.Item it) {
 //        if (!TextUtils.isEmpty(it.title)) textTitle.setText(it.title);
 //        tvOverview.setText(nl(it.overview));
@@ -156,33 +135,44 @@
 //        tvZipcode.setText(safe(it.zipcode));
 //        tvTel.setText(safe(it.tel));
 //
-//        // '전화명'은 공통 상세에 있을 수도( telname ). 리플렉션으로 안전 접근.
-//        String telname = rf(it, "telname");
-//        tvTelName.setText(safe(telname));
+//        // 전화명(telname) – 있을 때만
+//        tvTelName.setText(safe(rf(it, "telname")));
 //
+//        // 대표 이미지
 //        String img = !TextUtils.isEmpty(it.firstimage) ? it.firstimage : it.firstimage2;
 //        if (!TextUtils.isEmpty(img)) {
-//            Glide.with(this).load(img).placeholder(R.drawable.sample1).error(R.drawable.sample1).into(imageMain);
+//            Glide.with(this).load(img).placeholder(R.drawable.sample1)
+//                    .error(R.drawable.sample1).into(imageMain);
 //        } else if (TextUtils.isEmpty(passedFirstImage)) {
 //            imageMain.setImageResource(R.drawable.sample1);
 //        }
+//
+//        // 지도 좌표 적용 (없으면 지오코딩으로 주소 → 좌표)
+//        try {
+//            if (!TextUtils.isEmpty(it.mapy) && !TextUtils.isEmpty(it.mapx)) {
+//                lat = Double.parseDouble(it.mapy);
+//                lng = Double.parseDouble(it.mapx);
+//                updateMapMarker();
+//            } else {
+//                String addr = joinAddr(it.addr1, it.addr2);
+//                if (!TextUtils.isEmpty(addr)) geocodeAndMove(addr);
+//            }
+//        } catch (Exception ignore) {}
 //    }
 //
-//    // ---------- 축제 인트로 바인딩 ----------
+//    // ----- 인트로(축제) -----
 //    private void bindIntroFestival(SpotDetailIntroResponse.Item it) {
-//        // 축제 인트로(15)에서 기대하는 필드들(없을 수도 있으니 rf 로 안전 접근)
 //        String sponsor1     = rf(it, "sponsor1");
 //        String sponsor1tel  = rf(it, "sponsor1tel");
 //        String sponsor2     = rf(it, "sponsor2");
 //        String startDate    = rf(it, "eventstartdate");
 //        String endDate      = rf(it, "eventenddate");
 //        String playtime     = rf(it, "playtime");
-//        String subevent     = rf(it, "subevent");       // 진행형태(세부 프로그램 나열 등)
-//        String festivalType = rf(it, "festivalgrade");  // 축제형태(지역대표/유명축제 등)
-//        String program      = rf(it, "program");        // 행사소개
-//        String placeinfo    = rf(it, "placeinfo");      // 행사내용(장소/부스/부대행사 안내 등)
+//        String subevent     = rf(it, "subevent");
+//        String festivalType = rf(it, "festivalgrade");
+//        String program      = rf(it, "program");
+//        String placeinfo    = rf(it, "placeinfo");
 //
-//        // 바인딩 + 포맷
 //        tvSponsor1.setText(safe(sponsor1));
 //        tvSponsor1Tel.setText(safe(sponsor1tel));
 //        tvSponsor2.setText(safe(sponsor2));
@@ -195,43 +185,64 @@
 //        tvContent.setText(nl(placeinfo));
 //    }
 //
-//    // ---------- 유틸 ----------
-//    private void finishWithError(String msg) {
-//        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-//        finish();
+//    // ----- 지도 -----
+//    @Override public void onMapReady(NaverMap map) {
+//        naverMap = map;
+//        naverMap.getUiSettings().setScaleBarEnabled(false);
+//        naverMap.getUiSettings().setZoomControlEnabled(true);
+//        updateMapMarker();
 //    }
 //
-//    private String safe(String s) { return s == null ? "" : s; }
+//    private void geocodeAndMove(String address) {
+//        Executors.newSingleThreadExecutor().execute(() -> {
+//            try {
+//                Geocoder g = new Geocoder(this, Locale.KOREA);
+//                List<Address> r = g.getFromLocationName(address, 1);
+//                if (r != null && !r.isEmpty()) {
+//                    lat = r.get(0).getLatitude();
+//                    lng = r.get(0).getLongitude();
+//                    runOnUiThread(this::updateMapMarker);
+//                }
+//            } catch (Exception ignore) {}
+//        });
+//    }
 //
-//    /** <br> 등 단순 HTML 개행 처리 */
+//    private void updateMapMarker() {
+//        if (naverMap == null || lat == null || lng == null) return;
+//        LatLng pos = new LatLng(lat, lng);
+//        if (marker == null) marker = new Marker();
+//        marker.setPosition(pos);
+//        marker.setMap(naverMap);
+//        naverMap.moveCamera(CameraUpdate.scrollAndZoomTo(pos, 15.0));
+//    }
+//
+//    // MapView lifecycle
+//    @Override protected void onStart()   { super.onStart();   mapView.onStart(); }
+//    @Override protected void onResume()  { super.onResume();  mapView.onResume(); }
+//    @Override protected void onPause()   { mapView.onPause(); super.onPause(); }
+//    @Override protected void onStop()    { mapView.onStop();  super.onStop(); }
+//    @Override protected void onDestroy() { mapView.onDestroy(); super.onDestroy(); }
+//    @Override public void onLowMemory()  { super.onLowMemory(); mapView.onLowMemory(); }
+//
+//    // ----- 유틸 -----
+//    private void finishWithError(String msg) { Toast.makeText(this, msg, Toast.LENGTH_SHORT).show(); finish(); }
+//    private String safe(String s) { return s == null ? "" : s; }
 //    private String nl(String v) {
 //        if (v == null) return "";
 //        return v.replaceAll("(?i)<br\\s*/?>", "\n")
 //                .replaceAll("(?i)</p>", "\n")
-//                .replaceAll("<[^>]*>", "")
-//                .trim();
+//                .replaceAll("<[^>]*>", "").trim();
 //    }
-//
 //    private String joinAddr(String a1, String a2) {
 //        if (TextUtils.isEmpty(a2)) return safe(a1);
 //        if (TextUtils.isEmpty(a1)) return safe(a2);
 //        return a1 + " " + a2;
 //    }
-//
-//    /** yyyyMMdd → yyyy.MM.dd */
 //    private String fmtDate(String raw) {
 //        if (TextUtils.isEmpty(raw) || raw.length() < 8) return safe(raw);
-//        try {
-//            return raw.substring(0,4) + "." + raw.substring(4,6) + "." + raw.substring(6,8);
-//        } catch (Exception e) {
-//            return safe(raw);
-//        }
+//        try { return raw.substring(0,4)+"."+raw.substring(4,6)+"."+raw.substring(6,8); }
+//        catch (Exception e) { return safe(raw); }
 //    }
-//
-//    /**
-//     * 리플렉션으로 public 필드 값을 안전하게 문자열로 가져온다.
-//     * DTO에 필드가 없어도 예외 없이 빈 문자열 반환.
-//     */
 //    private String rf(Object obj, String field) {
 //        if (obj == null || TextUtils.isEmpty(field)) return "";
 //        try {
@@ -239,8 +250,6 @@
 //            f.setAccessible(true);
 //            Object v = f.get(obj);
 //            return v == null ? "" : String.valueOf(v);
-//        } catch (Exception ignore) {
-//            return "";
-//        }
+//        } catch (Exception ignore) { return ""; }
 //    }
 //}

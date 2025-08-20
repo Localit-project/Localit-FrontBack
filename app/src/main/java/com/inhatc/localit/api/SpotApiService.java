@@ -67,16 +67,18 @@ public interface SpotApiService {
     // 공통 상세(대표사진/개요/주소/우편번호/연락처 등)
     @GET("detailCommon2")
     Call<SpotDetailCommonResponse> getDetailCommon(
-            @Query("MobileOS") String os,
-            @Query("MobileApp") String app,
-            @Query("_type") String type,
+            @Query("MobileOS") String os,               // "AND"
+            @Query("MobileApp") String app,             // "localit"
+            @Query("_type") String type,                // "json"
             @Query("contentId") String contentId,
             @Query("contentTypeId") String contentTypeId,
-            @Query("defaultYN") String defaultYN,
-            @Query("firstImageYN") String firstImageYN,
-            @Query("addrinfoYN") String addrinfoYN,
-            @Query("mapinfoYN") String mapinfoYN,
-            @Query("overviewYN") String overviewYN,
+            @Query("defaultYN") String defaultYN,       // Y
+            @Query("firstImageYN") String firstImageYN, // Y
+            @Query("areacodeYN") String areacodeYN,     // Y
+            @Query("catcodeYN") String catcodeYN,       // Y
+            @Query("addrinfoYN") String addrinfoYN,     // Y  ← 주소 받는 스위치
+            @Query("mapinfoYN") String mapinfoYN,       // Y  ← 좌표 받는 스위치
+            @Query("overviewYN") String overviewYN,     // Y  ← 개요 받는 스위치
             @Query("serviceKey") String serviceKey
     );
 
