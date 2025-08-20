@@ -102,7 +102,7 @@
             android:exported="true"
             android:label="@string/app_name" />
         <activity
-            android:name=".ui.category.EventsActivity"
+            android:name=".ui.category.FestivalActivity"
             android:exported="true"
             android:label="@string/app_name" />
         <activity

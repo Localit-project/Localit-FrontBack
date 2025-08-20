@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.inhatc.localit.R;
 import com.inhatc.localit.databinding.FragmentCategoryBinding;
-import com.inhatc.localit.ui.category.EventsActivity;
+import com.inhatc.localit.ui.category.FestivalActivity;
 import com.inhatc.localit.ui.category.NewsActivity;
 import com.inhatc.localit.ui.category.RegionAdapter;
 import com.inhatc.localit.ui.category.SpotActivity;
@@ -76,7 +76,7 @@ public class CategoryFragment extends Fragment {
 
     private void setupCategoryClickListeners() {
         binding.categoryNews.setOnClickListener(v -> openCategoryActivity(NewsActivity.class));
-        binding.categoryEvents.setOnClickListener(v -> openCategoryActivity(EventsActivity.class));
+        binding.categoryEvents.setOnClickListener(v -> openCategoryActivity(FestivalActivity.class));
         binding.categoryTourism.setOnClickListener(v -> openCategoryActivity(SpotActivity.class));
     }
 

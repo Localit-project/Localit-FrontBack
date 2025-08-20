@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -14,6 +16,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
 import com.inhatc.localit.api.SpotApiHelper;
@@ -33,30 +37,34 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class EventsActivity extends AppCompatActivity {
+public class FestivalActivity extends AppCompatActivity {
 
-    private static final String TAG = "EventsActivity";
+    private static final String TAG = "FestivalActivity";
     private static final String SERVICE_KEY =
             "wL/Ry8EMiMg43mPRl3wyQhKosVExsJbLLDcZebat4S4eedobtNuBG+eqrj5GPKHvEAxy4NjYPz25Parbyeg8PA==";
 
     private RecyclerView recyclerViewEvents;
-    private EventsAdapter eventsAdapter;
-    private final List<SpotResponse.Item> apiItems = new ArrayList<>();
+    private FestivalAdapter festivalAdapter;
+
+    //  API 원본 목록
+    private final List<SpotResponse.Item> fullItems = new ArrayList<>();
 
     private TextView textRegionTitle;
     private ImageView btnBack;
     private BottomNavigationView navView;
 
+    //  검색 뷰
+    private TextInputLayout searchInputLayout;
+    private TextInputEditText etSearch;
+
     private String regionName;
     private String subRegionName;
-
 
     private static final Map<String, Integer> AREA_CODE_MAP = new HashMap<>();
     private static final Map<String, String>  REGION_ALIAS  = new HashMap<>();
     private static final Map<String, Integer> GG_SIGUNGU    = new HashMap<>();
 
     static {
-
         AREA_CODE_MAP.put("서울특별시", 1);
         AREA_CODE_MAP.put("인천광역시", 2);
         AREA_CODE_MAP.put("대전광역시", 3);
@@ -74,7 +82,6 @@ public class EventsActivity extends AppCompatActivity {
         AREA_CODE_MAP.put("경상북도", 37);
         AREA_CODE_MAP.put("경상남도", 38);
         AREA_CODE_MAP.put("제주특별자치도", 39);
-
 
         alias("서울특별시", "서울", "서울시");
         alias("인천광역시", "인천", "인천시");
@@ -95,7 +102,6 @@ public class EventsActivity extends AppCompatActivity {
         alias("경상남도", "경남");
         alias("제주특별자치도", "제주", "제주도");
 
-        // 경기도 하위 시/군 (예시 코드, 실제 API로 갱신 권장)
         GG_SIGUNGU.put("수원시", 13);
         GG_SIGUNGU.put("성남시", 12);
         GG_SIGUNGU.put("고양시", 2);
@@ -133,6 +139,8 @@ public class EventsActivity extends AppCompatActivity {
         REGION_ALIAS.put(clean(standard), standard);
         for (String a : aliases) REGION_ALIAS.put(clean(a), standard);
     }
+    private static String clean(String s) { return s == null ? "" : s.replaceAll("\\s+", ""); }
+    private static String stripSuffix(String k) { return k.replaceAll("(광역시|특별자치시|특별자치도|특별시|자치시|자치도|시|도)$", ""); }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,6 +150,7 @@ public class EventsActivity extends AppCompatActivity {
         initViews();
         getRegionNameFromIntent();
         setupRecyclerView();
+        setupSearchBar();
         setupClickListeners();
         setupBottomNavigationView();
 
@@ -149,34 +158,75 @@ public class EventsActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        recyclerViewEvents = findViewById(R.id.recyclerViewEvents);
-        textRegionTitle = findViewById(R.id.textRegionTitle);
-        btnBack = findViewById(R.id.btnBack);
-        navView = findViewById(R.id.nav_view);
+        recyclerViewEvents   = findViewById(R.id.recyclerViewEvents);
+        textRegionTitle      = findViewById(R.id.textRegionTitle);
+        btnBack              = findViewById(R.id.btnBack);
+        navView              = findViewById(R.id.nav_view);
+
+        searchInputLayout    = findViewById(R.id.searchInputLayout);
+        etSearch             = findViewById(R.id.etSearch);
     }
 
     private void getRegionNameFromIntent() {
         subRegionName = getIntent().getStringExtra("subRegionName");
-        regionName = getIntent().getStringExtra("regionName");
+        regionName    = getIntent().getStringExtra("regionName");
 
-        String title = !TextUtils.isEmpty(subRegionName) ? subRegionName :
-                !TextUtils.isEmpty(regionName) ? regionName : "축제·행사";
+        String title = !TextUtils.isEmpty(subRegionName) ? subRegionName
+                : (!TextUtils.isEmpty(regionName) ? regionName : "축제·행사");
         textRegionTitle.setText(title);
 
         Log.d(TAG, "received regionName=" + regionName + ", subRegionName=" + subRegionName);
     }
 
     private void setupRecyclerView() {
-        eventsAdapter = new EventsAdapter(
-                apiItems,
-
+        festivalAdapter = new FestivalAdapter(
+                new ArrayList<>(),
                 (item, position) -> openHomepageFor(item),
-                (item, position) -> {
-                    // TODO: 즐겨찾기 저장
-                }
+                (item, position) -> { /* TODO: 즐겨찾기 저장 필요시 처리 */ }
         );
         recyclerViewEvents.setLayoutManager(new LinearLayoutManager(this));
-        recyclerViewEvents.setAdapter(eventsAdapter);
+        recyclerViewEvents.setAdapter(festivalAdapter);
+    }
+
+    /**  검색바: 돋보기/IME 검색으로 로컬 필터 */
+    private void setupSearchBar() {
+        if (searchInputLayout != null) {
+            searchInputLayout.setEndIconOnClickListener(v -> triggerSearch());
+        }
+        if (etSearch != null) {
+            etSearch.setOnEditorActionListener((tv, actionId, ev) -> {
+                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    triggerSearch();
+                    return true;
+                }
+                return false;
+            });
+        }
+    }
+
+    private void triggerSearch() {
+        String q = (etSearch != null && etSearch.getText() != null)
+                ? etSearch.getText().toString().trim() : "";
+        applyFilter(q);
+        hideKeyboard();
+    }
+
+    /** ✅로컬 필터: 제목/주소에 키워드 포함 */
+    private void applyFilter(String keyword) {
+        if (TextUtils.isEmpty(keyword)) {
+            festivalAdapter.submitList(new ArrayList<>(fullItems));
+            return;
+        }
+        String k = keyword.toLowerCase();
+        List<SpotResponse.Item> out = new ArrayList<>();
+        for (SpotResponse.Item it : fullItems) {
+            String t = it != null && it.title != null ? it.title : "";
+            String a = it != null && it.addr1 != null ? it.addr1 : "";
+            if (t.toLowerCase().contains(k) || a.toLowerCase().contains(k)) {
+                out.add(it);
+            }
+        }
+        festivalAdapter.submitList(out);
     }
 
     private void setupClickListeners() { btnBack.setOnClickListener(v -> finish()); }
@@ -184,7 +234,7 @@ public class EventsActivity extends AppCompatActivity {
     private void setupBottomNavigationView() {
         navView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            Intent intent = new Intent(EventsActivity.this, MainActivity.class);
+            Intent intent = new Intent(FestivalActivity.this, MainActivity.class);
             if (id == R.id.navigation_home) intent.putExtra("start_fragment", 0);
             else if (id == R.id.navigation_category) intent.putExtra("start_fragment", 1);
             else if (id == R.id.navigation_search) intent.putExtra("start_fragment", 2);
@@ -196,22 +246,18 @@ public class EventsActivity extends AppCompatActivity {
         });
     }
 
-
     private void fetchFestivalListFromApi() {
         int areaCode = getAreaCode(regionName);
         String startDate = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
         Integer sigunguCode = getSigunguIfGyeonggi(regionName, subRegionName);
 
-        Log.d(TAG, "[Festival] areaCode=" + areaCode + ", sigungu=" + sigunguCode + ", region=" + regionName + ", sub=" + subRegionName);
+        Log.d(TAG, "[FestivalItem] areaCode=" + areaCode + ", sigungu=" + sigunguCode
+                + ", region=" + regionName + ", sub=" + subRegionName);
 
         SpotApiService api = SpotApiHelper.getApiService();
         Call<SpotResponse> call = api.getFestivalList(
                 30, 1, "AND", "localit", "json",
-                areaCode,
-                sigunguCode,
-                startDate,
-                "A",
-                SERVICE_KEY
+                areaCode, sigunguCode, startDate, "A", SERVICE_KEY
         );
 
         Log.d(TAG, "REQ URL: " + call.request().url());
@@ -224,30 +270,32 @@ public class EventsActivity extends AppCompatActivity {
                         response.body().response.body == null ||
                         response.body().response.body.items == null ||
                         response.body().response.body.items.item == null) {
-                    Toast.makeText(EventsActivity.this, "축제 데이터를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(FestivalActivity.this, "축제 데이터를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 List<SpotResponse.Item> items = response.body().response.body.items.item;
-
 
                 if (sigunguCode != null && !TextUtils.isEmpty(subRegionName)) {
                     items = filterByAddr(items, subRegionName);
                 }
 
-                apiItems.clear();
-                apiItems.addAll(items);
-                eventsAdapter.notifyDataSetChanged();
+                fullItems.clear();
+                fullItems.addAll(items);
+
+                String currentQuery = etSearch != null && etSearch.getText() != null
+                        ? etSearch.getText().toString().trim() : "";
+                applyFilter(currentQuery);
             }
 
             @Override
             public void onFailure(Call<SpotResponse> call, Throwable t) {
                 t.printStackTrace();
-                Toast.makeText(EventsActivity.this, "네트워크 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(FestivalActivity.this, "네트워크 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    /** 아이템 클릭 시: homepage 있으면 열고, 없으면 '대한민국 구석구석' 검색으로 이동 */
+    /** 카드 클릭 시: 홈페이지 있으면 열고, 없으면 '대한민국 구석구석' 검색으로 이동 */
     private void openHomepageFor(SpotResponse.Item item) {
         if (item == null) return;
 
@@ -256,11 +304,7 @@ public class EventsActivity extends AppCompatActivity {
             Toast.makeText(this, "콘텐츠 ID가 없어 이동할 수 없습니다.", Toast.LENGTH_SHORT).show();
             return;
         }
-
-        // 축제 탭이므로 기본은 15, 응답에 contenttypeid가 있으면 그 값을 사용
         String contentTypeId = !TextUtils.isEmpty(item.contenttypeid) ? item.contenttypeid : "15";
-
-        // 검색 폴백용 제목(람다에서 final 필요)
         final String titleFinal = item.title == null ? "" : item.title;
 
         SpotApiHelper.fetchHomepageUrl(
@@ -273,11 +317,8 @@ public class EventsActivity extends AppCompatActivity {
                         openInCustomTab(url);
                     } else {
                         String q;
-                        try {
-                            q = URLEncoder.encode(titleFinal, "UTF-8"); // API 26 호환
-                        } catch (Exception e) {
-                            q = titleFinal;
-                        }
+                        try { q = URLEncoder.encode(titleFinal, "UTF-8"); }
+                        catch (Exception e) { q = titleFinal; }
                         String gukSearch = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + q;
                         openInCustomTab(gukSearch);
                         Toast.makeText(this, "'대한민국 구석구석' 검색으로 이동합니다.", Toast.LENGTH_SHORT).show();
@@ -286,29 +327,25 @@ public class EventsActivity extends AppCompatActivity {
         );
     }
 
-    /** Custom Tabs로 URL 열기 (실패 시 브라우저 폴백) */
     private void openInCustomTab(String url) {
         try {
             new CustomTabsIntent.Builder().build()
                     .launchUrl(this, android.net.Uri.parse(url));
         } catch (Exception e) {
-            try {
-                startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)));
-            } catch (Exception ignored) {}
+            try { startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))); }
+            catch (Exception ignored) {}
         }
     }
 
-    /** 경기도일 때만 하위도시 코드를 매핑 ("전체"면 null). 약칭 대응을 위해 areaCode==31 판정 */
     private Integer getSigunguIfGyeonggi(String region, String sub) {
         if (TextUtils.isEmpty(sub)) return null;
         int area = getAreaCode(region);
-        if (area != 31) return null; // 경기도만 적용
+        if (area != 31) return null;
         String s = sub.trim();
         if ("전체".equals(s)) return null;
         return GG_SIGUNGU.get(s);
     }
 
-    /** addr1 보조 필터 */
     private List<SpotResponse.Item> filterByAddr(List<SpotResponse.Item> src, String key) {
         if (src == null) return new ArrayList<>();
         if (TextUtils.isEmpty(key)) return src;
@@ -323,7 +360,6 @@ public class EventsActivity extends AppCompatActivity {
         return out;
     }
 
-    // 지역명 정규화 → areaCode
     private int getAreaCode(String region) {
         if (TextUtils.isEmpty(region)) return 1;
         String key = clean(region);
@@ -332,35 +368,18 @@ public class EventsActivity extends AppCompatActivity {
             String stripped = stripSuffix(key);
             standard = REGION_ALIAS.get(stripped);
         }
-        if (standard == null && AREA_CODE_MAP.containsKey(region)) {
-            standard = region;
-        }
-        if (standard == null) {
-            Log.w(TAG, "Unknown region '" + region + "', fallback to 서울특별시");
-            standard = "서울특별시";
-        }
+        if (standard == null && AREA_CODE_MAP.containsKey(region)) standard = region;
+        if (standard == null) { Log.w(TAG, "Unknown region '"+region+"', fallback to 서울특별시"); standard = "서울특별시"; }
         Integer code = AREA_CODE_MAP.get(standard);
         return code != null ? code : 1;
     }
 
-    private static String clean(String s) { return s == null ? "" : s.replaceAll("\\s+", ""); }
-    private static String stripSuffix(String k) {
-        return k.replaceAll("(광역시|특별자치시|특별자치도|특별시|자치시|자치도|시|도)$", "");
+    private void hideKeyboard() {
+        try {
+            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null && etSearch != null) {
+                imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
+            }
+        } catch (Exception ignored) {}
     }
-
-    private String formatDate(String raw) {
-        if (!TextUtils.isEmpty(raw) && raw.length() >= 8) {
-            return raw.substring(0, 4) + "." + raw.substring(4, 6) + "." + raw.substring(6, 8);
-        }
-        return "";
-    }
-
-    private String buildDateText(String start, String end) {
-        if (!TextUtils.isEmpty(start) && !TextUtils.isEmpty(end)) return start + " ~ " + end;
-        if (!TextUtils.isEmpty(start)) return start;
-        if (!TextUtils.isEmpty(end)) return end;
-        return "일정 미정";
-    }
-
-    private String safe(String s) { return s == null ? "" : s; }
 }

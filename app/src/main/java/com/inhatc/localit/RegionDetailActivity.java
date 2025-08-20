@@ -20,7 +20,7 @@ import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
 
-import com.inhatc.localit.ui.category.EventsActivity;
+import com.inhatc.localit.ui.category.FestivalActivity;
 import com.inhatc.localit.ui.category.SpotActivity;
 import com.inhatc.localit.ui.category.NewsActivity;
 
@@ -242,7 +242,7 @@ public class RegionDetailActivity extends AppCompatActivity {
         if (btnMoreFestivals != null) {
             btnMoreFestivals.setOnClickListener(v -> {
                 // 카테고리 프래그먼트와 동일한 규칙
-                openCategoryActivity(EventsActivity.class);
+                openCategoryActivity(FestivalActivity.class);
             });
         }
 
