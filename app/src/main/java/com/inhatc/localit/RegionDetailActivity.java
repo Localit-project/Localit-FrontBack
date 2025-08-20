@@ -1,6 +1,5 @@
 package com.inhatc.localit;
 
-import com.inhatc.localit.api.ApiMainActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -22,7 +21,7 @@ import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
 
 import com.inhatc.localit.ui.category.EventsActivity;
-import com.inhatc.localit.ui.category.TourismActivity;
+import com.inhatc.localit.ui.category.SpotActivity;
 import com.inhatc.localit.ui.category.NewsActivity;
 
 import java.text.SimpleDateFormat;
@@ -250,7 +249,7 @@ public class RegionDetailActivity extends AppCompatActivity {
         if (btnMoreTourism != null) {
             btnMoreTourism.setOnClickListener(v -> {
                 // 카테고리 프래그먼트와 동일한 규칙
-                openCategoryActivity(TourismActivity.class);
+                openCategoryActivity(SpotActivity.class);
             });
         }
 
