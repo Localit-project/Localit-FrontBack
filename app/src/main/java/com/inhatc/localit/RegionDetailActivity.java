@@ -474,19 +474,27 @@ public class RegionDetailActivity extends AppCompatActivity {
     private void openHomepageFor(String contentId, String contentTypeId, String titleForFallback) {
         SpotApiService api = SpotApiHelper.getApiService();
         SpotApiHelper.fetchHomepageUrl(api, SERVICE_KEY, contentId, contentTypeId, url -> {
-            if (url != null) {
+            if (url != null && !url.isEmpty()) {
+                // ✅ homepage가 존재하면 그대로 열기
                 openInCustomTab(url);
             } else {
-                // 1차 Fallback: 대한민국 구석구석 검색 페이지로 이동
-                String q;
-                try {
-                    q = java.net.URLEncoder.encode(titleForFallback == null ? "" : titleForFallback, "UTF-8");
-                } catch (Exception e) {
-                    q = titleForFallback == null ? "" : titleForFallback;
+                String fallbackUrl;
+
+                if ("15".equals(contentTypeId)) {
+                    // ✅ contentTypeId 15번(축제)인 경우 → fstvlDetail 도메인으로 직접 진입
+                    fallbackUrl = "https://korean.visitkorea.or.kr/kfes/detail/fstvlDetail.do?cmsCntntsId=" + contentId;
+                } else {
+                    // ✅ 관광지 등 나머지는 → 검색 페이지로 fallback
+                    try {
+                        String encoded = java.net.URLEncoder.encode(titleForFallback == null ? "" : titleForFallback, "UTF-8");
+                        fallbackUrl = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + encoded;
+                    } catch (Exception e) {
+                        fallbackUrl = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + titleForFallback;
+                    }
                 }
-                String gukSearch = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + q;
-                openInCustomTab(gukSearch);
-                Toast.makeText(this, "'대한민국 구석구석' 검색으로 이동합니다.", Toast.LENGTH_SHORT).show();
+
+                openInCustomTab(fallbackUrl);
+                Toast.makeText(this, "상세 페이지로 이동합니다.", Toast.LENGTH_SHORT).show();
             }
         });
     }
