@@ -24,7 +24,6 @@ import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
 
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,14 +42,14 @@ public class SpotActivity extends AppCompatActivity {
     private RecyclerView recyclerViewTourism;
     private SpotAdapter spotAdapter;
 
-    // API 원본 목록과 현재 표시 목록
+    // API 원본 목록 (검색 필터용)
     private final List<SpotResponse.Item> fullItems = new ArrayList<>();
 
     private TextView textRegionTitle;
     private ImageView btnBack;
     private BottomNavigationView navView;
 
-    //  검색 뷰
+    // 검색 뷰
     private TextInputLayout searchInputLayout;
     private TextInputEditText etSearch;
 
@@ -178,7 +177,9 @@ public class SpotActivity extends AppCompatActivity {
     private void setupRecyclerView() {
         spotAdapter = new SpotAdapter(
                 new ArrayList<>(),
-                (item, position) -> openHomepageFor(item),
+                // (수정) 카드 클릭 시 상세 화면으로
+                (item, position) -> openSpotDetail(item),
+                // 즐겨찾기 클릭은 그대로
                 (item, position) -> Toast.makeText(
                         SpotActivity.this,
                         "즐겨찾기: " + (item.title != null ? item.title : ""),
@@ -188,6 +189,22 @@ public class SpotActivity extends AppCompatActivity {
         recyclerViewTourism.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewTourism.setAdapter(spotAdapter);
     }
+    private void openSpotDetail(SpotResponse.Item item) {
+        if (item == null) return;
+
+        Intent i = new Intent(this, SpotDetailActivity.class);
+        i.putExtra(SpotDetailActivity.EXTRA_CONTENT_ID, item.contentid);
+        i.putExtra(SpotDetailActivity.EXTRA_CONTENT_TYPE_ID,
+                TextUtils.isEmpty(item.contenttypeid) ? "12" : item.contenttypeid);
+
+        // 선표시용(옵션)
+        i.putExtra(SpotDetailActivity.EXTRA_TITLE, s(item.title));
+        i.putExtra(SpotDetailActivity.EXTRA_ADDR1, s(item.addr1));
+        i.putExtra(SpotDetailActivity.EXTRA_FIRST_IMAGE, s(item.firstimage));
+
+        startActivity(i);
+    }
+    private String s(String v){ return v==null?"":v; }
 
     /** 검색바: 아이콘/IME_SEARCH로 로컬 필터 */
     private void setupSearchBar() {
@@ -285,9 +302,9 @@ public class SpotActivity extends AppCompatActivity {
                     items = filterByAddr(items, subRegionName);
                 }
 
-                // 원본 보관 + 현재 검색어로 필터
                 fullItems.clear();
                 fullItems.addAll(items);
+
                 String currentQuery = etSearch != null && etSearch.getText() != null
                         ? etSearch.getText().toString().trim() : "";
                 applyFilter(currentQuery);
@@ -301,36 +318,79 @@ public class SpotActivity extends AppCompatActivity {
         });
     }
 
-    /** 아이템 클릭 시 홈페이지 열기 (없으면 '대한민국 구석구석' 검색으로 Fallback) */
+    /** 아이템 클릭 시: VisitKorea 상세/홈페이지 직행 → 없으면 검색 폴백 */
     private void openHomepageFor(SpotResponse.Item item) {
         if (item == null) return;
 
-        String contentId = item.contentid;
+        final String contentId     = item.contentid;
+        final String contentTypeId = !TextUtils.isEmpty(item.contenttypeid) ? item.contenttypeid : "12";
+        final String titleFinal    = item.title == null ? "" : item.title;
+
         if (TextUtils.isEmpty(contentId)) {
             Toast.makeText(this, "콘텐츠 ID가 없어 이동할 수 없습니다.", Toast.LENGTH_SHORT).show();
             return;
         }
-        String contentTypeId = !TextUtils.isEmpty(item.contenttypeid) ? item.contenttypeid : "12";
-        final String titleFinal = item.title == null ? "" : item.title;
 
         SpotApiHelper.fetchHomepageUrl(
                 SpotApiHelper.getApiService(),
                 SERVICE_KEY,
                 contentId,
                 contentTypeId,
-                url -> {
-                    if (url != null && url.startsWith("http")) {
-                        openInCustomTab(url);
-                    } else {
-                        String q;
-                        try { q = URLEncoder.encode(titleFinal, "UTF-8"); }
-                        catch (Exception e) { q = titleFinal; }
-                        String gukSearch = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + q;
-                        openInCustomTab(gukSearch);
-                        Toast.makeText(this, "'대한민국 구석구석' 검색으로 이동합니다.", Toast.LENGTH_SHORT).show();
+                raw -> {
+                    // 1) 정규화
+                    String url = normalizeVisitKoreaUrl(raw);
+
+                    // 2) 상세 직행 fallback
+                    if (TextUtils.isEmpty(url)) {
+                        url = buildVisitKoreaDetailUrl(contentId);
                     }
+
+                    // 3) 검색 fallback
+                    if (TextUtils.isEmpty(url)) {
+                        url = buildVisitKoreaSearchUrl(titleFinal);
+                    }
+
+                    openInCustomTab(url);
                 }
         );
+    }
+    /** m도메인/HTTP 정규화, homepage가 <a href="...">일 때 href만 추출 */
+    private String normalizeVisitKoreaUrl(String raw) {
+        if (TextUtils.isEmpty(raw)) return null;
+        String url = raw.trim();
+
+        // <a href="...">...</a> 에서 href만 뽑기
+        if (url.contains("<a")) {
+            try {
+                java.util.regex.Matcher m =
+                        java.util.regex.Pattern.compile("href\\s*=\\s*\"([^\"]+)\"", java.util.regex.Pattern.CASE_INSENSITIVE)
+                                .matcher(url);
+                if (m.find()) url = m.group(1);
+            } catch (Exception ignore) {}
+        }
+
+        // 스킴 강제 https
+        if (url.startsWith("//")) url = "https:" + url;
+        if (url.startsWith("http://")) url = "https://" + url.substring(7);
+
+        // 에뮬레이터 인증서 이슈 회피: m → korean 도메인
+        url = url.replace("m.visitkorea.or.kr", "korean.visitkorea.or.kr");
+        return url;
+    }
+
+    /** VisitKorea(PC) 상세 기본 패턴 */
+    private String buildVisitKoreaDetailUrl(String contentId) {
+        return "https://korean.visitkorea.or.kr/detail/list_detail.do?contentId=" + contentId;
+    }
+
+    /** VisitKorea 검색 URL */
+    private String buildVisitKoreaSearchUrl(String q) {
+        try {
+            return "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" +
+                    java.net.URLEncoder.encode(q == null ? "" : q, "UTF-8");
+        } catch (Exception e) {
+            return "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + (q == null ? "" : q);
+        }
     }
 
     private void openInCustomTab(String url) {

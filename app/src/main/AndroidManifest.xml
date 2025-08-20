@@ -11,9 +11,9 @@
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    <!-- ✅ 추가: 카메라 권한 -->
+    <!-- 추가: 카메라 권한 -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <!-- ✅ (선택) Android 13+ 알림 권한: 실제 알림 쓸 때만 -->
+    <!-- (선택) Android 13+ 알림 권한: 실제 알림 쓸 때만 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature
@@ -126,6 +126,14 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <activity
+            android:name=".ui.category.SpotDetailActivity"
+            android:exported="false" />
+
+        <meta-data
+            android:name="com.naver.maps.map.NCP_KEY_ID"
+            android:value="YOUR_NCP_KEY_ID_HERE" />
 
     </application>
 

@@ -2,33 +2,35 @@ package com.inhatc.localit;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
-import androidx.browser.customtabs.CustomTabsIntent;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+
 import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
-
 import com.inhatc.localit.ui.category.FestivalActivity;
-import com.inhatc.localit.ui.category.SpotActivity;
+//import com.inhatc.localit.ui.category.FestivalDetailActivity;
 import com.inhatc.localit.ui.category.NewsActivity;
+import com.inhatc.localit.ui.category.SpotActivity;
+import com.inhatc.localit.ui.category.SpotDetailActivity;
+import com.naver.maps.map.NaverMapSdk;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;      // for List
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -42,9 +44,8 @@ public class RegionDetailActivity extends AppCompatActivity {
     private ImageView btnBack, imageTourism1, imageTourism2;
     private TextView btnMoreFestivals, btnMoreTourism, btnMoreNews;
     private BottomNavigationView navView;
-    private String regionName;     // 정상화된 시/도 이름(예: 경기→경기도)
-    private String subRegionName;  // 경기도일 때만 사용(예: 수원시)
-    private CardView cardSubRegion;
+    private String regionName;     // 예: 경기→경기도
+    private String subRegionName;  // 경기도일 때만 사용
 
     private TextView textTourism1Title, textTourism1Location, textTourism1Date;
     private TextView textTourism2Title, textTourism2Location, textTourism2Date;
@@ -53,7 +54,7 @@ public class RegionDetailActivity extends AppCompatActivity {
     private TextView textFestival1Title, textFestival1Date, textFestival1DateInfo;
     private TextView textFestival2Title, textFestival2Date, textFestival2DateInfo;
 
-    // 미리보기 아이템 저장(클릭 시 contentId 사용)
+    // 미리보기 데이터
     private List<SpotResponse.Item> tourismPreview = new ArrayList<>();
     private List<SpotResponse.Item> festivalPreview = new ArrayList<>();
 
@@ -85,81 +86,52 @@ public class RegionDetailActivity extends AppCompatActivity {
     /** 경기도 시‧군 → sigunguCode */
     private static final Map<String, Integer> GG_SIGUNGU = new HashMap<>();
     static {
-        GG_SIGUNGU.put("수원시", 13);
-        GG_SIGUNGU.put("성남시", 12);
-        GG_SIGUNGU.put("고양시", 2);
-        GG_SIGUNGU.put("용인시", 23);
-        GG_SIGUNGU.put("안산시", 15);
-        GG_SIGUNGU.put("안양시", 17);
-        GG_SIGUNGU.put("부천시", 11);
-        GG_SIGUNGU.put("화성시", 31);
-        GG_SIGUNGU.put("남양주시", 9);
-        GG_SIGUNGU.put("평택시", 28);
-        GG_SIGUNGU.put("의정부시", 25);
-        GG_SIGUNGU.put("시흥시", 14);
-        GG_SIGUNGU.put("파주시", 27);
-        GG_SIGUNGU.put("김포시", 8);
-        GG_SIGUNGU.put("광명시", 4);
-        GG_SIGUNGU.put("군포시", 7);
-        GG_SIGUNGU.put("광주시", 5);
-        GG_SIGUNGU.put("하남시", 30);
-        GG_SIGUNGU.put("오산시", 22);
-        GG_SIGUNGU.put("이천시", 26);
-        GG_SIGUNGU.put("안성시", 16);
-        GG_SIGUNGU.put("구리시", 6);
-        GG_SIGUNGU.put("의왕시", 24);
-        GG_SIGUNGU.put("여주시", 20);
-        GG_SIGUNGU.put("양평군", 19);
-        GG_SIGUNGU.put("동두천시", 10);
-        GG_SIGUNGU.put("과천시", 3);
-        GG_SIGUNGU.put("포천시", 29);
-        GG_SIGUNGU.put("연천군", 21);
-        GG_SIGUNGU.put("가평군", 1);
+        GG_SIGUNGU.put("수원시", 13); GG_SIGUNGU.put("성남시", 12); GG_SIGUNGU.put("고양시", 2);
+        GG_SIGUNGU.put("용인시", 23); GG_SIGUNGU.put("안산시", 15); GG_SIGUNGU.put("안양시", 17);
+        GG_SIGUNGU.put("부천시", 11); GG_SIGUNGU.put("화성시", 31); GG_SIGUNGU.put("남양주시", 9);
+        GG_SIGUNGU.put("평택시", 28); GG_SIGUNGU.put("의정부시", 25); GG_SIGUNGU.put("시흥시", 14);
+        GG_SIGUNGU.put("파주시", 27); GG_SIGUNGU.put("김포시", 8);  GG_SIGUNGU.put("광명시", 4);
+        GG_SIGUNGU.put("군포시", 7);  GG_SIGUNGU.put("광주시", 5);  GG_SIGUNGU.put("하남시", 30);
+        GG_SIGUNGU.put("오산시", 22); GG_SIGUNGU.put("이천시", 26); GG_SIGUNGU.put("안성시", 16);
+        GG_SIGUNGU.put("구리시", 6);  GG_SIGUNGU.put("의왕시", 24); GG_SIGUNGU.put("여주시", 20);
+        GG_SIGUNGU.put("양평군", 19); GG_SIGUNGU.put("동두천시", 10);GG_SIGUNGU.put("과천시", 3);
+        GG_SIGUNGU.put("포천시", 29); GG_SIGUNGU.put("연천군", 21); GG_SIGUNGU.put("가평군", 1);
         GG_SIGUNGU.put("양주시", 18);
     }
 
-    // ----------------------------- Lifecycle -----------------------------
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_region_detail);
-
-        if (findViewById(R.id.spinnerSubRegion) == null || findViewById(R.id.cardSubRegion) == null) {
-            // 레이아웃에 스피너가 없는 버전이면 하위지역을 사용하지 않도록 처리
-            spinnerSubRegion = null;
-            cardSubRegion = null;
-        }
-
         initViews();
         setClickListeners();
         setupBottomNavigationView();
 
-        // 인텐트 수신
-        String rawRegion = getIntent().getStringExtra("regionName");      // 예: "경기" (CategoryFragment)
-        String rawSub    = getIntent().getStringExtra("subRegionName");   // 예: "수원시" (경기일 때만)
+        NaverMapSdk.getInstance(this).setClient(
+                new NaverMapSdk.NcpKeyClient("j6uu2y26y1"));
 
-        // ★ 이름 정규화 (경기→경기도 등)
-        regionName = normalizeRegionName(rawRegion);
-        subRegionName = rawSub; // 경기도일 때만 사용
+        // 인텐트
+        String rawRegion = getIntent().getStringExtra("regionName");    // 예: "경기"
+        String rawSub    = getIntent().getStringExtra("subRegionName"); // 예: "수원시"
+
+        regionName    = normalizeRegionName(rawRegion);
+        subRegionName = rawSub;
 
         TextView textRegionTitle = findViewById(R.id.textRegionTitle);
         if (textRegionTitle != null) textRegionTitle.setText(regionName != null ? regionName : "");
 
-        // 경기도일 때만 하위 시‧군 선택(스피너) 노출
+        // 경기도면 스피너 노출
+        View cardSubRegion = findViewById(R.id.cardSubRegion);
         if (isGyeonggi(regionName) && spinnerSubRegion != null && cardSubRegion != null) {
             cardSubRegion.setVisibility(View.VISIBLE);
 
-            // 레이아웃에서 어댑터를 미리 지정 안 했다면 코드에서 설정
             if (spinnerSubRegion.getAdapter() == null) {
                 ArrayAdapter<CharSequence> ad = ArrayAdapter.createFromResource(
-                        this, R.array.textGyeonggi, android.R.layout.simple_spinner_item
-                );
+                        this, R.array.textGyeonggi, android.R.layout.simple_spinner_item);
                 ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spinnerSubRegion.setAdapter(ad);
             }
-
-            // 인텐트로 받은 subRegionName이 있으면 스피너 선택값 동기화
-            if (subRegionName != null) {
+            if (!TextUtils.isEmpty(subRegionName)) {
                 preselectSpinner(spinnerSubRegion, subRegionName);
             } else if (spinnerSubRegion.getSelectedItem() != null) {
                 subRegionName = spinnerSubRegion.getSelectedItem().toString();
@@ -167,17 +139,15 @@ public class RegionDetailActivity extends AppCompatActivity {
 
             spinnerSubRegion.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                    subRegionName = (String) parent.getItemAtPosition(position);
+                    subRegionName = String.valueOf(parent.getItemAtPosition(position));
                     fetchTourismPreview();
                     fetchFestivalPreview();
                 }
-                @Override public void onNothingSelected(AdapterView<?> parent) { /* no-op */ }
+                @Override public void onNothingSelected(AdapterView<?> parent) { }
             });
 
-            // 초기 로딩(스피너 첫 이벤트가 보장되지만 안전하게 한 번 더 호출해도 무방)
             fetchTourismPreview();
             fetchFestivalPreview();
-
         } else {
             if (cardSubRegion != null) cardSubRegion.setVisibility(View.GONE);
             subRegionName = null;
@@ -194,7 +164,6 @@ public class RegionDetailActivity extends AppCompatActivity {
         btnMoreNews = findViewById(R.id.btnMoreNews);
         navView = findViewById(R.id.nav_view);
         spinnerSubRegion = findViewById(R.id.spinnerSubRegion);
-        cardSubRegion = findViewById(R.id.cardSubRegion);
 
         textTourism1Title = findViewById(R.id.textTourism1Title);
         textTourism1Location = findViewById(R.id.textTourism1Location);
@@ -216,68 +185,37 @@ public class RegionDetailActivity extends AppCompatActivity {
         textFestival2Date = findViewById(R.id.textFestival2Date);
         textFestival2DateInfo = findViewById(R.id.textFestival2DateInfo);
 
-        // 관광 미리보기 클릭 타깃
-        View[] tourismClickTargets = new View[]{ imageTourism1, textTourism1Title, imageTourism2, textTourism2Title };
-        for (int i = 0; i < tourismClickTargets.length; i++) {
-            final int idx = i < 2 ? 0 : 1; // 0번 카드/1번 카드
-            if (tourismClickTargets[i] != null) {
-                tourismClickTargets[i].setOnClickListener(v -> onClickTourismCard(idx));
-            }
+        // 관광 카드 클릭 타깃
+        View[] tourismTargets = new View[]{ imageTourism1, textTourism1Title, imageTourism2, textTourism2Title };
+        for (int i = 0; i < tourismTargets.length; i++) {
+            final int idx = (i < 2) ? 0 : 1;
+            if (tourismTargets[i] != null) tourismTargets[i].setOnClickListener(v -> onClickTourismCard(idx));
         }
-
-        // 축제 미리보기 클릭 타깃
-        View[] festivalClickTargets = new View[]{ imageFestival1, textFestival1Title, imageFestival2, textFestival2Title };
-        for (int i = 0; i < festivalClickTargets.length; i++) {
-            final int idx = i < 2 ? 0 : 1;
-            if (festivalClickTargets[i] != null) {
-                festivalClickTargets[i].setOnClickListener(v -> onClickFestivalCard(idx));
-            }
+        // 축제 카드 클릭 타깃
+        View[] festivalTargets = new View[]{ imageFestival1, textFestival1Title, imageFestival2, textFestival2Title };
+        for (int i = 0; i < festivalTargets.length; i++) {
+            final int idx = (i < 2) ? 0 : 1;
+            if (festivalTargets[i] != null) festivalTargets[i].setOnClickListener(v -> onClickFestivalCard(idx));
         }
     }
 
-    // 더보기로 상세 페이지 이동
     private void setClickListeners() {
         if (btnBack != null) btnBack.setOnClickListener(v -> finish());
-
-        if (btnMoreFestivals != null) {
-            btnMoreFestivals.setOnClickListener(v -> {
-                // 카테고리 프래그먼트와 동일한 규칙
-                openCategoryActivity(FestivalActivity.class);
-            });
-        }
-
-        if (btnMoreTourism != null) {
-            btnMoreTourism.setOnClickListener(v -> {
-                // 카테고리 프래그먼트와 동일한 규칙
-                openCategoryActivity(SpotActivity.class);
-            });
-        }
-
-        if (btnMoreNews != null) {
-            btnMoreNews.setOnClickListener(v -> {
-                // 카테고리 프래그먼트와 동일한 규칙
-                openCategoryActivity(NewsActivity.class);
-            });
-        }
+        if (btnMoreFestivals != null) btnMoreFestivals.setOnClickListener(v -> openCategoryActivity(FestivalActivity.class));
+        if (btnMoreTourism != null) btnMoreTourism.setOnClickListener(v -> openCategoryActivity(SpotActivity.class));
+        if (btnMoreNews != null) btnMoreNews.setOnClickListener(v -> openCategoryActivity(NewsActivity.class));
     }
-    // RegionDetailActivity 안에 헬퍼 추가 (CategoryFragment.openCategoryActivity와 동일한 형태)
+
     private void openCategoryActivity(Class<?> activityClass) {
-        // 경기도인데 하위지역을 아직 선택 안 했다면 CategoryFragment와 동일하게 막기
-        if (isGyeonggi(regionName) && (subRegionName == null || subRegionName.trim().isEmpty())) {
+        if (isGyeonggi(regionName) && TextUtils.isEmpty(subRegionName)) {
             Toast.makeText(this, "경기도의 상세 지역을 선택해주세요.", Toast.LENGTH_SHORT).show();
             return;
         }
-
         Intent intent = new Intent(this, activityClass);
-        // CategoryFragment는 'selectedRegion' 그대로 넘깁니다(예: "경기")
-        // RegionDetailActivity는 내부에서 정규화된 풀네임을 쓰니, 되돌려서 넘겨줍니다.
         intent.putExtra("regionName", denormalizeRegionForPassing(regionName));
-        if (subRegionName != null && !subRegionName.trim().isEmpty()) {
-            intent.putExtra("subRegionName", subRegionName);
-        }
+        if (!TextUtils.isEmpty(subRegionName)) intent.putExtra("subRegionName", subRegionName);
         startActivity(intent);
     }
-
 
     private void setupBottomNavigationView() {
         if (navView == null) return;
@@ -298,7 +236,7 @@ public class RegionDetailActivity extends AppCompatActivity {
     // ----------------------------- Networking -----------------------------
     private Integer getSigunguCodeIfGyeonggi() {
         if (!isGyeonggi(regionName)) return null;
-        if (subRegionName == null || subRegionName.trim().isEmpty()) return null;
+        if (TextUtils.isEmpty(subRegionName)) return null;
         return GG_SIGUNGU.get(subRegionName.trim());
     }
 
@@ -306,9 +244,11 @@ public class RegionDetailActivity extends AppCompatActivity {
         int areaCode = getAreaCode(regionName);
         Integer sigunguCode = getSigunguCodeIfGyeonggi();
 
-        SpotApiService apiService = SpotApiHelper.getApiService();
-        Call<SpotResponse> call = apiService.getTourList(
-                12, 1, "AND", "localit", "c", 12, areaCode, sigunguCode, "json", SERVICE_KEY
+        SpotApiService api = SpotApiHelper.getApiService();
+        Call<SpotResponse> call = api.getTourList(
+                12, 1, "AND", "localit", "C",
+                12, areaCode, sigunguCode,
+                "json", SERVICE_KEY
         );
 
         call.enqueue(new Callback<SpotResponse>() {
@@ -324,16 +264,17 @@ public class RegionDetailActivity extends AppCompatActivity {
                 }
                 List<SpotResponse.Item> items = response.body().response.body.items.item;
 
-                if (getSigunguCodeIfGyeonggi() != null && subRegionName != null) {
+                if (sigunguCode != null && !TextUtils.isEmpty(subRegionName)) {
                     items = filterByAddr(items, subRegionName);
                 }
-
-                tourismPreview = items; // 저장
+                tourismPreview = items;
                 bindTourismPreview(items);
             }
+
             @Override public void onFailure(Call<SpotResponse> call, Throwable t) {
                 tourismPreview = new ArrayList<>();
                 t.printStackTrace();
+                bindTourismPreview(tourismPreview);
             }
         });
     }
@@ -343,9 +284,10 @@ public class RegionDetailActivity extends AppCompatActivity {
         int areaCode = getAreaCode(regionName);
         Integer sigunguCode = getSigunguCodeIfGyeonggi();
 
-        SpotApiService apiService = SpotApiHelper.getApiService();
-        Call<SpotResponse> call = apiService.getFestivalList(
-                10, 1, "AND", "localit", "json", areaCode, sigunguCode, startDate, "A", SERVICE_KEY
+        SpotApiService api = SpotApiHelper.getApiService();
+        Call<SpotResponse> call = api.getFestivalList(
+                10, 1, "AND", "localit", "json",
+                areaCode, sigunguCode, startDate, "A", SERVICE_KEY
         );
 
         call.enqueue(new Callback<SpotResponse>() {
@@ -361,16 +303,17 @@ public class RegionDetailActivity extends AppCompatActivity {
                 }
                 List<SpotResponse.Item> items = response.body().response.body.items.item;
 
-                if (getSigunguCodeIfGyeonggi() != null && subRegionName != null) {
+                if (sigunguCode != null && !TextUtils.isEmpty(subRegionName)) {
                     items = filterByAddr(items, subRegionName);
                 }
-
-                festivalPreview = items; // 저장
+                festivalPreview = items;
                 bindFestivalPreview(items);
             }
+
             @Override public void onFailure(Call<SpotResponse> call, Throwable t) {
                 festivalPreview = new ArrayList<>();
                 t.printStackTrace();
+                bindFestivalPreview(festivalPreview);
             }
         });
     }
@@ -378,7 +321,7 @@ public class RegionDetailActivity extends AppCompatActivity {
     /** addr1에 하위도시명이 포함된 것만 남기기 (fallback) */
     private List<SpotResponse.Item> filterByAddr(List<SpotResponse.Item> src, String key) {
         if (src == null) return new ArrayList<>();
-        if (key == null || key.trim().isEmpty()) return src;
+        if (TextUtils.isEmpty(key)) return src;
         String k = key.trim();
         List<SpotResponse.Item> out = new ArrayList<>();
         for (SpotResponse.Item it : src) {
@@ -458,60 +401,36 @@ public class RegionDetailActivity extends AppCompatActivity {
         }
     }
 
-    // ---------- 카드 클릭 핸들러 ----------
+    // ---------- 카드 클릭 → 내부 상세 화면 ----------
     private void onClickTourismCard(int idx) {
         if (tourismPreview == null || tourismPreview.size() <= idx) return;
-        SpotResponse.Item item = tourismPreview.get(idx);
-        openHomepageFor(item.contentid, "12", item.title);
+        SpotResponse.Item it = tourismPreview.get(idx);
+
+        Intent i = new Intent(this, SpotDetailActivity.class);
+        i.putExtra(SpotDetailActivity.EXTRA_CONTENT_ID, it.contentid);
+        i.putExtra(SpotDetailActivity.EXTRA_CONTENT_TYPE_ID,
+                TextUtils.isEmpty(it.contenttypeid) ? "12" : it.contenttypeid);
+
+        // (선표시용) 선택사항
+        i.putExtra(SpotDetailActivity.EXTRA_TITLE,       it.title != null ? it.title : "");
+        i.putExtra(SpotDetailActivity.EXTRA_ADDR1,       it.addr1 != null ? it.addr1 : "");
+        i.putExtra(SpotDetailActivity.EXTRA_FIRST_IMAGE, it.firstimage != null ? it.firstimage : "");
+
+        startActivity(i);
     }
 
     private void onClickFestivalCard(int idx) {
         if (festivalPreview == null || festivalPreview.size() <= idx) return;
-        SpotResponse.Item item = festivalPreview.get(idx);
-        openHomepageFor(item.contentid, "15", item.title);
-    }
+        SpotResponse.Item it = festivalPreview.get(idx);
 
-    private void openHomepageFor(String contentId, String contentTypeId, String titleForFallback) {
-        SpotApiService api = SpotApiHelper.getApiService();
-        SpotApiHelper.fetchHomepageUrl(api, SERVICE_KEY, contentId, contentTypeId, url -> {
-            String fallbackUrl;
-
-            if (url != null && url.startsWith("http")) {
-
-                openInCustomTab(url);
-                return;
-            }
-
-            if ("15".equals(contentTypeId)) {
-
-                fallbackUrl = "https://korean.visitkorea.or.kr/kfes/detail/fstvlDetail.do?cmsCntntsId=" + contentId;
-            } else {
-                
-                try {
-                    String encoded = java.net.URLEncoder.encode(titleForFallback == null ? "" : titleForFallback, "UTF-8");
-                    fallbackUrl = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + encoded;
-                } catch (Exception e) {
-                    fallbackUrl = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + titleForFallback;
-                }
-            }
-
-            openInCustomTab(fallbackUrl);
-            Toast.makeText(this, "상세 페이지로 이동합니다.", Toast.LENGTH_SHORT).show();
-        });
-    }
-
-    private void openInCustomTab(String url) {
-        try {
-            CustomTabsIntent intent = new CustomTabsIntent.Builder().build();
-            intent.launchUrl(this, android.net.Uri.parse(url));
-        } catch (Exception e) {
-            Intent i = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url));
-            startActivity(i);
-        }
+        Intent i = new Intent(this, FestivalDetailActivity.class);
+        i.putExtra(SpotDetailActivity.EXTRA_CONTENT_ID, it.contentid);
+        i.putExtra(SpotDetailActivity.EXTRA_CONTENT_TYPE_ID,
+                TextUtils.isEmpty(it.contenttypeid) ? "15" : it.contenttypeid);
+        startActivity(i);
     }
 
     // ----------------------------- Utils -----------------------------
-    /** CategoryFragment가 넘긴 짧은 표기를 정규화(경기→경기도 등). 이미 풀네임이면 그대로 */
     private String normalizeRegionName(String r) {
         if (r == null) return null;
         String t = r.trim();
@@ -533,11 +452,10 @@ public class RegionDetailActivity extends AppCompatActivity {
             case "경북": return "경상북도";
             case "경남": return "경상남도";
             case "제주": return "제주특별자치도";
-            default: return t; // 이미 풀네임이면 그대로 사용
+            default: return t;
         }
     }
 
-    /** UI 타이틀 등으로 다시 전달할 때 원래 짧은 형태가 필요하면 변환(선택사항) */
     private String denormalizeRegionForPassing(String full) {
         if (full == null) return null;
         switch (full) {
@@ -562,9 +480,7 @@ public class RegionDetailActivity extends AppCompatActivity {
         }
     }
 
-    private boolean isGyeonggi(String r) {
-        return "경기도".equals(r);
-    }
+    private boolean isGyeonggi(String r) { return "경기도".equals(r); }
 
     private int getAreaCode(String r) {
         String key = normalizeRegionName(r);
@@ -572,7 +488,7 @@ public class RegionDetailActivity extends AppCompatActivity {
     }
 
     private String formatDate(String raw) {
-        if (raw != null && raw.length() >= 8) {
+        if (!TextUtils.isEmpty(raw) && raw.length() >= 8) {
             return raw.substring(0, 4) + "." + raw.substring(4, 6) + "." + raw.substring(6, 8);
         }
         return "";
