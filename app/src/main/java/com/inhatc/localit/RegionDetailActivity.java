@@ -474,28 +474,29 @@ public class RegionDetailActivity extends AppCompatActivity {
     private void openHomepageFor(String contentId, String contentTypeId, String titleForFallback) {
         SpotApiService api = SpotApiHelper.getApiService();
         SpotApiHelper.fetchHomepageUrl(api, SERVICE_KEY, contentId, contentTypeId, url -> {
-            if (url != null && !url.isEmpty()) {
-                // ✅ homepage가 존재하면 그대로 열기
+            String fallbackUrl;
+
+            if (url != null && url.startsWith("http")) {
+
                 openInCustomTab(url);
-            } else {
-                String fallbackUrl;
-
-                if ("15".equals(contentTypeId)) {
-                    // ✅ contentTypeId 15번(축제)인 경우 → fstvlDetail 도메인으로 직접 진입
-                    fallbackUrl = "https://korean.visitkorea.or.kr/kfes/detail/fstvlDetail.do?cmsCntntsId=" + contentId;
-                } else {
-                    // ✅ 관광지 등 나머지는 → 검색 페이지로 fallback
-                    try {
-                        String encoded = java.net.URLEncoder.encode(titleForFallback == null ? "" : titleForFallback, "UTF-8");
-                        fallbackUrl = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + encoded;
-                    } catch (Exception e) {
-                        fallbackUrl = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + titleForFallback;
-                    }
-                }
-
-                openInCustomTab(fallbackUrl);
-                Toast.makeText(this, "상세 페이지로 이동합니다.", Toast.LENGTH_SHORT).show();
+                return;
             }
+
+            if ("15".equals(contentTypeId)) {
+
+                fallbackUrl = "https://korean.visitkorea.or.kr/kfes/detail/fstvlDetail.do?cmsCntntsId=" + contentId;
+            } else {
+                
+                try {
+                    String encoded = java.net.URLEncoder.encode(titleForFallback == null ? "" : titleForFallback, "UTF-8");
+                    fallbackUrl = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + encoded;
+                } catch (Exception e) {
+                    fallbackUrl = "https://korean.visitkorea.or.kr/search/search_list.do?keyword=" + titleForFallback;
+                }
+            }
+
+            openInCustomTab(fallbackUrl);
+            Toast.makeText(this, "상세 페이지로 이동합니다.", Toast.LENGTH_SHORT).show();
         });
     }
 
