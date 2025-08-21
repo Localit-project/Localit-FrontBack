@@ -24,6 +24,9 @@ public class SpotResponse {
     }
 
     public static class Item {
+        // ✨ 1. API 응답에 포함된 contenttypeid 필드 추가
+        public String contenttypeid;
+
         public String contentid;
         public String title;
         public String addr1;
@@ -38,6 +41,12 @@ public class SpotResponse {
         private int localContentType;
 
         // ===== Getter & Setter =====
+
+        // ✨ 2. contenttypeid의 getter 메서드 추가
+        public String getContenttypeid() {
+            return contenttypeid;
+        }
+
         public String getContentid() {
             return contentid;
         }
@@ -52,7 +61,6 @@ public class SpotResponse {
         public String getAddr2() {
             return addr2;
         }
-
 
         public String getFirstimage() {
             return firstimage;

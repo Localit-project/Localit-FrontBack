@@ -16,6 +16,7 @@ import android.view.ViewGroup.LayoutParams;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider; // ViewModelProvider import
 import androidx.navigation.NavController;
 import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
@@ -29,10 +30,13 @@ import com.google.android.material.textfield.TextInputLayout;
 import com.inhatc.localit.R;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
+import com.inhatc.localit.db.TouristSpot; // db 모델 import
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import okhttp3.OkHttpClient;
@@ -43,8 +47,6 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class SearchFragment extends Fragment {
 
     private static final String TAG = "SearchFragment";
-
-    // TODO: 본인 서비스키(원본키)로 교체
     private static final String SERVICE_KEY = "wL/Ry8EMiMg43mPRl3wyQhKosVExsJbLLDcZebat4S4eedobtNuBG+eqrj5GPKHvEAxy4NjYPz25Parbyeg8PA==";
     private static final String BASE_URL = "https://apis.data.go.kr/B551011/KorService2/";
 
@@ -56,11 +58,12 @@ public class SearchFragment extends Fragment {
     private SearchAdapter adapter;
     private SpotApiService api;
 
+    // ViewModel 변수 선언
+    private SearchViewModel searchViewModel;
+
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_search, container, false);
     }
 
@@ -72,6 +75,7 @@ public class SearchFragment extends Fragment {
         ImageButton back = v.findViewById(R.id.btn_back);
         back.setOnClickListener(view -> goHomeSingleTop());
 
+        // 뷰 초기화
         til = v.findViewById(R.id.searchInputLayout);
         etSearch = v.findViewById(R.id.etSearch);
         recyclerResults = v.findViewById(R.id.recyclerResults);
@@ -79,17 +83,36 @@ public class SearchFragment extends Fragment {
 
         tweakEndIconSize(til);
 
-        // RecyclerView
+        // ViewModel 인스턴스 생성
+        searchViewModel = new ViewModelProvider(this).get(SearchViewModel.class);
+
+        // RecyclerView 설정
         Context ctx = v.getContext();
         recyclerResults.setLayoutManager(new LinearLayoutManager(ctx));
         adapter = new SearchAdapter(
                 ctx,
-                item -> { /* 아이템 클릭 시 상세 이동 등 처리 */ },
-                favItem -> { /* 즐겨찾기 토글/저장 처리 */ }
+                item -> { /* TODO: 아이템 클릭 시 상세 화면으로 이동하는 로직 구현 */ },
+                favItem -> {
+                    // 찜 버튼 클릭 시 ViewModel에 이벤트 전달
+                    searchViewModel.toggleFavorite(favItem);
+                }
         );
         recyclerResults.setAdapter(adapter);
 
-        // Retrofit (Gson)
+        // 찜 목록 LiveData 구독 (DB의 찜 목록이 변경될 때마다 자동 호출)
+        searchViewModel.getAllWishedSpots().observe(getViewLifecycleOwner(), wishedSpots -> {
+            if (wishedSpots != null) {
+                // 찜된 아이템의 contentId만 Set으로 만듭니다.
+                Set<String> wishedIds = new HashSet<>();
+                for (TouristSpot spot : wishedSpots) {
+                    wishedIds.add(spot.contentId);
+                }
+                // 어댑터에 찜 목록을 전달하여 하트 아이콘을 업데이트합니다.
+                adapter.updateFavorites(wishedIds);
+            }
+        });
+
+        // Retrofit (Gson) 초기화
         HttpLoggingInterceptor log = new HttpLoggingInterceptor();
         log.setLevel(HttpLoggingInterceptor.Level.BASIC);
         OkHttpClient client = new OkHttpClient.Builder().addInterceptor(log).build();
@@ -101,7 +124,7 @@ public class SearchFragment extends Fragment {
                 .build();
         api = retrofit.create(SpotApiService.class);
 
-        // 엔터/검색 아이콘 동작
+        // 엔터/검색 아이콘 동작 리스너
         etSearch.setOnEditorActionListener((tv, action, event) -> {
             if (action == EditorInfo.IME_ACTION_SEARCH
                     || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
@@ -112,7 +135,7 @@ public class SearchFragment extends Fragment {
         });
         til.setEndIconOnClickListener(view -> performSearchFromInput());
 
-        // 칩들
+        // 추천 검색어 칩 리스너
         setChipClick(v, R.id.chip_busan, "부산");
         setChipClick(v, R.id.chip_seoul, "서울");
         setChipClick(v, R.id.chip_gangneung, "강릉");
@@ -168,7 +191,7 @@ public class SearchFragment extends Fragment {
         AtomicInteger done = new AtomicInteger(0);
         List<SpotResponse.Item> merged = Collections.synchronizedList(new ArrayList<>());
 
-        // 관광지
+        // 관광지 검색 API 호출
         api.searchKeyword(
                 SERVICE_KEY, "AND", "Localit", "json",
                 keyword, 12, 20, 1
@@ -192,7 +215,7 @@ public class SearchFragment extends Fragment {
             }
         });
 
-        // 축제
+        // 축제 검색 API 호출
         api.searchKeyword(
                 SERVICE_KEY, "AND", "Localit", "json",
                 keyword, 15, 20, 1
