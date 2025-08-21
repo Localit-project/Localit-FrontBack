@@ -24,7 +24,6 @@ import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
 
-import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -46,14 +45,14 @@ public class FestivalActivity extends AppCompatActivity {
     private RecyclerView recyclerViewEvents;
     private FestivalAdapter festivalAdapter;
 
-    //  API 원본 목록
+    // API 원본 목록
     private final List<SpotResponse.Item> fullItems = new ArrayList<>();
 
     private TextView textRegionTitle;
     private ImageView btnBack;
     private BottomNavigationView navView;
 
-    //  검색 뷰
+    // 검색 뷰
     private TextInputLayout searchInputLayout;
     private TextInputEditText etSearch;
 
@@ -181,14 +180,14 @@ public class FestivalActivity extends AppCompatActivity {
     private void setupRecyclerView() {
         festivalAdapter = new FestivalAdapter(
                 new ArrayList<>(),
-                (item, position) -> openHomepageFor(item),
+                (item, position) -> openHomepageFor(item),  // ← 카드 클릭 시 상세로
                 (item, position) -> { /* TODO: 즐겨찾기 저장 필요시 처리 */ }
         );
         recyclerViewEvents.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewEvents.setAdapter(festivalAdapter);
     }
 
-    /**  검색바: 돋보기/IME 검색으로 로컬 필터 */
+    /** 검색바: 돋보기/IME 검색으로 로컬 필터 */
     private void setupSearchBar() {
         if (searchInputLayout != null) {
             searchInputLayout.setEndIconOnClickListener(v -> triggerSearch());
@@ -295,17 +294,32 @@ public class FestivalActivity extends AppCompatActivity {
         });
     }
 
-    /** 카드 클릭 시: 홈페이지 있으면 열고, 없으면 '대한민국 구석구석' 검색으로 이동 */
+    /** 카드 클릭 시: 상세 페이지 열기 (FestivalDetailActivity) */
     private void openHomepageFor(SpotResponse.Item item) {
         if (item == null) return;
 
-        String contentId = item.contentid;
+        String contentId     = item.contentid;
+        String contentTypeId = !TextUtils.isEmpty(item.contenttypeid) ? item.contenttypeid : "15";
+        String title         = item.title == null ? "" : item.title;
+        String addr1         = item.addr1 == null ? "" : item.addr1;
+
+        // 🔧 firstimage2 제거: firstimage만 안전하게 사용
+        String firstImage    = item.firstimage != null ? item.firstimage : "";
+
         if (TextUtils.isEmpty(contentId)) {
-            Toast.makeText(this, "콘텐츠 ID가 없어 이동할 수 없습니다.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "콘텐츠 ID가 없어 상세로 이동할 수 없습니다.", Toast.LENGTH_SHORT).show();
             return;
         }
-        String contentTypeId = !TextUtils.isEmpty(item.contenttypeid) ? item.contenttypeid : "15";
-        final String titleFinal = item.title == null ? "" : item.title;
+
+        // ✅ FestivalDetailActivity로 이동 + 필요한 값 전달
+        Intent intent = new Intent(this, FestivalDetailActivity.class)
+                .putExtra(FestivalDetailActivity.EXTRA_CONTENT_ID, contentId)
+                .putExtra(FestivalDetailActivity.EXTRA_CONTENT_TYPE_ID, contentTypeId)
+                .putExtra(FestivalDetailActivity.EXTRA_TITLE, title)
+                .putExtra(FestivalDetailActivity.EXTRA_ADDR1, addr1)
+                .putExtra(FestivalDetailActivity.EXTRA_FIRST_IMAGE, firstImage);
+
+        startActivity(intent);
     }
 
     private void openInCustomTab(String url) {
