@@ -38,7 +38,6 @@ public class SpotDetailIntroResponse {
         @SerializedName("parking")       public String parking;      // 주차시설
         @SerializedName("usefee")        public String usefee;       // 입장료/이용요금(관광지)
 
-        // (추가 가능 옵션)
         @SerializedName("chkbabycarriage") public String chkbabycarriage;
         @SerializedName("chkpet")          public String chkpet;
         @SerializedName("chkcreditcard")   public String chkcreditcard;
@@ -59,6 +58,7 @@ public class SpotDetailIntroResponse {
         @SerializedName("usetimefestival")    public String usetimefestival;    // 이용요금(축제)
         @SerializedName("infocenterfestival") public String infocenterfestival; // 문의 및 안내(축제)
 
+        // ✅ 주최/주관 필드는 여기만 유지
         @SerializedName("sponsor1")           public String sponsor1;           // 주최
         @SerializedName("sponsor1tel")        public String sponsor1tel;        // 주최 연락처
         @SerializedName("sponsor2")           public String sponsor2;           // 주관

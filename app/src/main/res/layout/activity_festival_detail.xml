@@ -229,17 +229,6 @@
                 android:layout_height="wrap_content"
                 android:textColor="#444"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="전화번호"
-                android:textStyle="bold"
-                android:layout_marginTop="8dp"/>
-            <TextView
-                android:id="@+id/tvTel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#444"/>
 
             <!-- 지도 -->
             <com.naver.maps.map.MapView
