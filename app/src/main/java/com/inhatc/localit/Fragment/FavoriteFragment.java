@@ -120,7 +120,6 @@ public class FavoriteFragment extends Fragment {
         ));
     }
 
-<<<<<<< HEAD
     /** ViewModel의 LiveData를 관찰하여 원본 데이터를 업데이트하고, UI를 갱신합니다. */
     private void observeViewModel() {
         viewModel.getWishedSpots().observe(getViewLifecycleOwner(), wishedSpots -> {
@@ -129,13 +128,6 @@ public class FavoriteFragment extends Fragment {
             // 업데이트된 원본 데이터로 현재 탭에 맞게 필터링 및 표시
             filterAndDisplayList();
         });
-=======
-    // 최소 수정: 프래그먼트/뷰 살아있을 때만 Resources 접근
-    private int dpToPx(int dp) {
-        if (!isAdded() || getView() == null) return dp; // 가드
-        float density = requireView().getResources().getDisplayMetrics().density;
-        return Math.round(dp * density);
->>>>>>> 1513c0ab18a3a890083dbb438950b8a3dccbdd87
     }
 
     /** 현재 탭에 맞게 목록을 필터링하고 화면에 표시합니다. */
@@ -167,7 +159,7 @@ public class FavoriteFragment extends Fragment {
         }
     }
 
-    // --- 기존 탭 및 인디케이터 관리 코드 (수정 불필요) ---
+    // --- 탭 및 인디케이터 관리 코드 ---
 
     private void applyTabState() {
         if (!isAdded() || getView() == null) return;

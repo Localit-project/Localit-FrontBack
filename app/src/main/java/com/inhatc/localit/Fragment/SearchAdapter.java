@@ -101,7 +101,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.VH> {
         // ✨ 2. '찜' 상태에 따라 하트 아이콘 변경하는 로직 추가
         if (favoriteIds.contains(item.getContentid())) {
             // 이 아이템의 ID가 찜 목록 Set에 포함되어 있다면
-            h.btnFavorite.setImageResource(R.drawable.img); // 채워진 하트
+            //h.btnFavorite.setImageResource(R.drawable.img); // 채워진 하트
         } else {
             // 포함되어 있지 않다면
             h.btnFavorite.setImageResource(R.drawable.ic_favorite_border_24); // 빈 하트

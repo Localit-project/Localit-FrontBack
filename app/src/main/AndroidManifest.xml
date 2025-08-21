@@ -2,25 +2,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.inhatc.localit">
-
     <!-- Permissions must be direct children of <manifest> -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Android 13+ -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <!-- Android 12L 이하 전용 -->
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- Android 13+ -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" /> <!-- Android 12L 이하 전용 -->
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <!-- 추가: 카메라 권한 -->
-    <uses-permission android:name="android.permission.CAMERA" />
-    <!-- (선택) Android 13+ 알림 권한: 실제 알림 쓸 때만 -->
+        android:maxSdkVersion="32" /> <!-- 추가: 카메라 권한 -->
+    <uses-permission android:name="android.permission.CAMERA" /> <!-- (선택) Android 13+ 알림 권한: 실제 알림 쓸 때만 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature
         android:name="android.hardware.camera.any"
         android:required="false" />
-    <uses-permission android:name="android.permission.INTERNET"/>
-
 
     <application
         android:name=".GlobalApplication"
@@ -29,72 +23,60 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@drawable/logo"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Localit"
-        android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="31">
-
         <!-- Kakao SDK AppKey -->
         <meta-data
             android:name="com.kakao.sdk.AppKey"
-            android:value="47032f657514090a03eb23e26657b152" />
-
-        <!-- Launcher -->
+            android:value="47032f657514090a03eb23e26657b152" /> <!-- Launcher -->
         <activity
             android:name=".StartActivity"
             android:exported="true"
             android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- Login -->
+        </activity> <!-- Login -->
         <activity
             android:name=".LoginActivity"
             android:exported="true"
-            android:label="@string/app_name" />
-
-        <!-- Main -->
+            android:label="@string/app_name" /> <!-- Main -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name" />
-
-        <!-- Sign Up -->
+            android:label="@string/app_name" /> <!-- Sign Up -->
         <activity
             android:name=".SignUpActivity"
             android:exported="true"
-            android:label="@string/app_name" />
-
-        <!-- Find ID/PW -->
+            android:label="@string/app_name" /> <!-- Find ID/PW -->
         <activity
             android:name=".FindIdActivity"
             android:exported="true"
             android:label="@string/app_name" />
-
         <activity
             android:name=".ChangePwActivity"
             android:exported="true"
-            android:label="@string/app_name" />
-
-        <!-- Kakao Auth handler -->
+            android:label="@string/app_name" /> <!-- Kakao Auth handler -->
         <activity
             android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
+
                 <data
                     android:host="oauth"
                     android:scheme="kakao47032f657514090a03eb23e26657b152" />
             </intent-filter>
-        </activity>
-
-        <!-- Region / Category screens -->
+        </activity> <!-- Region / Category screens -->
         <activity
             android:name=".RegionDetailActivity"
             android:exported="true"
@@ -110,15 +92,11 @@
         <activity
             android:name=".ui.category.SpotActivity"
             android:exported="true"
-            android:label="@string/app_name" />
-
-        <!-- API demo -->
+            android:label="@string/app_name" /> <!-- API demo -->
         <activity
-            android:name="com.inhatc.localit.api.ApiMainActivity"
+            android:name=".api.ApiMainActivity"
             android:exported="true"
-            android:label="@string/app_name" />
-
-        <!-- FileProvider for camera capture -->
+            android:label="@string/app_name" /> <!-- FileProvider for camera capture -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -132,16 +110,17 @@
         <activity
             android:name=".ui.category.SpotDetailActivity"
             android:exported="false" />
-
         <activity
             android:name=".ui.category.FestivalDetailActivity"
             android:exported="false" />
 
+        <activity android:name=".api.ActivityGemini"
+            android:exported="true" />
+
+
         <meta-data
             android:name="com.naver.maps.map.NCP_KEY_ID"
             android:value="YOUR_NCP_KEY_ID_HERE" />
-
-
     </application>
 
 </manifest>

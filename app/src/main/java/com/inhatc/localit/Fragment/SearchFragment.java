@@ -97,8 +97,7 @@ public class SearchFragment extends Fragment {
         recyclerResults.setLayoutManager(new LinearLayoutManager(ctx));
         adapter = new SearchAdapter(
                 ctx,
-<<<<<<< HEAD
-                item -> { /* TODO: 아이템 클릭 시 상세 화면으로 이동하는 로직 구현 */ },
+                this::openHomepageFor, // ✅ 결과 클릭 → 홈페이지(또는 구석구석 검색)
                 favItem -> {
                     // 찜 버튼 클릭 시 ViewModel에 이벤트 전달
                     searchViewModel.toggleFavorite(favItem);
@@ -120,14 +119,6 @@ public class SearchFragment extends Fragment {
         });
 
         // Retrofit (Gson) 초기화
-=======
-                this::openHomepageFor,     // ✅ 결과 클릭 → 홈페이지(또는 구석구석 검색)
-                favItem -> { /* 즐겨찾기 토글/저장 처리 */ }
-        );
-        recyclerResults.setAdapter(adapter);
-
-        // Retrofit
->>>>>>> 1513c0ab18a3a890083dbb438950b8a3dccbdd87
         HttpLoggingInterceptor log = new HttpLoggingInterceptor();
         log.setLevel(HttpLoggingInterceptor.Level.BASIC);
         OkHttpClient client = new OkHttpClient.Builder().addInterceptor(log).build();
@@ -150,11 +141,7 @@ public class SearchFragment extends Fragment {
         });
         til.setEndIconOnClickListener(view -> performSearchFromInput());
 
-<<<<<<< HEAD
         // 추천 검색어 칩 리스너
-=======
-        // 추천 칩
->>>>>>> 1513c0ab18a3a890083dbb438950b8a3dccbdd87
         setChipClick(v, R.id.chip_busan, "부산");
         setChipClick(v, R.id.chip_seoul, "서울");
         setChipClick(v, R.id.chip_gangneung, "강릉");
@@ -322,7 +309,7 @@ public class SearchFragment extends Fragment {
             } else if (item.contenttypeid != null) {
                 contentTypeId = String.valueOf(item.contenttypeid);
             } else if (item.getContenttypeid() != null) {
-                contentTypeId = String.valueOf(item.getContenttypeid());
+                contentTypeId = String.valueOf(item.getContentid()); // <-- getContentid()가 getContenttypeid()로 수정되었습니다.
             }
         } catch (Throwable ignored) {
         }
@@ -336,4 +323,5 @@ public class SearchFragment extends Fragment {
         }
         if (TextUtils.isEmpty(t)) t = item.title;
         final String titleFinal = t; //
-    }}
+    }
+}

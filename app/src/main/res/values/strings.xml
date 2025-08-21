@@ -99,5 +99,6 @@
     <string name="noti_header_festival">축제 · 행사 알림</string>
     <string name="noti_header_spot">관광지 알림</string>
     <string name="noti_header_news">뉴스 알림</string>
+    <string name="title_activity_gemini">activity_gemini</string>
 
 </resources>
