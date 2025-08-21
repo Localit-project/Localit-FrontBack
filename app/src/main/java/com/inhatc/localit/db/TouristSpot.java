@@ -3,6 +3,7 @@ package com.inhatc.localit.db;
 import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+import androidx.room.Ignore;
 
 @Entity(tableName = "tourist_spots")
 public class TouristSpot {
@@ -20,21 +21,23 @@ public class TouristSpot {
     public String imageUrl;
     public boolean isWished = false;
 
-    // ✨ 1. 타입(12:관광지, 15:축제 등)을 저장할 변수 추가
+    // 타입(12:관광지, 15:축제 등)을 저장할 변수
     public int contentTypeId;
 
-    // Room이 사용하는 기본 생성자
+    //  Room이 사용할 기본 생성자
     public TouristSpot() {
-        this.contentId = ""; // NonNull 필드는 초기화가 필요합니다.
+        this.contentId = ""; // NonNull 필드는 초기화 필요
     }
 
-    // ✨ 2. Repository에서 사용할 생성자에 contentTypeId 파라미터 추가
-    public TouristSpot(@NonNull String contentId, String name, String address, String imageUrl, boolean isWished, int contentTypeId) {
+    // Repository 등에서만 직접 쓸 생성자 → @Ignore 붙임
+    @Ignore
+    public TouristSpot(@NonNull String contentId, String name, String address,
+                       String imageUrl, boolean isWished, int contentTypeId) {
         this.contentId = contentId;
         this.name = name;
         this.address = address;
         this.imageUrl = imageUrl;
         this.isWished = isWished;
-        this.contentTypeId = contentTypeId; // ✨ 3. 생성자에서 값 할당
+        this.contentTypeId = contentTypeId;
     }
 }

@@ -2,8 +2,6 @@
 plugins {
     id 'com.android.application'
     id 'com.google.gms.google-services'
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
 }
 
 def localProps = new Properties()
@@ -46,13 +44,10 @@ android {
         targetCompatibility JavaVersion.VERSION_11
     }
 
-    kotlinOptions {
-        jvmTarget = '11'
-    }
+
     buildFeatures {
         viewBinding true
         buildConfig true
-        compose true// ← BuildConfig 사용 에러 해결 포인트
     }
 }
 
@@ -78,9 +73,9 @@ dependencies {
     implementation "androidx.browser:browser:1.8.0"
 
     // Lifecycle
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.7.0"
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.7.0"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0"
+    implementation "androidx.lifecycle:lifecycle-runtime:2.7.0"
+    implementation "androidx.lifecycle:lifecycle-livedata:2.7.0"
+    implementation "androidx.lifecycle:lifecycle-viewmodel:2.7.0"
 
     // Navigation
     implementation "androidx.navigation:navigation-fragment:2.7.7"
@@ -88,14 +83,6 @@ dependencies {
 
     // Room DB
     implementation "androidx.room:room-runtime:$room_version"
-    implementation libs.activity.compose
-    implementation platform(libs.compose.bom)
-    implementation libs.ui
-    implementation libs.ui.graphics
-    implementation libs.ui.tooling.preview
-    implementation libs.material3
-    androidTestImplementation platform(libs.compose.bom)
-    androidTestImplementation libs.ui.test.junit4
     annotationProcessor "androidx.room:room-compiler:$room_version"
 
     // Network (Retrofit) & Image Loading (Glide)
@@ -114,6 +101,4 @@ dependencies {
     testImplementation "junit:junit:4.13.2"
     androidTestImplementation "androidx.test.ext:junit:1.1.5"
     androidTestImplementation "androidx.test.espresso:espresso-core:3.5.1"
-    debugImplementation libs.ui.tooling
-    debugImplementation libs.ui.test.manifest
 }
