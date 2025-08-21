@@ -6,47 +6,104 @@ import retrofit2.http.Query;
 
 public interface SpotApiService {
 
-    // 관광지 목록
+    // 관광지(12)
     @GET("areaBasedList2")
     Call<SpotResponse> getTourList(
             @Query("numOfRows") int numOfRows,
             @Query("pageNo") int pageNo,
             @Query("MobileOS") String os,
             @Query("MobileApp") String app,
-            @Query("arrange") String arrange,
-            @Query("contentTypeId") int contentTypeId,
+            @Query("arrange") String arrange,           // "A" / "C" 등
+            @Query("contentTypeId") int contentTypeId,  // 12
             @Query("areaCode") int areaCode,
             @Query("sigunguCode") Integer sigunguCode,
-            @Query("_type") String type,
+            @Query("_type") String type,                // "json"
             @Query("serviceKey") String key
     );
 
-    // 축제 목록
+    // 축제(15)
     @GET("searchFestival2")
     Call<SpotResponse> getFestivalList(
             @Query("numOfRows") int numOfRows,
             @Query("pageNo") int pageNo,
-            @Query("MobileOS") String mobileOS,
-            @Query("MobileApp") String mobileApp,
-            @Query("_type") String type,
+            @Query("MobileOS") String os,
+            @Query("MobileApp") String app,
+            @Query("_type") String type,                // "json"
             @Query("areaCode") int areaCode,
             @Query("sigunguCode") Integer sigunguCode,
-            @Query("eventStartDate") String eventStartDate,
-            @Query("arrange") String arrange,
-            @Query("serviceKey") String serviceKey
+            @Query("eventStartDate") String eventStartDate,  // yyyyMMdd
+            @Query("arrange") String arrange,           // "A"
+            @Query("serviceKey") String key
     );
 
+    // --- 검색: 기존 호출을 살리기 위해 오버로드 2개 제공 ---
 
-    // 반드시 KorService2 + searchKeyword2
+    // (A) 프로젝트 일부가 이 시그니처를 사용
     @GET("searchKeyword2")
     Call<SpotResponse> searchKeyword(
-            @Query("serviceKey") String serviceKey,
-            @Query("MobileOS") String mobileOS,
-            @Query("MobileApp") String mobileApp,
+            @Query("MobileOS") String os,
+            @Query("MobileApp") String app,
+            @Query("_type") String type,          // "json"
+            @Query("keyword") String keyword,
+            @Query("contentTypeId") Integer contentTypeId, // null 가능
+            @Query("numOfRows") int numOfRows,
+            @Query("pageNo") int pageNo,
+            @Query("serviceKey") String key
+    );
+
+    // (B) 다른 부분이 이 순서를 사용했다면 이것도 커버됨
+    @GET("searchKeyword2")
+    Call<SpotResponse> searchKeyword(
+            @Query("serviceKey") String key,
+            @Query("MobileOS") String os,
+            @Query("MobileApp") String app,
             @Query("_type") String type,
             @Query("keyword") String keyword,
-            @Query("contentTypeId") int contentTypeId,
+            @Query("contentTypeId") Integer contentTypeId,
             @Query("numOfRows") int numOfRows,
             @Query("pageNo") int pageNo
     );
+
+    // 공통 상세(대표사진/개요/주소/우편번호/연락처 등)
+    @GET("detailCommon2")
+    Call<SpotDetailCommonResponse> getDetailCommon(
+            @Query("MobileOS") String os,               // "AND"
+            @Query("MobileApp") String app,             // "localit"
+            @Query("_type") String type,                // "json"
+            @Query("contentId") String contentId,
+            @Query("contentTypeId") String contentTypeId,
+            @Query("defaultYN") String defaultYN,       // Y
+            @Query("firstImageYN") String firstImageYN, // Y
+            @Query("areacodeYN") String areacodeYN,     // Y
+            @Query("catcodeYN") String catcodeYN,       // Y
+            @Query("addrinfoYN") String addrinfoYN,     // Y  ← 주소 받는 스위치
+            @Query("mapinfoYN") String mapinfoYN,       // Y  ← 좌표 받는 스위치
+            @Query("overviewYN") String overviewYN,     // Y  ← 개요 받는 스위치
+            @Query("serviceKey") String serviceKey
+    );
+
+    // 인트로 상세(관광지: 문의/쉬는날/이용시간/주차/입장료 등, 축제는 행사기간 등)
+    @GET("detailIntro2")
+    Call<SpotDetailIntroResponse> getDetailIntro(
+            @Query("MobileOS") String os,
+            @Query("MobileApp") String app,
+            @Query("_type") String type,               // "json"
+            @Query("contentId") String contentId,
+            @Query("contentTypeId") int contentTypeId, // 12(관광) / 15(축제)
+            @Query("serviceKey") String key
+    );
+    // SpotApiService.java
+    @GET("detailImage2")
+    Call<SpotDetailImageResponse> getDetailImages(
+            @Query("numOfRows") int numOfRows,
+            @Query("pageNo") int pageNo,
+            @Query("MobileOS") String mobileOS,     // "AND"
+            @Query("MobileApp") String mobileApp,   // "localit"
+            @Query("_type") String type,            // "json"
+            @Query("imageYN") String imageYN,       // "Y"
+            @Query("subImageYN") String subImageYN, // "Y"
+            @Query("contentId") String contentId,
+            @Query("serviceKey") String serviceKey
+    );
+
 }

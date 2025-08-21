@@ -12,15 +12,18 @@ pluginManagement {
     }
 }
 
-
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://devrepo.kakao.com/nexus/content/groups/public/' } // ✅ 카카오 SDK 공식 저장소
+        // 네이버 지도 SDK
+        maven {url 'https://repository.map.naver.com/archive/maven'}
+        // 카카오 SDK
+        maven { url "https://devrepo.kakao.com/nexus/content/groups/public/" }
     }
 }
+
 
 rootProject.name = "Localit"
 include(":app")

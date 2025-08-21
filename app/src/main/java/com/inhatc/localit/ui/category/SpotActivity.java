@@ -1,10 +1,11 @@
-
 package com.inhatc.localit.ui.category;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -14,7 +15,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.inhatc.localit.FestivalDetailActivity;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
 import com.inhatc.localit.api.SpotApiHelper;
@@ -30,19 +32,25 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class TourismActivity extends AppCompatActivity {
+public class SpotActivity extends AppCompatActivity {
 
-    private static final String TAG = "TourismActivity";
+    private static final String TAG = "SpotActivity";
     private static final String SERVICE_KEY =
             "wL/Ry8EMiMg43mPRl3wyQhKosVExsJbLLDcZebat4S4eedobtNuBG+eqrj5GPKHvEAxy4NjYPz25Parbyeg8PA==";
 
     private RecyclerView recyclerViewTourism;
-    private TourismAdapter tourismAdapter;
-    private final List<SpotResponse.Item> apiItems = new ArrayList<>();
+    private SpotAdapter spotAdapter;
+
+    // API 원본 목록 (검색 필터용)
+    private final List<SpotResponse.Item> fullItems = new ArrayList<>();
 
     private TextView textRegionTitle;
     private ImageView btnBack;
     private BottomNavigationView navView;
+
+    // 검색 뷰
+    private TextInputLayout searchInputLayout;
+    private TextInputEditText etSearch;
 
     private String regionName;
     private String subRegionName;
@@ -52,7 +60,6 @@ public class TourismActivity extends AppCompatActivity {
     private static final Map<String, Integer> GG_SIGUNGU    = new HashMap<>();
 
     static {
-        // 시/도 → areaCode
         AREA_CODE_MAP.put("서울특별시", 1);
         AREA_CODE_MAP.put("인천광역시", 2);
         AREA_CODE_MAP.put("대전광역시", 3);
@@ -71,7 +78,6 @@ public class TourismActivity extends AppCompatActivity {
         AREA_CODE_MAP.put("경상남도", 38);
         AREA_CODE_MAP.put("제주특별자치도", 39);
 
-        // 약칭/별칭 → 표준명 매핑
         alias("서울특별시", "서울", "서울시");
         alias("인천광역시", "인천", "인천시");
         alias("대전광역시", "대전", "대전시");
@@ -91,7 +97,6 @@ public class TourismActivity extends AppCompatActivity {
         alias("경상남도", "경남");
         alias("제주특별자치도", "제주", "제주도");
 
-        // 경기도 하위 시/군 → sigunguCode (예시값, 실제 API로 갱신 권장)
         GG_SIGUNGU.put("수원시", 13);
         GG_SIGUNGU.put("성남시", 12);
         GG_SIGUNGU.put("고양시", 2);
@@ -140,6 +145,7 @@ public class TourismActivity extends AppCompatActivity {
         initViews();
         getRegionNameFromIntent();
         setupRecyclerView();
+        setupSearchBar();
         setupClickListeners();
         setupBottomNavigationView();
 
@@ -151,6 +157,9 @@ public class TourismActivity extends AppCompatActivity {
         textRegionTitle     = findViewById(R.id.textRegionTitle);
         btnBack             = findViewById(R.id.btnBack);
         navView             = findViewById(R.id.nav_view);
+
+        searchInputLayout   = findViewById(R.id.searchInputLayout);
+        etSearch            = findViewById(R.id.etSearch);
     }
 
     private void getRegionNameFromIntent() {
@@ -165,35 +174,87 @@ public class TourismActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        tourismAdapter = new TourismAdapter(
-                apiItems,
-                (item, position) -> {
-                    Intent intent = new Intent(TourismActivity.this, FestivalDetailActivity.class);
-                    intent.putExtra("event_title", item.title != null ? item.title : "");
-                    String sub = (item.addr1 != null && !item.addr1.isEmpty()) ? item.addr1
-                            : (item.createdtime != null ? item.createdtime : "");
-                    intent.putExtra("event_date", sub);
-                    intent.putExtra("event_image_url", item.firstimage != null ? item.firstimage : "");
-                    startActivity(intent);
-                },
+        spotAdapter = new SpotAdapter(
+                new ArrayList<>(),
+                // 카드 클릭 시 상세 화면으로 이동
+                (item, position) -> openSpotDetail(item),
+                // 즐겨찾기 클릭은 토스트 유지
                 (item, position) -> Toast.makeText(
-                        TourismActivity.this,
+                        SpotActivity.this,
                         "즐겨찾기: " + (item.title != null ? item.title : ""),
                         Toast.LENGTH_SHORT
                 ).show()
         );
-
         recyclerViewTourism.setLayoutManager(new LinearLayoutManager(this));
-        recyclerViewTourism.setAdapter(tourismAdapter);
+        recyclerViewTourism.setAdapter(spotAdapter);
     }
 
-    private void setupClickListeners() { btnBack.setOnClickListener(v -> finish()); }
+    private void openSpotDetail(SpotResponse.Item item) {
+        if (item == null) return;
+        Intent i = new Intent(this, SpotDetailActivity.class);
+        i.putExtra(SpotDetailActivity.EXTRA_CONTENT_ID, item.contentid);
+        i.putExtra(SpotDetailActivity.EXTRA_CONTENT_TYPE_ID,
+                TextUtils.isEmpty(item.contenttypeid) ? "12" : item.contenttypeid);
+        // 선표시용
+        i.putExtra(SpotDetailActivity.EXTRA_TITLE, s(item.title));
+        i.putExtra(SpotDetailActivity.EXTRA_ADDR1, s(item.addr1));
+        i.putExtra(SpotDetailActivity.EXTRA_FIRST_IMAGE, s(item.firstimage));
+        startActivity(i);
+    }
+
+    private String s(String v){ return v==null?"":v; }
+
+    /** 검색바: 아이콘/IME_SEARCH로 로컬 필터 */
+    private void setupSearchBar() {
+        if (searchInputLayout != null) {
+            searchInputLayout.setEndIconOnClickListener(v -> triggerSearch());
+        }
+        if (etSearch != null) {
+            etSearch.setOnEditorActionListener((tv, actionId, ev) -> {
+                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    triggerSearch();
+                    return true;
+                }
+                return false;
+            });
+        }
+    }
+
+    private void triggerSearch() {
+        String q = (etSearch != null && etSearch.getText() != null)
+                ? etSearch.getText().toString().trim()
+                : "";
+        applyFilter(q);
+        hideKeyboard();
+    }
+
+    /** 로컬 필터: 제목/주소에 키워드 포함 */
+    private void applyFilter(String keyword) {
+        if (TextUtils.isEmpty(keyword)) {
+            spotAdapter.submitList(new ArrayList<>(fullItems));
+            return;
+        }
+        String k = keyword.toLowerCase();
+        List<SpotResponse.Item> out = new ArrayList<>();
+        for (SpotResponse.Item it : fullItems) {
+            String t = it != null && it.title != null ? it.title : "";
+            String a = it != null && it.addr1 != null ? it.addr1 : "";
+            if (t.toLowerCase().contains(k) || a.toLowerCase().contains(k)) {
+                out.add(it);
+            }
+        }
+        spotAdapter.submitList(out);
+    }
+
+    private void setupClickListeners() {
+        btnBack.setOnClickListener(v -> finish());
+    }
 
     private void setupBottomNavigationView() {
         if (navView == null) return;
         navView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            Intent intent = new Intent(TourismActivity.this, MainActivity.class);
+            Intent intent = new Intent(SpotActivity.this, MainActivity.class);
             if (id == R.id.navigation_home) intent.putExtra("start_fragment", 0);
             else if (id == R.id.navigation_category) intent.putExtra("start_fragment", 1);
             else if (id == R.id.navigation_search) intent.putExtra("start_fragment", 2);
@@ -213,7 +274,6 @@ public class TourismActivity extends AppCompatActivity {
                 + ", areaCode=" + areaCode + ", sigungu=" + sigunguCode);
 
         SpotApiService api = SpotApiHelper.getApiService();
-
         Call<SpotResponse> call = api.getTourList(
                 30, 1, "AND", "localit", "A",
                 12, areaCode, sigunguCode,
@@ -230,38 +290,41 @@ public class TourismActivity extends AppCompatActivity {
                         response.body().response.body == null ||
                         response.body().response.body.items == null ||
                         response.body().response.body.items.item == null) {
-                    Toast.makeText(TourismActivity.this, "관광지 데이터를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(SpotActivity.this, "관광지 데이터를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 List<SpotResponse.Item> items = response.body().response.body.items.item;
 
-                // 서버가 sigungu를 무시/불일치하면 addr1로 보조 필터
+                // 서버 sigungu 불일치 보정
                 if (sigunguCode != null && !TextUtils.isEmpty(subRegionName)) {
                     items = filterByAddr(items, subRegionName);
                 }
 
-                tourismAdapter.submitList(items);
+                fullItems.clear();
+                fullItems.addAll(items);
+
+                String currentQuery = etSearch != null && etSearch.getText() != null
+                        ? etSearch.getText().toString().trim() : "";
+                applyFilter(currentQuery);
             }
 
             @Override
             public void onFailure(Call<SpotResponse> call, Throwable t) {
                 t.printStackTrace();
-                Toast.makeText(TourismActivity.this, "네트워크 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(SpotActivity.this, "네트워크 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    /** 경기도 하위 시/군 코드 매핑 ("전체"면 null). 약칭(경기) 대응을 위해 areaCode==31로 판정 */
     private Integer getSigunguIfGyeonggi(String region, String sub) {
         if (TextUtils.isEmpty(sub)) return null;
-        int area = getAreaCode(region);        // 별칭/접미사 정규화 포함
-        if (area != 31) return null;           // 경기도만 sigungu 적용
+        int area = getAreaCode(region);
+        if (area != 31) return null;
         String s = sub.trim();
         if ("전체".equals(s)) return null;
         return GG_SIGUNGU.get(s);
     }
 
-    /** addr1에 하위도시명이 포함돼 있는지로 2차 필터 */
     private List<SpotResponse.Item> filterByAddr(List<SpotResponse.Item> src, String key) {
         if (src == null) return new ArrayList<>();
         if (TextUtils.isEmpty(key)) return src;
@@ -276,7 +339,6 @@ public class TourismActivity extends AppCompatActivity {
         return out;
     }
 
-    /** 별칭/접미사 제거 포함해서 areaCode 계산 (서울 폴백 방지) */
     private int getAreaCode(String region) {
         String key = clean(region);
         String standard = REGION_ALIAS.get(key);
@@ -293,5 +355,14 @@ public class TourismActivity extends AppCompatActivity {
         }
         Integer code = AREA_CODE_MAP.get(standard);
         return code != null ? code : 1;
+    }
+
+    private void hideKeyboard() {
+        try {
+            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null && etSearch != null) {
+                imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
+            }
+        } catch (Exception ignored) {}
     }
 }

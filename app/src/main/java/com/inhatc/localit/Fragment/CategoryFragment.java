@@ -14,11 +14,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.inhatc.localit.R;
 import com.inhatc.localit.databinding.FragmentCategoryBinding;
-import com.inhatc.localit.ui.category.EventsActivity;
+import com.inhatc.localit.ui.category.FestivalActivity;
 import com.inhatc.localit.ui.category.NewsActivity;
 import com.inhatc.localit.ui.category.RegionAdapter;
+import com.inhatc.localit.ui.category.SpotActivity;
 import com.inhatc.localit.ui.category.SubRegionAdapter;
-import com.inhatc.localit.ui.category.TourismActivity;
 
 import java.util.Arrays;
 import java.util.List;
@@ -76,8 +76,8 @@ public class CategoryFragment extends Fragment {
 
     private void setupCategoryClickListeners() {
         binding.categoryNews.setOnClickListener(v -> openCategoryActivity(NewsActivity.class));
-        binding.categoryEvents.setOnClickListener(v -> openCategoryActivity(EventsActivity.class));
-        binding.categoryTourism.setOnClickListener(v -> openCategoryActivity(TourismActivity.class));
+        binding.categoryEvents.setOnClickListener(v -> openCategoryActivity(FestivalActivity.class));
+        binding.categoryTourism.setOnClickListener(v -> openCategoryActivity(SpotActivity.class));
     }
 
     private void openCategoryActivity(Class<?> activityClass) {
@@ -97,7 +97,7 @@ public class CategoryFragment extends Fragment {
             targetRegion = selectedRegion;
         }
 
-        Intent intent = new Intent(getContext(), activityClass);  // 💡 해당 액티비티로 이동
+        Intent intent = new Intent(getContext(), activityClass);  // 해당 액티비티로 이동
         intent.putExtra("regionName", selectedRegion);
         if (selectedSubRegion != null) {
             intent.putExtra("subRegionName", selectedSubRegion);

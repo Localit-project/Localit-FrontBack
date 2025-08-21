@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.Toast;
 import android.view.ViewGroup.LayoutParams;
 
 import androidx.annotation.NonNull;
@@ -28,10 +29,12 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.inhatc.localit.R;
+import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
 import com.inhatc.localit.db.TouristSpot; // db 모델 import
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -41,7 +44,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
-import retrofit2.*;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class SearchFragment extends Fragment {
@@ -55,7 +61,7 @@ public class SearchFragment extends Fragment {
     private RecyclerView recyclerResults;
     private View progress;
 
-    private SearchAdapter adapter;
+    private SearchAdapter adapter; // 프로젝트의 기존 어댑터 사용
     private SpotApiService api;
 
     // ViewModel 변수 선언
@@ -91,6 +97,7 @@ public class SearchFragment extends Fragment {
         recyclerResults.setLayoutManager(new LinearLayoutManager(ctx));
         adapter = new SearchAdapter(
                 ctx,
+<<<<<<< HEAD
                 item -> { /* TODO: 아이템 클릭 시 상세 화면으로 이동하는 로직 구현 */ },
                 favItem -> {
                     // 찜 버튼 클릭 시 ViewModel에 이벤트 전달
@@ -113,6 +120,14 @@ public class SearchFragment extends Fragment {
         });
 
         // Retrofit (Gson) 초기화
+=======
+                this::openHomepageFor,     // ✅ 결과 클릭 → 홈페이지(또는 구석구석 검색)
+                favItem -> { /* 즐겨찾기 토글/저장 처리 */ }
+        );
+        recyclerResults.setAdapter(adapter);
+
+        // Retrofit
+>>>>>>> 1513c0ab18a3a890083dbb438950b8a3dccbdd87
         HttpLoggingInterceptor log = new HttpLoggingInterceptor();
         log.setLevel(HttpLoggingInterceptor.Level.BASIC);
         OkHttpClient client = new OkHttpClient.Builder().addInterceptor(log).build();
@@ -135,7 +150,11 @@ public class SearchFragment extends Fragment {
         });
         til.setEndIconOnClickListener(view -> performSearchFromInput());
 
+<<<<<<< HEAD
         // 추천 검색어 칩 리스너
+=======
+        // 추천 칩
+>>>>>>> 1513c0ab18a3a890083dbb438950b8a3dccbdd87
         setChipClick(v, R.id.chip_busan, "부산");
         setChipClick(v, R.id.chip_seoul, "서울");
         setChipClick(v, R.id.chip_gangneung, "강릉");
@@ -271,4 +290,50 @@ public class SearchFragment extends Fragment {
         BottomNavigationView bottom = requireActivity().findViewById(R.id.nav_view);
         if (bottom != null) bottom.setSelectedItemId(R.id.navigation_home);
     }
-}
+
+    // ----------------------- ⬇⬇ 홈페이지 열기 로직 -----------------------
+
+    /** 검색 결과 아이템 클릭 -> 홈페이지(또는 '대한민국 구석구석' 검색)로 이동 */
+    private void openHomepageFor(SpotResponse.Item item) {
+        if (item == null) return;
+
+        // contentId
+        String contentId = null;
+        try {
+            if (item.contentid != null) contentId = String.valueOf(item.contentid);
+            else if (item.getContentid() != null) contentId = String.valueOf(item.getContentid());
+        } catch (Throwable ignored) {
+        }
+        if (TextUtils.isEmpty(contentId)) {
+            Toast.makeText(requireContext(), "콘텐츠 ID가 없어 이동할 수 없습니다.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // contentTypeId (우선 localContentType, 없으면 원본)
+        String contentTypeId = null;
+        try {
+            Integer local = null;
+            try {
+                local = item.getLocalContentType();
+            } catch (Throwable ignored) {
+            }
+            if (local != null && local > 0) {
+                contentTypeId = String.valueOf(local); // 12 or 15
+            } else if (item.contenttypeid != null) {
+                contentTypeId = String.valueOf(item.contenttypeid);
+            } else if (item.getContenttypeid() != null) {
+                contentTypeId = String.valueOf(item.getContenttypeid());
+            }
+        } catch (Throwable ignored) {
+        }
+        if (TextUtils.isEmpty(contentTypeId)) contentTypeId = "12";
+
+        // 제목 (구석구석 검색 Fallback에 사용)
+        String t = null;
+        try {
+            t = item.getTitle();
+        } catch (Throwable ignored) {
+        }
+        if (TextUtils.isEmpty(t)) t = item.title;
+        final String titleFinal = t; //
+    }}

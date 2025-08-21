@@ -1,7 +1,7 @@
-// app/src/main/java/com/inhatc/localit/model/Festival.java
-package com.inhatc.localit.model;
+// app/src/main/java/com/inhatc/localit/model/FestivalItem.java
+package com.inhatc.localit.ui.category;
 
-public class Festival {
+public class FestivalItem {
     private String title;
     private String date;
 
@@ -14,7 +14,7 @@ public class Festival {
     private boolean favorite;
 
     // 리소스 이미지용 (샘플/더미)
-    public Festival(String title, String date, int imageResId, boolean favorite) {
+    public FestivalItem(String title, String date, int imageResId, boolean favorite) {
         this.title = title;
         this.date = date;
         this.imageResId = imageResId;
@@ -22,7 +22,7 @@ public class Festival {
     }
 
     //  API용 생성자 (URL)
-    public Festival(String title, String date, String imageUrl, boolean favorite) {
+    public FestivalItem(String title, String date, String imageUrl, boolean favorite) {
         this.title = title;
         this.date = date;
         this.imageUrl = imageUrl;

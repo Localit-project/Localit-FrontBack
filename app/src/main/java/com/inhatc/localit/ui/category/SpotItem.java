@@ -1,11 +1,11 @@
 package com.inhatc.localit.ui.category;
 
-public class TourismItem {
+public class SpotItem {
     private String name;
     private String description;
     private int imageResId;
 
-    public TourismItem(String name, String description, int imageResId) {
+    public SpotItem(String name, String description, int imageResId) {
         this.name = name;
         this.description = description;
         this.imageResId = imageResId;

@@ -149,19 +149,41 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <EditText
-                    android:id="@+id/etNickname"
+                <!-- 입력창 + 저장 버튼 -->
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:background="@drawable/bg_edittext_round"
-                    android:hint="2~10자로 입력해 주세요"
-                    android:imeOptions="actionDone"
-                    android:inputType="textPersonName"
-                    android:maxLength="10"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:singleLine="true"
-                    android:textStyle="normal" />
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <EditText
+                        android:id="@+id/etNickname"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_edittext_round"
+                        android:hint="2~10자로 입력해 주세요"
+                        android:imeOptions="actionDone"
+                        android:inputType="textPersonName"
+                        android:maxLength="10"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:singleLine="true" />
+
+                    <Button
+                        android:id="@+id/btnSaveNickname"
+                        android:layout_width="65dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_edittext_round"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="저장"
+                        android:textColor="@color/white"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+
 
                 <TextView
                     android:id="@+id/tvNickRule"
@@ -173,8 +195,6 @@
                     android:layout_marginStart="5dp"
                     android:layout_marginTop="8dp"/>
             </LinearLayout>
-
-
 
 
             <View

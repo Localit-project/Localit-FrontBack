@@ -23,6 +23,13 @@ public class RetrofitClient {
                     .baseUrl(BASE_URL)
                     .addConverterFactory(GsonConverterFactory.create(gson))  // 커스터마이즈된 Gson을 사용
                     .build();
+
+            HttpLoggingInterceptor netLog = new HttpLoggingInterceptor();
+            netLog.setLevel(HttpLoggingInterceptor.Level.BODY);
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .addInterceptor(netLog)
+                    .build();
+
         }
         return retrofit;
     }

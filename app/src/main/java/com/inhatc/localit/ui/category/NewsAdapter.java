@@ -1,120 +1,140 @@
-
 package com.inhatc.localit.ui.category;
 
+import android.os.Build;
+import android.text.Html;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.inhatc.localit.R;
-import com.inhatc.localit.model.Festival;   // 뉴스도 임시로 Event 모델 재사용
+import com.inhatc.localit.api.naver.NaverNewsResponse;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.VH> {
 
-    /** TourismAdapter 패턴과 동일한 콜백 2종 */
-    public interface OnItemClick {
-        void onNewsClick(Festival news, int position);
-    }
-    public interface OnFavClick {
-        void onFavoriteClick(Festival news, int position);
+    public interface OnNewsClickListener {
+        void onNewsClick(NaverNewsResponse.Item item, int position);
+        void onFavoriteClick(NaverNewsResponse.Item item, int position);
     }
 
-    private final List<Festival> items = new ArrayList<>();
-    private final OnItemClick onItemClick;
-    private final OnFavClick onFavClick;
+    private final List<NaverNewsResponse.Item> items = new ArrayList<>();
+    private final OnNewsClickListener listener;
 
-    /** TourismAdapter와 동일하게: 초기 리스트 + 콜백 2개 */
-    public NewsAdapter(List<Festival> initial,
-                       OnItemClick onItemClick,
-                       OnFavClick onFavClick) {
+    // 즐겨찾기 상태 (link 우선, 없으면 title)
+    private final Set<String> favoriteKeys = new HashSet<>();
+
+    public NewsAdapter(List<NaverNewsResponse.Item> initial, OnNewsClickListener listener) {
         if (initial != null) items.addAll(initial);
-        this.onItemClick = onItemClick;
-        this.onFavClick  = onFavClick;
+        this.listener = listener;
+        setHasStableIds(true);
     }
 
-    /** 리스트 갱신 (TourismAdapter의 submitList와 동일) */
-    public void submitList(List<Festival> newItems) {
+    public void updateData(List<NaverNewsResponse.Item> newItems) {
         items.clear();
         if (newItems != null) items.addAll(newItems);
         notifyDataSetChanged();
     }
 
+    public void setFavoriteKeys(Set<String> keys) {
+        favoriteKeys.clear();
+        if (keys != null) favoriteKeys.addAll(keys);
+        notifyDataSetChanged();
+    }
+
+    public Set<String> getFavoriteKeys() {
+        return new HashSet<>(favoriteKeys);
+    }
+
+    @Override public long getItemId(int position) {
+        return keyOf(items.get(position)).hashCode();
+    }
+
     @NonNull @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        // ⬇️ 네가 붙여준 XML 파일명으로 맞춰줘 (item_news.xml 가정)
         View v = LayoutInflater.from(parent.getContext())
-                // item_event 레이아웃 재사용 (imageEvent, textEventTitle, textEventDate, btnFavorite)
-                .inflate(R.layout.item_festival, parent, false);
+                .inflate(R.layout.item_news, parent, false);
         return new VH(v);
     }
 
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
-        final Festival it = items.get(position);
+        NaverNewsResponse.Item it = items.get(position);
 
-        // 제목/날짜 바인딩
-        h.title.setText(it != null && it.getTitle() != null ? it.getTitle() : "");
-        h.date.setText(it != null && it.getDate()  != null ? it.getDate()  : "");
+        // 네이버 응답은 HTML 태그 포함 → 사람 읽기용 변환
+        h.title.setText(htmlToText(it.getTitle()));
+        h.description.setText(htmlToText(it.getDescription()));
 
-        // 썸네일(임시 리소스 사용)
-        if (it != null && it.getImageResId() != 0) {
-            h.image.setImageResource(it.getImageResId());
-        } else {
-            h.image.setImageResource(R.drawable.sample1);
-        }
+        // ⭐ 셀렉터용 selected 상태 적용 (스크롤 재활용 대비해서 "항상" 해줘야 함)
+        boolean isFav = favoriteKeys.contains(keyOf(it));
+        h.btnFavorite.setSelected(isFav);
 
-        // 아이템 클릭 → 외부 콜백 위임
+        // 카드 클릭
         h.itemView.setOnClickListener(v -> {
             int pos = h.getBindingAdapterPosition();
             if (pos == RecyclerView.NO_POSITION) return;
-            if (onItemClick != null) onItemClick.onNewsClick(items.get(pos), pos);
+            if (listener != null) listener.onNewsClick(items.get(pos), pos);
         });
 
-        // 즐겨찾기 클릭 → 외부 콜백 위임 (아이콘 토글은 외부에서 처리)
-        if (h.btnFavorite != null) {
-            h.btnFavorite.setOnClickListener(v -> {
-                int pos = h.getBindingAdapterPosition();
-                if (pos == RecyclerView.NO_POSITION) return;
-                if (onFavClick != null) onFavClick.onFavoriteClick(items.get(pos), pos);
-            });
-        } else {
-            // 버튼 없으면 롱클릭으로 대체 (TourismAdapter와 동일한 fallback)
-            h.itemView.setOnLongClickListener(v -> {
-                int pos = h.getBindingAdapterPosition();
-                if (pos == RecyclerView.NO_POSITION) return true;
-                if (onFavClick != null) onFavClick.onFavoriteClick(items.get(pos), pos);
-                return true;
-            });
-        }
+        // 즐겨찾기 클릭 → 상태 반전 + selected 토글 (notify 불필요)
+        h.btnFavorite.setOnClickListener(v -> {
+            int pos = h.getBindingAdapterPosition();
+            if (pos == RecyclerView.NO_POSITION) return;
+
+            String key = keyOf(items.get(pos));
+            boolean newState;
+            if (favoriteKeys.contains(key)) {
+                favoriteKeys.remove(key);
+                newState = false;
+            } else {
+                favoriteKeys.add(key);
+                newState = true;
+            }
+            h.btnFavorite.setSelected(newState); // ⬅️ 아이콘 즉시 변경(셀렉터가 처리)
+
+            if (listener != null) listener.onFavoriteClick(items.get(pos), pos);
+        });
     }
 
     @Override public int getItemCount() { return items.size(); }
 
-    /** ViewHolder (TourismAdapter.VH와 유사) */
+    private String keyOf(NaverNewsResponse.Item it) {
+        if (it == null) return "@null";
+        if (!TextUtils.isEmpty(it.getLink()))  return "link:" + it.getLink();
+        if (!TextUtils.isEmpty(it.getTitle())) return "title:" + it.getTitle();
+        return "pos@" + System.identityHashCode(it);
+    }
+
+    private CharSequence htmlToText(String html) {
+        if (html == null) return "";
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            return Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY);
+        }
+        return Html.fromHtml(html);
+    }
+
     static class VH extends RecyclerView.ViewHolder {
-        ImageView image;       // @id/imageEvent
-        TextView title;        // @id/textEventTitle
-        TextView date;         // @id/textEventDate
-        ImageView btnFavorite; // @id/btnFavorite (선택)
+        TextView title;        // @id/textNewsTitle
+        TextView description;  // @id/textNewsDescription
+        ImageButton btnFavorite; // @id/btnFavorite
 
         VH(@NonNull View v) {
             super(v);
-            image = v.findViewById(R.id.imageEvent);
-            title = v.findViewById(R.id.textEventTitle);
-            date  = v.findViewById(R.id.textEventDate);
+            title = v.findViewById(R.id.textNewsTitle);
+            description = v.findViewById(R.id.textNewsDescription);
             btnFavorite = v.findViewById(R.id.btnFavorite);
-
-            // 버튼이 루트 클릭 포커스를 뺏지 않도록
-            if (btnFavorite != null) {
-                btnFavorite.setFocusable(false);
-                btnFavorite.setFocusableInTouchMode(false);
-            }
+            btnFavorite.setFocusable(false);
+            btnFavorite.setFocusableInTouchMode(false);
         }
     }
 }

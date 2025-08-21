@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 즐겨찾기 ON -->
+    <item android:state_selected="true"
+        android:drawable="@drawable/ic_favorite_full" />
+    <!-- 기본(OFF) -->
+    <item android:drawable="@drawable/ic_favorite_border_24" />
+</selector>
