@@ -37,29 +37,15 @@ import java.util.concurrent.Executors;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-/**
- * 관광지 공용 상세 화면
- * 1) 대표 사진
- * 2) 추가사진(보조사진들)
- * 3) 개요(상세설명)
- * 4) 주소
- * 5) 우편번호
- * 6) 문의 및 안내
- * 7) 쉬는날
- * 8) 이용시간
- * 9) 주차시설
- * 10) 입장료(없으면 "입장료 없음")
- */
-
 public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyCallback {
+
+    private static final String TAG = "SpotDetail";
 
     public static final String EXTRA_CONTENT_ID      = "extra_content_id";
     public static final String EXTRA_CONTENT_TYPE_ID = "extra_content_type_id";
     public static final String EXTRA_TITLE           = "extra_title";
     public static final String EXTRA_ADDR1           = "extra_addr1";
     public static final String EXTRA_FIRST_IMAGE     = "extra_first_image";
-
-    // intent keys 그대로
 
     private ImageView imageMain, btnBack;
     private RecyclerView recyclerGallery;
@@ -80,7 +66,6 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_spot_detail);
 
-        // 1) 인텐트
         Intent intent = getIntent();
         if (intent == null) { finishWithError("잘못된 접근입니다."); return; }
 
@@ -93,16 +78,12 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
 
         if (TextUtils.isEmpty(contentId)) { finishWithError("상세 조회에 필요한 contentId 가 없습니다."); return; }
 
-        // 2) 뷰
         bindViews();
 
-        // ESC처럼 뒤로가기
         btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
-
-        // 하단 내비 (필요 시)
         setupBottomNavigationView();
 
-        // 3) 선표시 (제목/주소/대표사진)
+        // 선표시
         setTextOrGone(textTitle, passedTitle);
         setTextOrGone(textAddr, passedAddr1);
         if (!TextUtils.isEmpty(passedFirstImage)) {
@@ -112,7 +93,7 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
             imageMain.setImageResource(R.drawable.sample1);
         }
 
-        // 4) 갤러리
+        // 갤러리
         recyclerGallery.setLayoutManager(new LinearLayoutManager(this, RecyclerView.HORIZONTAL, false));
         galleryAdapter = new GalleryAdapter(gallery, url ->
                 Glide.with(SpotDetailActivity.this)
@@ -120,32 +101,30 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
                         .into(imageMain));
         recyclerGallery.setAdapter(galleryAdapter);
 
-        // 5) 지도
+        // 지도
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
-        // 6) 데이터
-        SpotApiHelper.fetchDetailCommon(contentId, contentTypeId, item -> runOnUiThread(() -> {
+        // 데이터
+        SpotApiHelper.fetchDetailCommon(contentId, contentTypeId, (SpotDetailCommonResponse.Item item) -> runOnUiThread(() -> {
             if (item == null) return;
 
-            // 🧭 XML 순서대로 바인딩 시작 ----------------
-
-            // (1) 개요
+            // 개요
             setTextWithBrOrGone(textOverview, item.overview);
 
-            // (2) 위치(주소)
+            // 주소
             setTextOrGone(textAddr, joinAddr(item.addr1, item.addr2));
 
-            // (3) 우편번호
+            // 우편번호
             if (!TextUtils.isEmpty(item.zipcode)) {
-                labelZip.setVisibility(View.VISIBLE);
+                if (labelZip != null) labelZip.setVisibility(View.VISIBLE);
                 setTextOrGone(textZipcode, item.zipcode);
             } else {
-                labelZip.setVisibility(View.GONE);
-                textZipcode.setVisibility(View.GONE);
+                if (labelZip != null) labelZip.setVisibility(View.GONE);
+                if (textZipcode != null) textZipcode.setVisibility(View.GONE);
             }
 
-            // (4) 문의 및 안내 (우선 common.tel)
+            // 문의 및 안내
             setTextWithBrOrGone(textTel, item.tel);
 
             // 대표 이미지 교체
@@ -155,35 +134,40 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
                         .placeholder(R.drawable.sample1).error(R.drawable.sample1).into(imageMain);
             }
 
-            // 좌표
+            // 좌표 처리 + 로그/토스트
             try {
+                Log.d(TAG, "COMMON raw coords mapx=" + item.mapx + ", mapy=" + item.mapy);
                 if (!TextUtils.isEmpty(item.mapy) && !TextUtils.isEmpty(item.mapx)) {
-                    lat = Double.parseDouble(item.mapy); // mapy=위도
-                    lng = Double.parseDouble(item.mapx); // mapx=경도
+                    lat = Double.parseDouble(item.mapy); // 위도
+                    lng = Double.parseDouble(item.mapx); // 경도
+                    Log.d(TAG, "COMMON parsed coords lat=" + lat + ", lng=" + lng);
+                    Toast.makeText(this, "좌표 수신 완료", Toast.LENGTH_SHORT).show();
                     updateMapMarker();
+                } else {
+                    String addr = joinAddr(item.addr1, item.addr2);
+                    Log.w(TAG, "COMMON no coords. fallback geocode addr=" + addr);
+                    if (!TextUtils.isEmpty(addr)) geocodeAndMove(addr);
+                    else Toast.makeText(this, "좌표/주소 없음", Toast.LENGTH_SHORT).show();
                 }
-            } catch (Exception ignore) {}
-            // 🧭 XML 순서 (공통 파트) 끝 ----------------
+            } catch (Exception e) {
+                Log.e(TAG, "Parsing map coords failed", e);
+                Toast.makeText(this, "좌표 파싱 실패", Toast.LENGTH_SHORT).show();
+            }
         }));
 
-        SpotApiHelper.fetchDetailIntro(contentId, safeInt(contentTypeId, 12), intro -> runOnUiThread(() -> {
+        SpotApiHelper.fetchDetailIntro(contentId, safeInt(contentTypeId, 12), (SpotDetailIntroResponse.Item intro) -> runOnUiThread(() -> {
             if (intro == null) return;
 
-            // (5) 휴일
+            // 휴일/시간/주차/입장료
             setTextWithBrOrGone(textRestdate, intro.restdate);
-
-            // (6) 이용시간
             setTextWithBrOrGone(textUsetime, intro.usetime);
-
-            // (7) 주차
             setTextWithBrOrGone(textParking, intro.parking);
 
-            // (8) 입장료
             String fee = nl(intro.usefee);
             textUsefee.setText(TextUtils.isEmpty(fee.trim()) ? "입장료 없음" : fee);
             textUsefee.setVisibility(View.VISIBLE);
 
-            // (4 보완) 문의 및 안내가 비어있다면 intro.infocenter로 보완
+            // 문의 보완
             if (TextUtils.isEmpty(textTel.getText())) {
                 setTextWithBrOrGone(textTel, intro.infocenter);
             }
@@ -211,22 +195,91 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         mapView        = findViewById(R.id.mapView);
         navView        = findViewById(R.id.nav_view);
     }
-
     // ---------------- 지도 ----------------
     @Override public void onMapReady(@NonNull NaverMap map) {
         naverMap = map;
         naverMap.getUiSettings().setScaleBarEnabled(false);
         naverMap.getUiSettings().setZoomControlEnabled(true);
+
+        Log.d(TAG, "onMapReady: map ready. lat=" + lat + ", lng=" + lng);
+        // 지도 보이는지 확인용(디버그): 초기 카메라(대한민국 중부)
+        if (lat == null || lng == null) {
+            naverMap.moveCamera(CameraUpdate.scrollAndZoomTo(new LatLng(36.5, 127.9), 6.5));
+        }
+
+        // 이미 좌표가 있으면 바로 마커
         updateMapMarker();
+
+        // 좌표 없고 주소가 있으면 바로 지오코딩 폴백
+        if ((lat == null || lng == null) && textAddr != null) {
+            CharSequence addr = textAddr.getText();
+            if (addr != null && addr.toString().trim().length() > 0) {
+                Log.d(TAG, "onMapReady: no coords yet -> geocode fallback with addr=" + addr);
+                geocodeAndMove(addr.toString());
+            } else {
+                Log.w(TAG, "onMapReady: no coords and no address available");
+                Toast.makeText(this, "지도 좌표/주소가 아직 준비되지 않았습니다.", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
+    /** 준비된 좌표를 지도에 마커로 표시 + 캡션 + 카메라 이동 */
     private void updateMapMarker() {
-        if (naverMap == null || lat == null || lng == null) return;
+        Log.d(TAG, "updateMapMarker called. naverMap=" + (naverMap != null)
+                + ", lat=" + lat + ", lng=" + lng);
+
+        if (naverMap == null) {
+            Log.w(TAG, "updateMapMarker: naverMap is null");
+            return;
+        }
+        if (lat == null || lng == null) {
+            Log.w(TAG, "updateMapMarker: lat/lng is null");
+            return;
+        }
+
         LatLng pos = new LatLng(lat, lng);
+
         if (marker == null) marker = new Marker();
         marker.setPosition(pos);
         marker.setMap(naverMap);
+
+        String caption = (textTitle != null && !TextUtils.isEmpty(String.valueOf(textTitle.getText())))
+                ? textTitle.getText().toString()
+                : (textAddr != null ? String.valueOf(textAddr.getText()) : "");
+        if (!TextUtils.isEmpty(caption)) marker.setCaptionText(caption);
+
         naverMap.moveCamera(CameraUpdate.scrollAndZoomTo(pos, 15.0));
+        Log.d(TAG, "updateMapMarker: moved camera to lat=" + lat + ", lng=" + lng);
+        Toast.makeText(this, "지도 위치가 설정되었습니다.", Toast.LENGTH_SHORT).show();
+    }
+
+    /** 주소를 좌표로 변환하고 지도 갱신(폴백) */
+    private void geocodeAndMove(String address) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                Geocoder g = new Geocoder(this, Locale.KOREA);
+                List<Address> r = g.getFromLocationName(address, 1);
+                if (r != null && !r.isEmpty()) {
+                    lat = r.get(0).getLatitude();
+                    lng = r.get(0).getLongitude();
+                    Log.d(TAG, "GEOCODER lat=" + lat + ", lng=" + lng + " for addr=" + address);
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "주소로 위치 설정: " + address, Toast.LENGTH_SHORT).show();
+                        updateMapMarker();
+                    });
+                } else {
+                    Log.w(TAG, "GEOCODER no result for addr=" + address);
+                    runOnUiThread(() ->
+                            Toast.makeText(this, "주소 지오코딩 실패: " + address, Toast.LENGTH_SHORT).show()
+                    );
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Geocoder failed for address=" + address, e);
+                runOnUiThread(() ->
+                        Toast.makeText(this, "지오코더 오류", Toast.LENGTH_SHORT).show()
+                );
+            }
+        });
     }
 
     // -------- MapView lifecycle --------
@@ -240,7 +293,6 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
     private void setupBottomNavigationView() {
         if (navView == null) return;
         navView.setOnItemSelectedListener(item -> {
-            // 필요 시 메인으로 라우팅하는 기존 로직 유지
             startActivity(new Intent(this, MainActivity.class)
                     .putExtra("start_fragment",
                             item.getItemId() == R.id.navigation_home ? 0 :
@@ -260,14 +312,12 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
     // ---------- 유틸 ----------
     private String s(String v) { return v == null ? "" : v; }
 
-    // <br> → 줄바꿈, 나머지 태그 제거
     private String nl(String v) {
         if (v == null) return "";
         return v.replaceAll("(?i)<br\\s*/?>", "\n")
                 .replaceAll("(?s)<[^>]*>", "");
     }
 
-    // 줄바꿈 처리 + GONE 처리
     private void setTextWithBrOrGone(TextView tv, String value) {
         String cooked = nl(value);
         if (TextUtils.isEmpty(cooked.trim())) {
@@ -281,7 +331,6 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         }
     }
 
-    // 일반 텍스트 + GONE 처리
     private void setTextOrGone(TextView tv, String value) {
         String s = s(value);
         if (TextUtils.isEmpty(s.trim())) {
@@ -299,13 +348,9 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         return a1 + " " + a2;
     }
 
-    private String nvl(String a, String b) {
-        // a가 null 이거나 비어있으면 b 반환
-        return TextUtils.isEmpty(a) ? b : a;
-    }
+    private String nvl(String a, String b) { return TextUtils.isEmpty(a) ? b : a; }
 
     private int safeInt(String s, int def) {
         try { return Integer.parseInt(s); } catch (Exception e) { return def; }
     }
 }
-

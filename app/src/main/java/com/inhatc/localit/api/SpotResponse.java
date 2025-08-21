@@ -39,6 +39,8 @@ public class SpotResponse {
 
         // 어댑터에서 관광지/축제 구분용(로컬)
         private int localContentType;
+        public String mapx;   // 경도
+        public String mapy;
 
         // ===== Getter & Setter =====
         public String getContentid() {
