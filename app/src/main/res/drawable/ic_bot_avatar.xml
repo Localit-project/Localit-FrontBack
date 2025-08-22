@@ -1,0 +1,23 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 얼굴 원형 -->
+    <path
+        android:fillColor="#78D0A8"
+        android:pathData="M12,2a10,10 0 1,0 0,20a10,10 0 1,0 0,-20z"/>
+    <!-- 눈 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M8,10a1,1 0 1,0 0.001,0z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M16,10a1,1 0 1,0 0.001,0z"/>
+    <!-- 입 -->
+    <path
+        android:pathData="M8,15c1.5,2 6.5,2 8,0"
+        android:strokeWidth="1"
+        android:strokeColor="#FFFFFF"
+        android:fillColor="@android:color/transparent"/>
+</vector>

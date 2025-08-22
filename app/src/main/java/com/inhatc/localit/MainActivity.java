@@ -9,12 +9,12 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.inhatc.localit.Fragment.CategoryFragment;
+import com.inhatc.localit.Fragment.ChatFragment;
 import com.inhatc.localit.Fragment.FavoriteFragment;
 import com.inhatc.localit.Fragment.HomeFragment;
 import com.inhatc.localit.Fragment.MypageFragment;
 import com.inhatc.localit.Fragment.NotificationsFragment;
 import com.inhatc.localit.Fragment.AlarmSettingsFragment;
-import com.inhatc.localit.Fragment.SearchFragment;
 import com.inhatc.localit.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
                 initialMenuId = R.id.navigation_category;
                 break;
             case 2:
-                initialFragment = new SearchFragment();
+                initialFragment = new ChatFragment();
                 initialMenuId = R.id.navigation_search;
                 break;
             case 3:
@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (id == R.id.navigation_category) {
                 selectedFragment = new CategoryFragment();
             } else if (id == R.id.navigation_search) {
-                selectedFragment = new SearchFragment();
+                selectedFragment = new ChatFragment();
             } else if (id == R.id.navigation_favorite) {
                 selectedFragment = new FavoriteFragment();
             } else if (id == R.id.navigation_mypage) {

@@ -22,7 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.VH> {
+public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.VH> {
 
     public interface OnItemClickListener {
         void onItemClick(SpotResponse.Item item);
@@ -40,9 +40,9 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.VH> {
     // Set을 사용하면 특정 아이디가 포함되어 있는지 매우 빠르게 확인할 수 있습니다.
     private final Set<String> favoriteIds = new HashSet<>();
 
-    public SearchAdapter(Context context,
-                         OnItemClickListener itemClickListener,
-                         OnFavoriteClickListener favoriteClickListener) {
+    public ChatAdapter(Context context,
+                       OnItemClickListener itemClickListener,
+                       OnFavoriteClickListener favoriteClickListener) {
         this.context = context;
         this.itemClickListener = itemClickListener;
         this.favoriteClickListener = favoriteClickListener;

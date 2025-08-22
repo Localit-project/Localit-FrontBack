@@ -15,14 +15,14 @@ import java.util.List;
  * SearchFragment의 UI 상태와 데이터를 관리하는 ViewModel.
  * UI와 데이터 로직(Repository)을 분리하는 역할을 합니다.
  */
-public class SearchViewModel extends AndroidViewModel {
+public class ChatViewModel extends AndroidViewModel {
 
     // 데이터 처리를 담당하는 Repository
     private final TouristSpotRepository mRepository;
     // DB에 저장된 모든 '찜' 목록을 담고 있는 LiveData
     private final LiveData<List<TouristSpot>> mAllWishedSpots;
 
-    public SearchViewModel(@NonNull Application application) {
+    public ChatViewModel(@NonNull Application application) {
         super(application);
         // ViewModel이 생성될 때 Repository를 초기화하고,
         // Repository로부터 찜 목록 LiveData를 가져옵니다.

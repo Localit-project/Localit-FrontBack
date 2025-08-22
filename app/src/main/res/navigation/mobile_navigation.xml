@@ -15,9 +15,9 @@
 
     <fragment
         android:id="@+id/navigation_search"
-        android:name="com.inhatc.localit.Fragment.SearchFragment"
+        android:name="com.inhatc.localit.Fragment.ChatFragment"
         android:label="@string/title_search"
-        tools:layout="@layout/fragment_search" />
+        tools:layout="@layout/fragment_chat" />
 
     <fragment
         android:id="@+id/navigation_favorite"

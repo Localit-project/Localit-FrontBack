@@ -101,4 +101,7 @@
     <string name="noti_header_news">뉴스 알림</string>
     <string name="title_activity_gemini">activity_gemini</string>
 
+    <string name="send">보내기</string>
+    <string name="attach">첨부</string>
+
 </resources>
