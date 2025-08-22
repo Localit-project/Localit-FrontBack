@@ -51,10 +51,13 @@ android {
     }
 }
 
-// ✅ Room 버전을 사용하기 전에 변수를 정의합니다.
+// Room 버전을 사용하기 전에 변수를 정의합니다.
 def room_version = "2.6.1" // 원하는 Room 라이브러리 버전
 
 dependencies {
+    //챗봇 추천 액션
+    implementation "com.google.android.flexbox:flexbox:3.0.0"
+
     // 네이버 지도 SDK 추가
     implementation "com.naver.maps:map-sdk:3.22.1"
 

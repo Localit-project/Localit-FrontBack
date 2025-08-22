@@ -27,6 +27,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Localit"
+        android:enableOnBackInvokedCallback="true"
         tools:targetApi="31">
         <!-- Kakao SDK AppKey -->
         <meta-data
@@ -116,6 +117,7 @@
 
         <activity android:name=".api.ActivityGemini"
             android:exported="true" />
+
 
 
         <meta-data
