@@ -27,6 +27,7 @@ import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
 import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotDetailCommonResponse;
+import com.inhatc.localit.api.SpotDetailInfoResponse;
 import com.inhatc.localit.api.SpotDetailIntroResponse;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.CameraUpdate;
@@ -55,23 +56,27 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
     private GalleryAdapter galleryAdapter;
 
     private TextView textTitle, textOverview, textAddr, textZipcode,
-            textTel, textRestdate, textUsetime, textParking, textUsefee, labelZip;
+            textTel, textRestdate, textUsetime, textParking, labelZip;
+
     private BottomNavigationView navView;
 
-    // --- Gallery UI ---
-    private View          galleryContainer;     // 전체 컨테이너 (비어있으면 숨김)
+    // Gallery UI
+    private View          galleryContainer;
     private ImageButton   btnGalleryPrev, btnGalleryNext;
     private LinearLayout  galleryDots;
     private LinearLayoutManager galleryLm;
-    private int galleryStep = 3;                // 화살표 클릭 시 이동 칸 수
-    private int visiblePerPage = 1;             // 한 화면에 보이는 썸네일 개수(실측 후 계산)
-    private static final int GALLERY_ITEM_DP = 118; // item width(110dp) + marginEnd(8dp) ≈ 118dp
+
+    private int galleryStep = 3;
+    private int visiblePerPage = 1;
+    private static final int GALLERY_ITEM_DP = 118; // 110 + 8
 
     private final List<String> gallery = new ArrayList<>();
     private MapView mapView;
     private NaverMap naverMap;
     private Marker marker;
     private Double lat, lng;
+
+    private TextView textExtraInfo;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -86,6 +91,8 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
                 intent.getStringExtra(EXTRA_CONTENT_TYPE_ID),
                 nvl(intent.getStringExtra("contentTypeId"), "12")
         );
+        Log.d("DETAIL_ARGS", "contentId=" + contentId + ", contentTypeId=" + contentTypeId);
+
         String passedTitle = intent.getStringExtra(EXTRA_TITLE);
         String passedAddr1 = intent.getStringExtra(EXTRA_ADDR1);
         String passedFirstImage = intent.getStringExtra(EXTRA_FIRST_IMAGE);
@@ -109,7 +116,7 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
             imageMain.setImageResource(R.drawable.sample1);
         }
 
-        // ===== Gallery 세팅 =====
+        // Gallery
         galleryLm = new LinearLayoutManager(this, RecyclerView.HORIZONTAL, false);
         recyclerGallery.setLayoutManager(galleryLm);
         galleryAdapter = new GalleryAdapter(gallery, url ->
@@ -120,7 +127,6 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
                         .into(imageMain));
         recyclerGallery.setAdapter(galleryAdapter);
 
-        // 화면 폭 기준으로 한 페이지에 몇 개 보일지 계산
         recyclerGallery.post(() -> {
             int rvWidth = recyclerGallery.getWidth();
             float density = getResources().getDisplayMetrics().density;
@@ -129,14 +135,12 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
             updateDots();
         });
 
-        // 스크롤 시 점 갱신
         recyclerGallery.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
                 updateDots();
             }
         });
 
-        // 좌우 버튼
         if (btnGalleryPrev != null) {
             btnGalleryPrev.setOnClickListener(v -> {
                 int first = galleryLm.findFirstVisibleItemPosition();
@@ -152,85 +156,79 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
             });
         }
 
-        // ===== 지도 =====
+        // 지도
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
-        // ===== detailCommon (개요/주소/연락처/좌표/대표이미지 등) =====
+        // detailCommon (개요/주소/연락처/좌표/대표이미지 등)
         SpotApiHelper.fetchDetailCommon(contentId, contentTypeId, (SpotDetailCommonResponse.Item item) -> runOnUiThread(() -> {
-            if (item == null) return;
-
-            // 개요 (HTML 파싱으로 교체)
-            setTextWithHtmlOrGone(textOverview, item.overview);
-
-            // 주소
-            setTextOrGone(textAddr, joinAddr(item.addr1, item.addr2));
-
-            // 우편번호
-            if (!TextUtils.isEmpty(item.zipcode)) {
-                if (labelZip != null) labelZip.setVisibility(View.VISIBLE);
-                setTextOrGone(textZipcode, item.zipcode);
-            } else {
-                if (labelZip != null) labelZip.setVisibility(View.GONE);
-                if (textZipcode != null) textZipcode.setVisibility(View.GONE);
+            // 안전 처리: item이 null이면 기본 안내만
+            if (item == null) {
+                setTextWithHtmlOrGone(textOverview, null);
+                // 제목/주소는 기존 선표시 유지
+                return;
             }
 
-            // 문의 및 안내 (HTML 포함 가능)
+            setTextWithHtmlOrGone(textOverview, item.overview);   // 내부에서 null/빈문자 처리함
+            setTextOrGone(textAddr, joinAddr(item.addr1, item.addr2));
             setTextWithHtmlOrGone(textTel, item.tel);
 
-            // 대표 이미지 교체
             String img = !TextUtils.isEmpty(item.firstimage) ? item.firstimage :
-                    !TextUtils.isEmpty(item.firstimage2) ? item.firstimage2 :
-                            passedFirstImage;  // ← 인텐트로 받은 선표시 이미지까지 폴백
-            Glide.with(this).load(img)
-                    .placeholder(R.drawable.sample1)
-                    .error(R.drawable.sample1)
-                    .into(imageMain);
+                    !TextUtils.isEmpty(item.firstimage2) ? item.firstimage2 : passedFirstImage;
+            Glide.with(this).load(img).placeholder(R.drawable.sample1).error(R.drawable.sample1).into(imageMain);
 
-
-
-            // 좌표 처리
             try {
-                Log.d(TAG, "COMMON raw coords mapx=" + item.mapx + ", mapy=" + item.mapy);
                 if (!TextUtils.isEmpty(item.mapy) && !TextUtils.isEmpty(item.mapx)) {
-                    lat = Double.parseDouble(item.mapy); // 위도
-                    lng = Double.parseDouble(item.mapx); // 경도
+                    lat = Double.parseDouble(item.mapy);
+                    lng = Double.parseDouble(item.mapx);
                     updateMapMarker();
                 } else {
                     String addr = joinAddr(item.addr1, item.addr2);
                     if (!TextUtils.isEmpty(addr)) geocodeAndMove(addr);
-                    else Toast.makeText(this, "좌표/주소 없음", Toast.LENGTH_SHORT).show();
                 }
-            } catch (Exception e) {
-                Log.e(TAG, "Parsing map coords failed", e);
-                Toast.makeText(this, "좌표 파싱 실패", Toast.LENGTH_SHORT).show();
-            }
+            } catch (Exception e) { Log.e(TAG,"Parsing map coords failed", e); }
         }));
 
-        // ===== detailIntro (휴무/이용시간/주차/입장료 등) =====
-        SpotApiHelper.fetchDetailIntro(contentId, safeInt(contentTypeId, 12), (SpotDetailIntroResponse.Item intro) -> runOnUiThread(() -> {
+// detailIntro: 입장료는 여기서 UI에 넣지 않음(중복 제거)
+        SpotApiHelper.fetchDetailIntro(contentId, safeInt(contentTypeId, 12), intro -> runOnUiThread(() -> {
             if (intro == null) return;
-
             setTextWithHtmlOrGone(textRestdate, intro.restdate);
             setTextWithHtmlOrGone(textUsetime,  intro.usetime);
             setTextWithHtmlOrGone(textParking,  intro.parking);
+            if (TextUtils.isEmpty(textTel.getText())) setTextWithHtmlOrGone(textTel, intro.infocenter);
+        }));
 
-            String fee = stripHtml(intro.usefee);
-            textUsefee.setText(TextUtils.isEmpty(fee.trim()) ? "입장료 없음" : fee);
-            textUsefee.setVisibility(View.VISIBLE);
-
-            if (TextUtils.isEmpty(textTel.getText())) {
-                setTextWithHtmlOrGone(textTel, intro.infocenter);
+// detailInfo2: textExtraInfo만 사용(입장료 포함 각종 반복정보)
+        int realTypeForInfo = safeInt(contentTypeId, 12);
+        SpotApiHelper.fetchDetailInfo(contentId, realTypeForInfo, items -> runOnUiThread(() -> {
+            if (textExtraInfo == null) return;
+            if (items == null || items.isEmpty()) {
+                textExtraInfo.setVisibility(View.GONE);
+                return;
+            }
+            StringBuilder sb = new StringBuilder();
+            for (SpotDetailInfoResponse.Item it : items) {
+                if (!TextUtils.isEmpty(it.infoname) && !TextUtils.isEmpty(it.infotext)) {
+                    if (sb.length() > 0) sb.append("\n");
+                    sb.append(it.infoname.replaceAll("\\s+", " ").trim())
+                            .append(" : ")
+                            .append(it.infotext.trim());
+                }
+            }
+            if (sb.length() > 0) {
+                textExtraInfo.setVisibility(View.VISIBLE);
+                textExtraInfo.setText(sb.toString());
+            } else {
+                textExtraInfo.setVisibility(View.GONE);
             }
         }));
 
-        // ===== detailImage (보조 이미지) =====
+        // detailImage (보조 이미지)
         SpotApiHelper.fetchDetailImages(contentId, urls -> runOnUiThread(() -> {
             gallery.clear();
             for (String u : urls) if (!TextUtils.isEmpty(u)) gallery.add(u);
             galleryAdapter.notifyDataSetChanged();
 
-            // 데이터 유무에 따라 컨테이너 가시성 / 점 갱신
             if (galleryContainer != null) {
                 galleryContainer.setVisibility(gallery.isEmpty() ? View.GONE : View.VISIBLE);
             }
@@ -239,28 +237,27 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
     }
 
     private void bindViews() {
-        imageMain        = findViewById(R.id.imageMain);
-        btnBack          = findViewById(R.id.btnBack);
-        recyclerGallery  = findViewById(R.id.recyclerGallery);
-        textTitle        = findViewById(R.id.textTitle);
-        textOverview     = findViewById(R.id.textOverview);
-        textAddr         = findViewById(R.id.textAddr);
-        textTel          = findViewById(R.id.textTel);
-        textRestdate     = findViewById(R.id.textRestdate);
-        textUsetime      = findViewById(R.id.textUsetime);
-        textParking      = findViewById(R.id.textParking);
-        textUsefee       = findViewById(R.id.textUsefee);
-        mapView          = findViewById(R.id.mapView);
-        navView          = findViewById(R.id.nav_view);
+        imageMain       = findViewById(R.id.imageMain);
+        btnBack         = findViewById(R.id.btnBack);
+        recyclerGallery = findViewById(R.id.recyclerGallery);
+        textTitle       = findViewById(R.id.textTitle);
+        textOverview    = findViewById(R.id.textOverview);
+        textAddr        = findViewById(R.id.textAddr);
+        textTel         = findViewById(R.id.textTel);
+        textRestdate    = findViewById(R.id.textRestdate);
+        textUsetime     = findViewById(R.id.textUsetime);
+        textParking     = findViewById(R.id.textParking);
+        mapView         = findViewById(R.id.mapView);
+        navView         = findViewById(R.id.nav_view);
+        textExtraInfo   = findViewById(R.id.textExtraInfo);
 
-        // gallery UI
-        galleryContainer = findViewById(R.id.galleryContainer);
-        btnGalleryPrev   = findViewById(R.id.btnGalleryPrev);
-        btnGalleryNext   = findViewById(R.id.btnGalleryNext);
-        galleryDots      = findViewById(R.id.galleryDots);
+        galleryContainer= findViewById(R.id.galleryContainer);
+        btnGalleryPrev  = findViewById(R.id.btnGalleryPrev);
+        btnGalleryNext  = findViewById(R.id.btnGalleryNext);
+        galleryDots     = findViewById(R.id.galleryDots);
     }
 
-    // ---------------- 지도 ----------------
+    // 지도
     @Override public void onMapReady(@NonNull NaverMap map) {
         naverMap = map;
         naverMap.getUiSettings().setScaleBarEnabled(false);
@@ -277,7 +274,6 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         }
     }
 
-    /** 준비된 좌표를 지도에 마커로 표시 + 캡션 + 카메라 이동 */
     private void updateMapMarker() {
         if (naverMap == null || lat == null || lng == null) return;
 
@@ -295,7 +291,6 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         naverMap.moveCamera(CameraUpdate.scrollAndZoomTo(pos, 15.0));
     }
 
-    /** 주소를 좌표로 변환하고 지도 갱신(폴백) */
     private void geocodeAndMove(String address) {
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
@@ -319,7 +314,7 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         });
     }
 
-    // -------- MapView lifecycle --------
+    // MapView lifecycle
     @Override protected void onStart()   { super.onStart();   mapView.onStart(); }
     @Override protected void onResume()  { super.onResume();  mapView.onResume(); }
     @Override protected void onPause()   { mapView.onPause(); super.onPause(); }
@@ -346,7 +341,7 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         finish();
     }
 
-    // ---------- Gallery dots ----------
+    // Dots
     private int getCurrentPage() {
         if (gallery.isEmpty() || visiblePerPage <= 0) return 0;
         int first = Math.max(0, galleryLm.findFirstVisibleItemPosition());
@@ -384,21 +379,20 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         }
     }
 
-    // ---------- 유틸 ----------
+    // Utils
     private String s(String v) { return v == null ? "" : v; }
 
-    /** 태그 제거만 필요한 곳에서 사용 */
     private String stripHtml(String v) {
         if (v == null) return "";
         return v.replaceAll("(?i)<br\\s*/?>", "\n")
                 .replaceAll("(?s)<[^>]*>", "");
     }
 
-    /** 개요/문의/시간 등 HTML 포함 텍스트 표시용 (핵심 변경) */
     private void setTextWithHtmlOrGone(TextView tv, String html) {
-        if (TextUtils.isEmpty(html)) {
-            tv.setText("");
-            tv.setVisibility(View.GONE);
+        if (TextUtils.isEmpty(html) ||
+                HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY).toString().trim().isEmpty()) {
+            tv.setVisibility(View.VISIBLE);
+            tv.setText("설명 없음");
             return;
         }
         CharSequence spanned = HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY);

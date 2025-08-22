@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="#FFFFFF">
 
-    <!-- 상단 헤더 (고정) -->
+    <!-- 상단 헤더 -->
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="0dp"
@@ -47,7 +47,7 @@
             android:layout_height="24dp" />
     </LinearLayout>
 
-    <!-- 본문 스크롤 영역 (중앙만 스크롤) -->
+    <!-- 본문 -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollView"
         android:layout_width="0dp"
@@ -86,7 +86,7 @@
                 android:background="@drawable/bg_image_round"
                 android:contentDescription="@string/app_name"/>
 
-            <!-- 보조사진 가로 갤러리 (좌우 버튼 + 점 인디케이터 포함) -->
+            <!-- 보조사진 갤러리 -->
             <LinearLayout
                 android:id="@+id/galleryContainer"
                 android:layout_width="match_parent"
@@ -94,7 +94,6 @@
                 android:layout_marginTop="12dp"
                 android:orientation="vertical">
 
-                <!-- 리스트와 좌우 버튼 -->
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="100dp"
@@ -107,7 +106,6 @@
                         android:layout_height="match_parent"
                         android:overScrollMode="never" />
 
-                    <!-- 왼쪽 화살표 -->
                     <ImageButton
                         android:id="@+id/btnGalleryPrev"
                         android:layout_width="36dp"
@@ -116,10 +114,8 @@
                         android:background="@drawable/bg_round_button"
                         android:padding="6dp"
                         android:src="@drawable/ic_chevron_left"
-                        android:contentDescription="@string/app_name"
                         android:alpha="0.9" />
 
-                    <!-- 오른쪽 화살표 -->
                     <ImageButton
                         android:id="@+id/btnGalleryNext"
                         android:layout_width="36dp"
@@ -128,11 +124,9 @@
                         android:background="@drawable/bg_round_button"
                         android:padding="6dp"
                         android:src="@drawable/ic_chevron_right"
-                        android:contentDescription="@string/app_name"
                         android:alpha="0.9" />
                 </FrameLayout>
 
-                <!-- 페이지 인디케이터(∙∙∙) -->
                 <LinearLayout
                     android:id="@+id/galleryDots"
                     android:layout_width="match_parent"
@@ -141,6 +135,7 @@
                     android:gravity="center"
                     android:paddingTop="6dp" />
             </LinearLayout>
+
             <!-- 구분선 -->
             <View
                 android:layout_width="match_parent"
@@ -148,7 +143,7 @@
                 android:layout_marginTop="12dp"
                 android:background="#E0E0E0" />
 
-            <!-- 개요(상세설명) -->
+            <!-- 개요 -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -211,7 +206,7 @@
                 android:scrollHorizontally="false"
                 android:textColor="#444"/>
 
-            <!-- 주차시설 -->
+            <!-- 주차 -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -225,19 +220,21 @@
                 android:paddingStart="15dp"
                 android:textColor="#444"/>
 
-            <!-- 입장료 -->
+            <!-- 추가정보 (detailInfo2 묶음) -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ㆍ입장료"
+                android:text="ㆍ추가정보"
                 android:textStyle="bold"
                 android:layout_marginTop="8dp"/>
             <TextView
-                android:id="@+id/textUsefee"
+                android:id="@+id/textExtraInfo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingStart="15dp"
-                android:textColor="#444"/>
+                android:textColor="#444"
+                android:lineSpacingExtra="4dp"
+                android:visibility="gone"/>
 
             <!-- 구분선 -->
             <View
@@ -270,7 +267,7 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- 하단 내비 (고정) -->
+    <!-- 하단 내비 -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/nav_view"
         android:layout_width="0dp"

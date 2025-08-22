@@ -27,7 +27,7 @@ android {
         ]
 
         // TourAPI 키를 BuildConfig로 노출
-        buildConfigField "String", "TOUR_API_KEY", "\"${localProps.getProperty("TOUR_API_KEY", "")}\""
+        buildConfigField "String", "TOUR_API_KEY", "\"wL/Ry8EMiMg43mPRl3wyQhKosVExsJbLLDcZebat4S4eedobtNuBG+eqrj5GPKHvEAxy4NjYPz25Parbyeg8PA==\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

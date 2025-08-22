@@ -4,15 +4,21 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
-/** TourAPI detailCommon2 응답 모델 */
+/** TourAPI detailCommon2 응답 모델 (header 포함) */
 public class SpotDetailCommonResponse {
 
     @SerializedName("response")
     public Response response;
 
     public static class Response {
-        @SerializedName("body")
-        public Body body;
+        @SerializedName("header") public Header header;   // ← 추가
+        @SerializedName("body")   public Body body;
+    }
+
+    /** 공통 헤더 */
+    public static class Header {
+        @SerializedName("resultCode") public String resultCode;
+        @SerializedName("resultMsg")  public String resultMsg;
     }
 
     public static class Body {

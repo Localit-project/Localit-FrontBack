@@ -83,6 +83,16 @@ public interface SpotApiService {
             @Query("serviceKey") String serviceKey
     );
 
+    @GET("detailInfo2")
+    Call<SpotDetailInfoResponse> getDetailInfo(
+            @Query("MobileOS") String os,
+            @Query("MobileApp") String app,
+            @Query("_type") String type,               // "json"
+            @Query("contentId") String contentId,
+            @Query("contentTypeId") int contentTypeId, // 12, 15...
+            @Query("serviceKey") String key
+    );
+
     // 인트로 상세(관광지: 문의/쉬는날/이용시간/주차/입장료 등, 축제는 행사기간 등)
     @GET("detailIntro2")
     Call<SpotDetailIntroResponse> getDetailIntro(
@@ -102,7 +112,7 @@ public interface SpotApiService {
             @Query("MobileApp") String mobileApp,   // "localit"
             @Query("_type") String type,            // "json"
             @Query("imageYN") String imageYN,       // "Y"
-            @Query("subImageYN") String subImageYN, // "Y"
+//            @Query("subImageYN") String subImageYN, // "Y"
             @Query("contentId") String contentId,
             @Query("serviceKey") String serviceKey
     );
