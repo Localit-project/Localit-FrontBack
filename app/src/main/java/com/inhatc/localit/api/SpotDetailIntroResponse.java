@@ -1,31 +1,26 @@
+// SpotDetailIntroResponse.java
 package com.inhatc.localit.api;
 
+import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import java.util.List;
-
-/**
- * detailIntro2 응답 모델
- * - contentTypeId 12(관광지)와 15(축제)에서 공통/개별 필드를 모두 포함
- * - 앱 코드에서는 필요한 필드만 참조하면 됨(없으면 null)
- */
+/** * detailIntro2 응답 모델
+ * * - contentTypeId 12(관광지)와 15(축제)에서 공통/개별 필드를 모두 포함
+ * * - 앱 코드에서는 필요한 필드만 참조하면 됨(없으면 null) */
 public class SpotDetailIntroResponse {
     @SerializedName("response") public Response response;
-
-    public static class Response {
-        @SerializedName("body")  public Body body;
-    }
-
-    public static class Body {
-        @SerializedName("items") public Items items;
-    }
+    public static class Response { @SerializedName("body") public Body body; }
+    public static class Body { @SerializedName("items") public Items items; }
 
     public static class Items {
-        @SerializedName("item")  public List<Item> item;
+        /** 단일/배열 혼용 대응 */
+        @SerializedName("item")// "12", "15" 등 문자열로 내려옴
+        @JsonAdapter(SingleOrArrayAdapter.class)
+        public List<Item> item;
     }
 
-    /** Intro item (관광지/축제 공용) */
+    // 이하 Item 클래스는 기존 그대로 (필드들 유지)
     public static class Item {
-        // ---- 공통 식별자 ----
         @SerializedName("contentid")     public String contentid;
         @SerializedName("contenttypeid") public String contenttypeid; // "12", "15" 등 문자열로 내려옴
 
@@ -58,7 +53,7 @@ public class SpotDetailIntroResponse {
         @SerializedName("usetimefestival")    public String usetimefestival;    // 이용요금(축제)
         @SerializedName("infocenterfestival") public String infocenterfestival; // 문의 및 안내(축제)
 
-        // ✅ 주최/주관 필드는 여기만 유지
+        // 주최/주관 필드는 여기만 유지
         @SerializedName("sponsor1")           public String sponsor1;           // 주최
         @SerializedName("sponsor1tel")        public String sponsor1tel;        // 주최 연락처
         @SerializedName("sponsor2")           public String sponsor2;           // 주관

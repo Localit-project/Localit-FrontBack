@@ -4,7 +4,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.inhatc.localit.BuildConfig;
-
+import com.inhatc.localit.api.RetrofitClient;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +12,13 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+/**
+ * TourAPI 호출 헬퍼
+ * - detailCommon2 / detailIntro2 / detailImage2
+ */
 public class SpotApiHelper {
+
+    private static final String TAG = "SpotApiHelper";
 
     private static final SpotApiService API =
             RetrofitClient.getInstance().create(SpotApiService.class);
@@ -31,10 +37,17 @@ public class SpotApiHelper {
             String contentTypeId,
             SimpleCallback<SpotDetailCommonResponse.Item> cb
     ) {
+        int ctId;
+        try {
+            ctId = Integer.parseInt(contentTypeId);
+        } catch (Exception e) {
+            ctId = 12; // 기본값
+        }
+
         API.getDetailCommon(
-                "AND", "localit", "json",
-                contentId, contentTypeId,
-                "Y","Y","Y","Y","Y","Y","Y",   // defaultYN ~ overviewYN 모두 Y
+                "AND","localit","json",
+                contentId, ctId,
+                "Y","Y","Y","Y","Y","Y","Y",
                 SERVICE_KEY
         ).enqueue(new Callback<SpotDetailCommonResponse>() {
             @Override
@@ -50,16 +63,18 @@ public class SpotApiHelper {
                             && resp.body().response.body.items.item != null
                             && !resp.body().response.body.items.item.isEmpty()) {
                         out = resp.body().response.body.items.item.get(0);
+                    } else {
+                        Log.w(TAG, "detailCommon empty or invalid response");
                     }
                 } catch (Exception e) {
-                    Log.e("DETAIL_COMMON", "parse error", e);
+                    Log.e(TAG, "DETAIL_COMMON parse error", e);
                 }
                 if (cb != null) cb.onResult(out);
             }
 
             @Override
             public void onFailure(Call<SpotDetailCommonResponse> call, Throwable t) {
-                Log.e("DETAIL_COMMON", "request fail", t);
+                Log.e(TAG, "DETAIL_COMMON request fail", t);
                 if (cb != null) cb.onResult(null);
             }
         });
@@ -89,22 +104,24 @@ public class SpotApiHelper {
                             && resp.body().response.body.items.item != null
                             && !resp.body().response.body.items.item.isEmpty()) {
                         out = resp.body().response.body.items.item.get(0);
+                    } else {
+                        Log.w(TAG, "detailIntro empty or invalid response");
                     }
                 } catch (Exception e) {
-                    Log.e("DETAIL_INTRO", "parse error", e);
+                    Log.e(TAG, "DETAIL_INTRO parse error", e);
                 }
                 if (cb != null) cb.onResult(out);
             }
 
             @Override
             public void onFailure(Call<SpotDetailIntroResponse> call, Throwable t) {
-                Log.e("DETAIL_INTRO", "request fail", t);
+                Log.e(TAG, "DETAIL_INTRO request fail", t);
                 if (cb != null) cb.onResult(null);
             }
         });
     }
 
-    // -------------------- 추가 이미지: URL 리스트로 반환 --------------------
+    // -------------------- detailImage: URL 리스트로 반환 --------------------
     public static void fetchDetailImages(
             String contentId,
             SimpleCallback<List<String>> cb
@@ -119,26 +136,30 @@ public class SpotApiHelper {
                                    Response<SpotDetailImageResponse> res) {
                 List<String> urls = new ArrayList<>();
                 try {
-                    if (res.isSuccessful() && res.body() != null
+                    if (res.isSuccessful()
+                            && res.body() != null
                             && res.body().response != null
                             && res.body().response.body != null
                             && res.body().response.body.items != null
                             && res.body().response.body.items.item != null) {
                         for (SpotDetailImageResponse.Item it : res.body().response.body.items.item) {
                             String u = !TextUtils.isEmpty(it.originimgurl)
-                                    ? it.originimgurl : it.smallimageurl;
+                                    ? it.originimgurl
+                                    : it.smallimageurl;
                             if (!TextUtils.isEmpty(u)) urls.add(u);
                         }
+                    } else {
+                        Log.w(TAG, "detailImage empty or invalid response");
                     }
                 } catch (Exception e) {
-                    Log.e("DETAIL_IMAGE", "parse error", e);
+                    Log.e(TAG, "DETAIL_IMAGE parse error", e);
                 }
                 if (cb != null) cb.onResult(urls);
             }
 
             @Override
             public void onFailure(Call<SpotDetailImageResponse> call, Throwable t) {
-                Log.e("DETAIL_IMAGE", "request fail", t);
+                Log.e(TAG, "DETAIL_IMAGE request fail", t);
                 if (cb != null) cb.onResult(new ArrayList<>());
             }
         });

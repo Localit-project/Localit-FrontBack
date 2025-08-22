@@ -38,9 +38,6 @@ public class SpotDetailCommonResponse {
         @SerializedName("firstimage")    public String firstimage;
         @SerializedName("firstimage2")   public String firstimage2;
 
-        // 홈페이지(종종 <a href="...">링크 형식)
-        @SerializedName("homepage")      public String homepage;
-
         // 개요
         @SerializedName("overview")      public String overview;
 

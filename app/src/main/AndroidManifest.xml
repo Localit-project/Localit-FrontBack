@@ -9,11 +9,13 @@
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" /> <!-- 추가: 카메라 권한 -->
-    <uses-permission android:name="android.permission.CAMERA" /> <!-- (선택) Android 13+ 알림 권한: 실제 알림 쓸 때만 -->
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature
-        android:name="android.hardware.camera.any"
+        android:name="andro`id.hardware.camera.any"
         android:required="false" />
 
     <application
@@ -28,7 +30,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Localit"
         android:enableOnBackInvokedCallback="true"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
+
         <!-- Kakao SDK AppKey -->
         <meta-data
             android:name="com.kakao.sdk.AppKey"
