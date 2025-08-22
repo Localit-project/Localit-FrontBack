@@ -72,8 +72,8 @@ public interface SpotApiService {
             @Query("MobileApp") String app,
             @Query("_type") String type,
             @Query("contentId") String contentId,
-            @Query("contentTypeId") int contentTypeId,
-            @Query("defaultYN") String defaultYN,
+            @Query("defaultYN") String defaultYN,   // String
+            @Query("contentTypeId") int contentTypeId, // int
             @Query("firstImageYN") String firstImageYN,
             @Query("areacodeYN") String areacodeYN,
             @Query("catcodeYN") String catcodeYN,
@@ -116,5 +116,47 @@ public interface SpotApiService {
             @Query("contentId") String contentId,
             @Query("serviceKey") String serviceKey
     );
+    @GET("detailCommon2")
+    Call<SpotDetailCommonResponse> getDetailCommonMinimal(
+            @Query("MobileOS") String os,
+            @Query("MobileApp") String app,
+            @Query("_type") String type,
+            @Query("contentId") String contentId,
+            @Query("defaultYN") String defaultYN,
+            @Query("overviewYN") String overviewYN,
+            @Query("serviceKey") String serviceKey
+    );
+
+    @GET("detailCommon2")
+    Call<SpotDetailCommonResponse> getDetailCommonFull(
+            @Query("MobileOS") String os,
+            @Query("MobileApp") String app,
+            @Query("_type") String type,
+            @Query("contentId") String contentId,
+            @Query("defaultYN") String defaultYN,
+            @Query("firstImageYN") String firstImageYN,
+            @Query("areacodeYN") String areacodeYN,
+            @Query("catcodeYN") String catcodeYN,
+            @Query("addrinfoYN") String addrinfoYN,
+            @Query("mapinfoYN") String mapinfoYN,
+            @Query("overviewYN") String overviewYN,
+            @Query("serviceKey") String serviceKey
+
+    );
+    //overview 빈응답일 때 재시도
+    @GET("detailCommon2")
+    Call<SpotDetailCommonResponse> getDetailCommonMinimalWithCt(
+            @Query("MobileOS") String os,
+            @Query("MobileApp") String app,
+            @Query("_type") String type,
+            @Query("contentId") String contentId,
+            @Query("contentTypeId") int contentTypeId, // ← 추가
+            @Query("defaultYN") String defaultYN,      // "Y" 또는 null
+            @Query("overviewYN") String overviewYN,    // "Y"
+            @Query("serviceKey") String serviceKey
+    );
+
+
+
 
 }

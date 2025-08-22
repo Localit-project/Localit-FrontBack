@@ -24,6 +24,10 @@ public class SpotApiHelper {
     private static final SpotApiService API =
             RetrofitClient.getInstance().create(SpotApiService.class);
 
+    private static int parseCtId(String s) {
+        try { return Integer.parseInt(s); } catch (Exception e) { return 12; }
+    }
+
     public static SpotApiService getApiService() { return API; }
 
     // BuildConfig에서 주입된 "원본키" 사용 (encoded=true 아님)
@@ -33,61 +37,145 @@ public class SpotApiHelper {
     public interface SimpleCallback<T> { void onResult(T value); }
 
     // -------------------- detailCommon: 전체 1건 --------------------
-    public static void fetchDetailCommon(
-            String contentId,
-            String contentTypeId,
-            SimpleCallback<SpotDetailCommonResponse.Item> cb
-    ) {
-        Log.d("DETAIL_ARGS", "contentId=" + contentId + ", contentTypeId=" + contentTypeId);
+    public static void fetchDetailCommon(String contentId,
+                                         String contentTypeId,
+                                         SimpleCallback<SpotDetailCommonResponse.Item> cb) {
+        Log.d("DETAIL_ARGS", "contentId=" + contentId);
 
-        int ctId;
-        try { ctId = Integer.parseInt(contentTypeId); } catch (Exception e) { ctId = 12; }
+        final int ctId = parseCtId(contentTypeId);   // ← final 로 확정
+        final String cid = contentId;               // (필요하면 같이 final)
 
         getApiService().getDetailCommon(
                 "AND","localit","json",
-                contentId, ctId,
-                "Y","Y","Y","Y","Y","Y","Y",
+                cid,
+                "Y",                 // defaultYN
+                ctId,                // contentTypeId
+                "Y","Y","Y","Y","Y","Y",
                 SERVICE_KEY
         ).enqueue(new Callback<SpotDetailCommonResponse>() {
             @Override public void onResponse(Call<SpotDetailCommonResponse> call,
                                              Response<SpotDetailCommonResponse> resp) {
-                Log.d("DETAIL_COMMON_HTTP", "code=" + resp.code());
-
                 if (!resp.isSuccessful()) {
                     logErrorBody("DETAIL_COMMON_ERR", resp);
-                    if (cb != null) cb.onResult(null);
+                    retryMinimal(cid, ctId, cb);    // ← 이제 오류 없음
                     return;
                 }
-
+                SpotDetailCommonResponse body = resp.body();
                 SpotDetailCommonResponse.Item out = null;
-                try {
-                    SpotDetailCommonResponse.Header h =
-                            resp.body()!=null && resp.body().response!=null ? resp.body().response.header : null;
-                    if (h!=null) Log.d("DETAIL_COMMON_HDR","resultCode="+h.resultCode+", resultMsg="+h.resultMsg);
-                } catch (Exception ignore){
-                    if (resp.body() != null
-                            && resp.body().response != null
-                            && resp.body().response.body != null
-                            && resp.body().response.body.items != null
-                            && resp.body().response.body.items.item != null
-                            && !resp.body().response.body.items.item.isEmpty()) {
-                        out = resp.body().response.body.items.item.get(0);
-                    } else {
-                        Log.w(TAG, "detailCommon: body/items null or empty");
-                    }
-
+                if (body!=null && body.response!=null && body.response.body!=null
+                        && body.response.body.items!=null
+                        && body.response.body.items.item!=null
+                        && !body.response.body.items.item.isEmpty()) {
+                    out = body.response.body.items.item.get(0);
+                } else {
+                    Log.w(TAG, "detailCommon: body/items null or empty");
+                    // 성공이지만 비어있을 때도 최소파라미터 재시도
+                    retryMinimal(cid, ctId, cb);
+                    return;
                 }
+                Log.d("DETAIL_COMMON_OVERVIEW", "overview=" + out.overview);
                 if (cb != null) cb.onResult(out);
             }
 
             @Override public void onFailure(Call<SpotDetailCommonResponse> call, Throwable t) {
                 Log.e("DETAIL_COMMON", "request fail", t);
+                retryMinimal(cid, ctId, cb);        // ← 여기도 final 사용
+            }
+        });
+    }
+
+
+    private static void retryMinimal(String contentId, int ctId,
+                                     SimpleCallback<SpotDetailCommonResponse.Item> cb) {
+        getApiService().getDetailCommonMinimal(
+                "AND","localit","json",
+                contentId,
+                "Y",     // defaultYN
+                "Y",     // overviewYN
+                SERVICE_KEY
+        ).enqueue(new Callback<SpotDetailCommonResponse>() {
+            @Override public void onResponse(Call<SpotDetailCommonResponse> call,
+                                             Response<SpotDetailCommonResponse> resp) {
+                if (!resp.isSuccessful()) {
+                    logErrorBody("DETAIL_COMMON_ERR_MIN", resp);
+                    retryNoDefault(contentId, ctId, cb);
+                    return;
+                }
+                SpotDetailCommonResponse body = resp.body();
+                String rc = body!=null && body.response!=null && body.response.header!=null
+                        ? body.response.header.resultCode : null;
+                if (!"0000".equals(rc)) {
+                    if ("10".equals(rc)) retryNoDefault(contentId, ctId, cb);
+                    else if (cb!=null) cb.onResult(null);
+                    return;
+                }
+                SpotDetailCommonResponse.Item out = null;
+                if (body!=null && body.response!=null && body.response.body!=null
+                        && body.response.body.items!=null
+                        && body.response.body.items.item!=null
+                        && !body.response.body.items.item.isEmpty()) {
+                    out = body.response.body.items.item.get(0);
+                }
+                Log.d("DETAIL_COMMON_OVERVIEW_MIN",
+                        "overview=" + (out != null ? out.overview : "null"));
+                if (cb != null) cb.onResult(out);
+            }
+            @Override public void onFailure(Call<SpotDetailCommonResponse> call, Throwable t) {
+                Log.e("DETAIL_COMMON_MIN", "request fail", t);
+                retryNoDefault(contentId, ctId, cb);
+            }
+        });
+    }
+
+    private static void retryNoDefault(String contentId, int ctId,
+                                       SimpleCallback<SpotDetailCommonResponse.Item> cb) {
+        getApiService().getDetailCommonMinimal(
+                "AND", "localit", "json",
+                contentId,
+                null,   // defaultYN 제외
+                "Y",
+                SERVICE_KEY
+        ).enqueue(new Callback<SpotDetailCommonResponse>() {
+            @Override
+            public void onResponse(Call<SpotDetailCommonResponse> call,
+                                   Response<SpotDetailCommonResponse> resp) {
+                if (!resp.isSuccessful()) {
+                    logErrorBody("DETAIL_COMMON_ERR_NODEF", resp);
+                    if (cb != null) cb.onResult(null);
+                    return;
+                }
+
+                SpotDetailCommonResponse body = resp.body();
+                SpotDetailCommonResponse.Item out = null;
+                try {
+                    if (body != null
+                            && body.response != null
+                            && body.response.body != null
+                            && body.response.body.items != null
+                            && body.response.body.items.item != null
+                            && !body.response.body.items.item.isEmpty()) {
+                        out = body.response.body.items.item.get(0);
+                    } else {
+                        Log.w(TAG, "detailCommon(noDefault): items empty");
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "detailCommon(noDefault) parse error", e);
+                }
+
+                Log.d("DETAIL_COMMON_OVERVIEW_NODEF", "overview=" + (out != null ? out.overview : "null"));
+
+                if (cb != null) cb.onResult(out);
+            }
+
+            @Override
+            public void onFailure(Call<SpotDetailCommonResponse> call, Throwable t) {
+                Log.e("DETAIL_COMMON_NODEF", "request fail", t);
                 if (cb != null) cb.onResult(null);
             }
         });
     }
 
-    // -------------------- detailIntro: 이용정보 --------------------
+        // -------------------- detailIntro: 이용정보 --------------------
     public static void fetchDetailIntro(
             String contentId,
             int contentTypeId,
