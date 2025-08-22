@@ -45,32 +45,9 @@
             android:textColor="#111111"
             android:textSize="20sp"
             android:textStyle="bold" />
-
-        <!-- 알림 아이콘 + 뱃지 -->
-        <FrameLayout
+        <Space
             android:layout_width="24dp"
-            android:layout_height="24dp">
-
-            <ImageButton
-                android:id="@+id/btnNotification"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/notifications"
-                app:srcCompat="@drawable/ic_notifications_24" />
-
-            <TextView
-                android:id="@+id/badgeNew"
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:layout_gravity="end|top"
-                android:background="@drawable/bg_badge_green"
-                android:gravity="center"
-                android:text="1"
-                android:textColor="#FFFFFF"
-                android:textSize="9sp"
-                android:visibility="gone" />
-        </FrameLayout>
+            android:layout_height="24dp" />
     </LinearLayout>
 
 
