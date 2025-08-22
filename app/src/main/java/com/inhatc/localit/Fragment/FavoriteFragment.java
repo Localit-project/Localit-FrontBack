@@ -136,13 +136,15 @@ public class FavoriteFragment extends Fragment {
         for (TouristSpot spot : allWishedSpots) {
             switch (selectedTab) {
                 case 0: // 축제·행사 (contentTypeId == 15)
-                    if (spot.contentTypeId == 15) filteredList.add(spot);
+                    if (spot.contenttypeid  == 15) filteredList.add(spot);
                     break;
                 case 1: // 관광지 (contentTypeId == 12)
-                    if (spot.contentTypeId == 12) filteredList.add(spot);
+                    if (spot.contenttypeid  == 12) filteredList.add(spot);
                     break;
-                case 2: // 뉴스
-                    // TODO: 뉴스 타입 ID가 정해지면 해당 조건 추가
+                case 2: // 뉴스 (contentTypeId == 99)
+                    // ▼▼▼▼▼ 이 부분을 추가했습니다 ▼▼▼▼▼
+                    if (spot.contenttypeid == 99) filteredList.add(spot);
+                    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
                     break;
             }
         }

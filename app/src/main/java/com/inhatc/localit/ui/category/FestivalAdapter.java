@@ -46,7 +46,7 @@ public class FestivalAdapter extends RecyclerView.Adapter<FestivalAdapter.ViewHo
         notifyDataSetChanged();
     }
 
-    public void setFavoriteKeys(Set<String> keys) {
+    public void updateFavorites(Set<String> keys) {
         favoriteKeys.clear();
         if (keys != null) favoriteKeys.addAll(keys);
         notifyDataSetChanged();
@@ -54,7 +54,18 @@ public class FestivalAdapter extends RecyclerView.Adapter<FestivalAdapter.ViewHo
 
     public Set<String> getFavoriteKeys() { return new HashSet<>(favoriteKeys); }
 
-    @Override public long getItemId(int position) { return keyOf(items.get(position)).hashCode(); }
+    // ▼▼▼▼▼ 'keyOf'를 사용하던 부분을 안정적인 방식으로 수정 ▼▼▼▼▼
+    @Override
+    public long getItemId(int position) {
+        SpotResponse.Item item = items.get(position);
+        if (item != null && item.getContentid() != null) {
+            // contentid가 있으면 그것의 해시코드를 고유 ID로 사용
+            return item.getContentid().hashCode();
+        }
+        // 없으면 기본값 사용
+        return RecyclerView.NO_ID;
+    }
+    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
     @NonNull @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -66,15 +77,15 @@ public class FestivalAdapter extends RecyclerView.Adapter<FestivalAdapter.ViewHo
     public void onBindViewHolder(@NonNull ViewHolder h, int position) {
         SpotResponse.Item item = items.get(position);
 
-        h.textTitle.setText(item.title == null ? "" : item.title);
+        h.textTitle.setText(item.getTitle() == null ? "" : item.getTitle());
 
-        String start = formatDate(item.eventstartdate);
-        String end   = formatDate(item.eventenddate);
+        String start = formatDate(item.getEventstartdate());
+        String end   = formatDate(item.getEventenddate());
         h.textDate.setText(buildDateText(start, end));
 
-        if (!TextUtils.isEmpty(item.firstimage)) {
+        if (!TextUtils.isEmpty(item.getFirstimage())) {
             Glide.with(h.itemView.getContext())
-                    .load(item.firstimage)
+                    .load(item.getFirstimage())
                     .placeholder(R.drawable.sample1)
                     .error(R.drawable.sample1)
                     .into(h.imageThumb);
@@ -82,9 +93,13 @@ public class FestivalAdapter extends RecyclerView.Adapter<FestivalAdapter.ViewHo
             h.imageThumb.setImageResource(R.drawable.sample1);
         }
 
-        // 즐겨찾기 아이콘 상태
-        boolean fav = favoriteKeys.contains(keyOf(item));
-        h.btnFavorite.setSelected(fav);
+        boolean fav = favoriteKeys.contains(item.getContentid());
+
+        if (fav) {
+            h.btnFavorite.setImageResource(R.drawable.ic_favorite_full);
+        } else {
+            h.btnFavorite.setImageResource(R.drawable.ic_favorite_border_24);
+        }
 
         h.itemView.setOnClickListener(v -> {
             int pos = h.getBindingAdapterPosition();
@@ -95,17 +110,6 @@ public class FestivalAdapter extends RecyclerView.Adapter<FestivalAdapter.ViewHo
         h.btnFavorite.setOnClickListener(v -> {
             int pos = h.getBindingAdapterPosition();
             if (pos == RecyclerView.NO_POSITION) return;
-
-            String key = keyOf(items.get(pos));
-            boolean newState;
-            if (favoriteKeys.contains(key)) {
-                favoriteKeys.remove(key);
-                newState = false;
-            } else {
-                favoriteKeys.add(key);
-                newState = true;
-            }
-            h.btnFavorite.setSelected(newState); // 즉시 토글
             if (favClick != null) favClick.onClick(items.get(pos), pos);
         });
     }
@@ -134,11 +138,5 @@ public class FestivalAdapter extends RecyclerView.Adapter<FestivalAdapter.ViewHo
         if (!TextUtils.isEmpty(s)) return s;
         if (!TextUtils.isEmpty(e)) return e;
         return "일정 미정";
-    }
-    private static String keyOf(SpotResponse.Item it) {
-        if (it == null) return "@null";
-        if (!TextUtils.isEmpty(it.contentid)) return "id:"+it.contentid;
-        if (!TextUtils.isEmpty(it.title))     return "title:"+it.title;
-        return "pos@"+System.identityHashCode(it);
     }
 }

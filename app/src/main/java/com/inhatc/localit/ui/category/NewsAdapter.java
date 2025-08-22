@@ -1,4 +1,4 @@
-package com.inhatc.localit.ui.category;
+package com.inhatc.localit.ui.category; // 1. 패키지 주소를 올바르게 수정
 
 import android.os.Build;
 import android.text.Html;
@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.inhatc.localit.R;
+// 2. NaverNewsResponse의 정확한 주소를 알려주는 import 문 추가
 import com.inhatc.localit.api.naver.NaverNewsResponse;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+// ▼▼▼▼▼ 클래스 이름을 파일 이름과 일치하도록 수정 ▼▼▼▼▼
 public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.VH> {
 
     public interface OnNewsClickListener {
@@ -30,9 +32,10 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.VH> {
     private final List<NaverNewsResponse.Item> items = new ArrayList<>();
     private final OnNewsClickListener listener;
 
-    // 즐겨찾기 상태 (link 우선, 없으면 title)
+    // 찜한 뉴스의 ID(링크)를 저장하는 Set
     private final Set<String> favoriteKeys = new HashSet<>();
 
+    // ▼▼▼▼▼ 생성자 이름을 클래스 이름과 일치하도록 수정 ▼▼▼▼▼
     public NewsAdapter(List<NaverNewsResponse.Item> initial, OnNewsClickListener listener) {
         if (initial != null) items.addAll(initial);
         this.listener = listener;
@@ -45,23 +48,21 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.VH> {
         notifyDataSetChanged();
     }
 
-    public void setFavoriteKeys(Set<String> keys) {
+    // 3. NewsActivity와 연동하기 위한 updateFavorites 메서드
+    public void updateFavorites(Set<String> keys) {
         favoriteKeys.clear();
         if (keys != null) favoriteKeys.addAll(keys);
         notifyDataSetChanged();
     }
 
-    public Set<String> getFavoriteKeys() {
-        return new HashSet<>(favoriteKeys);
-    }
-
-    @Override public long getItemId(int position) {
-        return keyOf(items.get(position)).hashCode();
+    @Override
+    public long getItemId(int position) {
+        String link = items.get(position).getLink();
+        return link != null ? link.hashCode() : RecyclerView.NO_ID;
     }
 
     @NonNull @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // ⬇️ 네가 붙여준 XML 파일명으로 맞춰줘 (item_news.xml 가정)
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_news, parent, false);
         return new VH(v);
@@ -71,62 +72,62 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.VH> {
     public void onBindViewHolder(@NonNull VH h, int position) {
         NaverNewsResponse.Item it = items.get(position);
 
-        // 네이버 응답은 HTML 태그 포함 → 사람 읽기용 변환
         h.title.setText(htmlToText(it.getTitle()));
         h.description.setText(htmlToText(it.getDescription()));
 
-        // ⭐ 셀렉터용 selected 상태 적용 (스크롤 재활용 대비해서 "항상" 해줘야 함)
-        boolean isFav = favoriteKeys.contains(keyOf(it));
-        h.btnFavorite.setSelected(isFav);
+        // 4. 찜 상태에 따라 아이콘을 직접 변경하는 로직
+        boolean isFav = favoriteKeys.contains(it.getLink());
+        if (isFav) {
+            h.btnFavorite.setImageResource(R.drawable.ic_favorite_full);
+        } else {
+            h.btnFavorite.setImageResource(R.drawable.ic_favorite_border_24);
+        }
 
         // 카드 클릭
         h.itemView.setOnClickListener(v -> {
             int pos = h.getBindingAdapterPosition();
-            if (pos == RecyclerView.NO_POSITION) return;
-            if (listener != null) listener.onNewsClick(items.get(pos), pos);
+            if (pos != RecyclerView.NO_POSITION && listener != null) {
+                listener.onNewsClick(items.get(pos), pos);
+            }
         });
 
-        // 즐겨찾기 클릭 → 상태 반전 + selected 토글 (notify 불필요)
+        // 찜 버튼 클릭
         h.btnFavorite.setOnClickListener(v -> {
             int pos = h.getBindingAdapterPosition();
             if (pos == RecyclerView.NO_POSITION) return;
 
-            String key = keyOf(items.get(pos));
-            boolean newState;
+            // 5. 아이콘 즉시 변경 로직
+            String key = items.get(pos).getLink();
             if (favoriteKeys.contains(key)) {
                 favoriteKeys.remove(key);
-                newState = false;
+                h.btnFavorite.setImageResource(R.drawable.ic_favorite_border_24);
             } else {
                 favoriteKeys.add(key);
-                newState = true;
+                h.btnFavorite.setImageResource(R.drawable.ic_favorite_full);
             }
-            h.btnFavorite.setSelected(newState); // ⬅️ 아이콘 즉시 변경(셀렉터가 처리)
 
-            if (listener != null) listener.onFavoriteClick(items.get(pos), pos);
+            // Activity에 실제 DB 저장을 요청
+            if (listener != null) {
+                listener.onFavoriteClick(items.get(pos), pos);
+            }
         });
     }
 
     @Override public int getItemCount() { return items.size(); }
-
-    private String keyOf(NaverNewsResponse.Item it) {
-        if (it == null) return "@null";
-        if (!TextUtils.isEmpty(it.getLink()))  return "link:" + it.getLink();
-        if (!TextUtils.isEmpty(it.getTitle())) return "title:" + it.getTitle();
-        return "pos@" + System.identityHashCode(it);
-    }
 
     private CharSequence htmlToText(String html) {
         if (html == null) return "";
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             return Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY);
         }
+        //noinspection deprecation
         return Html.fromHtml(html);
     }
 
     static class VH extends RecyclerView.ViewHolder {
-        TextView title;        // @id/textNewsTitle
-        TextView description;  // @id/textNewsDescription
-        ImageButton btnFavorite; // @id/btnFavorite
+        TextView title;
+        TextView description;
+        ImageButton btnFavorite;
 
         VH(@NonNull View v) {
             super(v);

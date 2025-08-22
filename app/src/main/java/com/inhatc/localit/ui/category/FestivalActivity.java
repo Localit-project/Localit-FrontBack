@@ -12,25 +12,31 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.inhatc.localit.Fragment.FavoriteViewModel;
 import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
 import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
+import com.inhatc.localit.db.TouristSpot;
+import com.inhatc.localit.db.TouristSpotRepository;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -44,6 +50,8 @@ public class FestivalActivity extends AppCompatActivity {
 
     private RecyclerView recyclerViewEvents;
     private FestivalAdapter festivalAdapter;
+    private TouristSpotRepository touristSpotRepository;
+    private FavoriteViewModel favoriteViewModel;
 
     // API 원본 목록
     private final List<SpotResponse.Item> fullItems = new ArrayList<>();
@@ -146,6 +154,9 @@ public class FestivalActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_festival);
 
+        favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
+        touristSpotRepository = new TouristSpotRepository(getApplication());
+
         initViews();
         getRegionNameFromIntent();
         setupRecyclerView();
@@ -153,7 +164,24 @@ public class FestivalActivity extends AppCompatActivity {
         setupClickListeners();
         setupBottomNavigationView();
 
+        observeWishedSpots();
         fetchFestivalListFromApi();
+    }
+
+    private void observeWishedSpots() {
+        favoriteViewModel.getWishedSpots().observe(this, wishedSpots -> {
+            Set<String> wishedIds = new HashSet<>();
+            for (TouristSpot spot : wishedSpots) {
+                // ▼▼▼▼▼ 'spot.getContentid()' -> 'spot.contentid'로 수정 ▼▼▼▼▼
+                if (spot != null && spot.contentid != null) {
+                    wishedIds.add(spot.contentid);
+                }
+                // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+            }
+            if (festivalAdapter != null) {
+                festivalAdapter.updateFavorites(wishedIds);
+            }
+        });
     }
 
     private void initViews() {
@@ -180,8 +208,10 @@ public class FestivalActivity extends AppCompatActivity {
     private void setupRecyclerView() {
         festivalAdapter = new FestivalAdapter(
                 new ArrayList<>(),
-                (item, position) -> openHomepageFor(item),  // ← 카드 클릭 시 상세로
-                (item, position) -> { /* TODO: 즐겨찾기 저장 필요시 처리 */ }
+                (item, position) -> openHomepageFor(item),
+                (item, position) -> {
+                    touristSpotRepository.toggleFavoriteStatus(item);
+                }
         );
         recyclerViewEvents.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewEvents.setAdapter(festivalAdapter);
@@ -219,8 +249,8 @@ public class FestivalActivity extends AppCompatActivity {
         String k = keyword.toLowerCase();
         List<SpotResponse.Item> out = new ArrayList<>();
         for (SpotResponse.Item it : fullItems) {
-            String t = it != null && it.title != null ? it.title : "";
-            String a = it != null && it.addr1 != null ? it.addr1 : "";
+            String t = it != null && it.getTitle() != null ? it.getTitle() : "";
+            String a = it != null && it.getAddr1() != null ? it.getAddr1() : "";
             if (t.toLowerCase().contains(k) || a.toLowerCase().contains(k)) {
                 out.add(it);
             }
@@ -298,20 +328,18 @@ public class FestivalActivity extends AppCompatActivity {
     private void openHomepageFor(SpotResponse.Item item) {
         if (item == null) return;
 
-        String contentId     = item.contentid;
-        String contentTypeId = !TextUtils.isEmpty(item.contenttypeid) ? item.contenttypeid : "15";
-        String title         = item.title == null ? "" : item.title;
-        String addr1         = item.addr1 == null ? "" : item.addr1;
+        String contentId     = item.getContentid();
+        String contentTypeId = !TextUtils.isEmpty(item.getContenttypeid()) ? item.getContenttypeid() : "15";
+        String title         = item.getTitle() == null ? "" : item.getTitle();
+        String addr1         = item.getAddr1() == null ? "" : item.getAddr1();
 
-        // 🔧 firstimage2 제거: firstimage만 안전하게 사용
-        String firstImage    = item.firstimage != null ? item.firstimage : "";
+        String firstImage    = item.getFirstimage() != null ? item.getFirstimage() : "";
 
         if (TextUtils.isEmpty(contentId)) {
             Toast.makeText(this, "콘텐츠 ID가 없어 상세로 이동할 수 없습니다.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // ✅ FestivalDetailActivity로 이동 + 필요한 값 전달
         Intent intent = new Intent(this, FestivalDetailActivity.class)
                 .putExtra(FestivalDetailActivity.EXTRA_CONTENT_ID, contentId)
                 .putExtra(FestivalDetailActivity.EXTRA_CONTENT_TYPE_ID, contentTypeId)
@@ -347,7 +375,7 @@ public class FestivalActivity extends AppCompatActivity {
         String k = key.trim();
         List<SpotResponse.Item> out = new ArrayList<>();
         for (SpotResponse.Item it : src) {
-            String addr = it != null && it.addr1 != null ? it.addr1 : "";
+            String addr = it != null && it.getAddr1() != null ? it.getAddr1() : "";
             if (addr.startsWith(k) || addr.contains(" " + k) || addr.contains(k + " ")) {
                 out.add(it);
             }

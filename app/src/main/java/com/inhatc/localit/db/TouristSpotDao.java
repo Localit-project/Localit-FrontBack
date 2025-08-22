@@ -2,9 +2,9 @@ package com.inhatc.localit.db; // 본인의 패키지 이름으로 변경하세�
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
-import androidx.room.Delete; // ✨ @Delete 어노테이션 import 추가
+import androidx.room.Delete;
 import androidx.room.Insert;
-import androidx.room.OnConflictStrategy; // ✨ OnConflictStrategy import 추가
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
 
@@ -33,25 +33,26 @@ public interface TouristSpotDao {
     /**
      * 'isWished'가 true인, 즉 찜한 모든 관광지 목록을 가져옵니다.
      */
-    @Query("SELECT * FROM tourist_spots WHERE isWished = 1 ORDER BY name ASC")
+    // ▼▼▼▼▼ 'name' -> 'title'로 수정 ▼▼▼▼▼
+    @Query("SELECT * FROM tourist_spots WHERE isWished = 1 ORDER BY title ASC")
     LiveData<List<TouristSpot>> getWishedSpots();
 
     /**
      * 데이터베이스에 있는 모든 관광지 목록을 가져옵니다.
      */
-    @Query("SELECT * FROM tourist_spots ORDER BY name ASC")
+    // ▼▼▼▼▼ 'name' -> 'title'로 수정 ▼▼▼▼▼
+    @Query("SELECT * FROM tourist_spots ORDER BY title ASC")
     LiveData<List<TouristSpot>> getAllSpots();
 
-    // ✨ --- 아래 두 함수가 추가되었습니다 ---
-
     /**
-     * contentId를 기반으로 특정 관광지 데이터를 찾습니다.
+     * contentid를 기반으로 특정 관광지 데이터를 찾습니다.
      * 찜 여부를 확인할 때 사용됩니다. LIMIT 1은 결과를 하나로 제한합니다.
-     * @param contentId API에서 제공하는 고유 ID
-     * @return contentId에 해당하는 TouristSpot 객체. 없으면 null을 반환합니다.
+     * @param contentid API에서 제공하는 고유 ID
+     * @return contentid에 해당하는 TouristSpot 객체. 없으면 null을 반환합니다.
      */
-    @Query("SELECT * FROM tourist_spots WHERE contentId = :contentId LIMIT 1")
-    TouristSpot getSpotByContentId(String contentId);
+    // ▼▼▼▼▼ 'contentId' -> 'contentid'로 수정 ▼▼▼▼▼
+    @Query("SELECT * FROM tourist_spots WHERE contentid = :contentid LIMIT 1")
+    TouristSpot getSpotByContentId(String contentid);
 
     /**
      * 주어진 TouristSpot 객체를 데이터베이스에서 삭제합니다.

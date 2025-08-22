@@ -111,7 +111,7 @@ public class SearchFragment extends Fragment {
                 // 찜된 아이템의 contentId만 Set으로 만듭니다.
                 Set<String> wishedIds = new HashSet<>();
                 for (TouristSpot spot : wishedSpots) {
-                    wishedIds.add(spot.contentId);
+                    wishedIds.add(spot.contentid);
                 }
                 // 어댑터에 찜 목록을 전달하여 하트 아이콘을 업데이트합니다.
                 adapter.updateFavorites(wishedIds);

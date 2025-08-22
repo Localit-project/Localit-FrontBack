@@ -11,22 +11,28 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider; // ◀◀ 추가
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.inhatc.localit.Fragment.FavoriteViewModel; // ◀◀ 추가
 import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
 import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
+import com.inhatc.localit.db.TouristSpot; // ◀◀ 추가
+import com.inhatc.localit.db.TouristSpotRepository; // ◀◀ 추가
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet; // ◀◀ 추가
 import java.util.List;
 import java.util.Map;
+import java.util.Set; // ◀◀ 추가
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -40,6 +46,8 @@ public class SpotActivity extends AppCompatActivity {
 
     private RecyclerView recyclerViewTourism;
     private SpotAdapter spotAdapter;
+    private TouristSpotRepository touristSpotRepository; // ◀◀ 추가
+    private FavoriteViewModel favoriteViewModel; // ◀◀ 추가
 
     // API 원본 목록 (검색 필터용)
     private final List<SpotResponse.Item> fullItems = new ArrayList<>();
@@ -142,6 +150,11 @@ public class SpotActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_spot);
 
+        // ▼▼▼▼▼ 추가 ▼▼▼▼▼
+        favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
+        touristSpotRepository = new TouristSpotRepository(getApplication());
+        // ▲▲▲▲▲ 추가 ▲▲▲▲▲
+
         initViews();
         getRegionNameFromIntent();
         setupRecyclerView();
@@ -149,8 +162,25 @@ public class SpotActivity extends AppCompatActivity {
         setupClickListeners();
         setupBottomNavigationView();
 
+        observeWishedSpots(); // ◀◀ 추가
         fetchTourismListFromApi();
     }
+
+    // ◀◀ 추가 시작
+    private void observeWishedSpots() {
+        favoriteViewModel.getWishedSpots().observe(this, wishedSpots -> {
+            Set<String> wishedIds = new HashSet<>();
+            for (TouristSpot spot : wishedSpots) {
+                if (spot != null && spot.contentid != null) {
+                    wishedIds.add(spot.contentid);
+                }
+            }
+            if (spotAdapter != null) {
+                spotAdapter.updateFavorites(wishedIds);
+            }
+        });
+    }
+    // ◀◀ 추가 끝
 
     private void initViews() {
         recyclerViewTourism = findViewById(R.id.recyclerViewTourism);
@@ -174,17 +204,17 @@ public class SpotActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
+        // ▼▼▼▼▼ 수정 ▼▼▼▼▼
         spotAdapter = new SpotAdapter(
                 new ArrayList<>(),
                 // 카드 클릭 시 상세 화면으로 이동
                 (item, position) -> openSpotDetail(item),
-                // 즐겨찾기 클릭은 토스트 유지
-                (item, position) -> Toast.makeText(
-                        SpotActivity.this,
-                        "즐겨찾기: " + (item.title != null ? item.title : ""),
-                        Toast.LENGTH_SHORT
-                ).show()
+                // 즐겨찾기 클릭 시 DB 토글
+                (item, position) -> {
+                    touristSpotRepository.toggleFavoriteStatus(item);
+                }
         );
+        // ▲▲▲▲▲ 수정 ▲▲▲▲▲
         recyclerViewTourism.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewTourism.setAdapter(spotAdapter);
     }

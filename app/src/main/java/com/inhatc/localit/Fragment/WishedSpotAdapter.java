@@ -62,10 +62,10 @@ public class WishedSpotAdapter extends RecyclerView.Adapter<WishedSpotAdapter.Vi
         }
 
         void bind(TouristSpot item, Context context) {
-            textTourismTitle.setText(item.name);
-            textTourismSub.setText(item.address);
+            textTourismTitle.setText(item.title);
+            textTourismSub.setText(item.addr1);
             Glide.with(context)
-                    .load(item.imageUrl)
+                    .load(item.firstimage)
                     // 이미지가 없을 경우를 대비한 플레이스홀더 이미지
                     .placeholder(R.drawable.ic_image_placeholder)
                     .into(imageTourismThumb);

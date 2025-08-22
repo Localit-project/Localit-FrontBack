@@ -32,6 +32,18 @@ public class TouristSpotRepository {
     }
 
     /**
+     * TouristSpot 객체를 DB에 추가하는 메서드입니다.
+     * @param touristSpot 저장할 객체
+     */
+    public void insert(TouristSpot touristSpot) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            // ▼▼▼▼▼ 오타 수정 ▼▼▼▼▼
+            mTouristSpotDao.insert(touristSpot);
+            // ▲▲▲▲▲ 오타 수정 ▲▲▲▲▲
+        });
+    }
+
+    /**
      * 찜 상태를 토글(추가 또는 삭제)하는 메인 로직입니다.
      * 이 함수는 백그라운드 스레드에서 안전하게 실행됩니다.
      * @param apiItem 사용자가 클릭한 API 아이템 정보
@@ -63,6 +75,24 @@ public class TouristSpotRepository {
                 );
                 mTouristSpotDao.insert(newSpot);
             } else {
+                mTouristSpotDao.delete(spotInDb);
+            }
+        });
+    }
+    public void toggleFavoriteStatus(TouristSpot spotToToggle) {
+        if (spotToToggle == null || spotToToggle.contentid == null) {
+            return;
+        }
+
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            TouristSpot spotInDb = mTouristSpotDao.getSpotByContentId(spotToToggle.contentid);
+
+            if (spotInDb == null) {
+                // DB에 없으면, isWished를 true로 설정하여 새로 추가합니다.
+                spotToToggle.isWished = true;
+                mTouristSpotDao.insert(spotToToggle);
+            } else {
+                // DB에 이미 있으면 삭제합니다.
                 mTouristSpotDao.delete(spotInDb);
             }
         });
