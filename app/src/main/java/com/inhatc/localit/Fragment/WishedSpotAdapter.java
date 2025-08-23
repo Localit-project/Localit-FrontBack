@@ -1,77 +1,89 @@
 package com.inhatc.localit.Fragment;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.inhatc.localit.R;
-import com.inhatc.localit.db.TouristSpot; // DB의 TouristSpot 모델 사용
+import com.inhatc.localit.db.TouristSpot;
+
 import java.util.ArrayList;
 import java.util.List;
 
-// ✨ 클래스 이름을 WishedSpotAdapter로 변경
-public class WishedSpotAdapter extends RecyclerView.Adapter<WishedSpotAdapter.ViewHolder> {
+public class WishedSpotAdapter extends RecyclerView.Adapter<WishedSpotAdapter.VH> {
 
-    private final Context context;
-    private List<TouristSpot> items = new ArrayList<>();
-
-    public WishedSpotAdapter(Context context) {
-        this.context = context;
+    public interface OnSpotClickListener {
+        void onClick(@NonNull TouristSpot spot);
     }
 
-    public void setItems(List<TouristSpot> spotList) {
-        this.items = spotList;
+    private final Context context;
+    private final OnSpotClickListener listener;
+    private final List<TouristSpot> items = new ArrayList<>();
+
+    public WishedSpotAdapter(@NonNull Context context, OnSpotClickListener listener) {
+        this.context = context;
+        this.listener = listener;
+        setHasStableIds(true);
+    }
+
+    public void setItems(List<TouristSpot> data) {
+        items.clear();
+        if (data != null) items.addAll(data);
         notifyDataSetChanged();
     }
 
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // 검색 결과와 동일한 레이아웃 재사용
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_spot, parent, false);
-        return new ViewHolder(view);
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        TouristSpot item = items.get(position);
-        holder.bind(item, context);
-    }
-
-    @Override
-    public int getItemCount() {
-        return items.size();
-    }
-
-    static class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView imageTourismThumb;
-        TextView textTourismTitle, textTourismSub;
-        View btnFavorite; // 하트 버튼 뷰
-
-        ViewHolder(@NonNull View v) {
-            super(v);
-            imageTourismThumb = v.findViewById(R.id.imageTourismThumb);
-            textTourismTitle = v.findViewById(R.id.textTourismTitle);
-            textTourismSub = v.findViewById(R.id.textTourismSub);
-            btnFavorite = v.findViewById(R.id.btnFavorite);
+    @Override public long getItemId(int position) {
+        try {
+            return Long.parseLong(String.valueOf(items.get(position).contentid));
+        } catch (Exception e) {
+            return items.get(position).hashCode();
         }
+    }
 
-        void bind(TouristSpot item, Context context) {
-            textTourismTitle.setText(item.title);
-            textTourismSub.setText(item.addr1);
-            Glide.with(context)
-                    .load(item.firstimage)
-                    // 이미지가 없을 경우를 대비한 플레이스홀더 이미지
-                    .placeholder(R.drawable.ic_image_placeholder)
-                    .into(imageTourismThumb);
+    @NonNull @Override
+    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(context).inflate(R.layout.item_wished_spot, parent, false);
+        return new VH(v);
+    }
 
-            // 찜 목록에서는 하트 버튼을 보여줄 필요가 없으므로 숨깁니다.
-            btnFavorite.setVisibility(View.GONE);
+    @Override
+    public void onBindViewHolder(@NonNull VH h, int position) {
+        TouristSpot spot = items.get(position);
+
+        h.title.setText(spot.title != null ? spot.title : "");
+        h.addr.setText(spot.addr1 != null ? spot.addr1 : "");
+
+        String img = !TextUtils.isEmpty(spot.firstimage) ? spot.firstimage : null;
+        Glide.with(context)
+                .load(img)
+                .placeholder(R.drawable.sample1)
+                .error(R.drawable.sample1)
+                .into(h.thumb);
+
+        h.itemView.setOnClickListener(v -> {
+            if (listener != null) listener.onClick(spot);
+        });
+    }
+
+    @Override public int getItemCount() { return items.size(); }
+
+    static class VH extends RecyclerView.ViewHolder {
+        ImageView thumb;
+        TextView title;
+        TextView addr;
+        VH(@NonNull View itemView) {
+            super(itemView);
+            thumb = itemView.findViewById(R.id.imageThumb);
+            title = itemView.findViewById(R.id.textTitle);
+            addr  = itemView.findViewById(R.id.textAddr);
         }
     }
 }
