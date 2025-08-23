@@ -118,9 +118,6 @@
             android:name=".ui.category.FestivalDetailActivity"
             android:exported="false" />
 
-        <activity android:name=".api.ActivityGemini"
-            android:exported="true" />
-
 
 
         <meta-data

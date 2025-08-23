@@ -21,6 +21,7 @@ android {
         versionCode 1
         versionName "1.0"
 
+
         // 네이버 지도 클라이언트 아이디 (AndroidManifest에 주입)
         manifestPlaceholders = [
                 NAVERMAP_CLIENT_ID: localProps.getProperty("NAVERMAP_CLIENT_ID", "")
@@ -28,6 +29,8 @@ android {
 
         // TourAPI 키를 BuildConfig로 노출
         buildConfigField "String", "TOUR_API_KEY", "\"wL/Ry8EMiMg43mPRl3wyQhKosVExsJbLLDcZebat4S4eedobtNuBG+eqrj5GPKHvEAxy4NjYPz25Parbyeg8PA==\""
+        // 2. BuildConfig에 GPT API 키 변수 추가
+        buildConfigField "String", "GPT_API_KEY", "\"${GPT_API_KEY}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -1,6 +1,9 @@
 package com.inhatc.localit.api;
 
 import android.util.Log;
+
+import com.inhatc.localit.BuildConfig;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,41 +17,43 @@ import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class GeminiApi {
+public class GPTApi {
 
-    private static final String API_KEY = "AIzaSyBY3dx-lTq1VBxOQhWOSEqyamkI9zxKLcw"; // 실제 키로 교체
-    private static final String API_URL =
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=" + API_KEY;
-    private static final String TAG = "GeminiApi";
+    // 🔑 OpenAI API Key (gradle.properties → BuildConfig 에서 안전하게 관리)
+    private static final String API_KEY = BuildConfig.GPT_API_KEY;
+    private static final String API_URL = "https://api.openai.com/v1/chat/completions";
+    private static final String TAG = "GPTApi";
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(4);
 
-    public interface GeminiResponseCallback {
+    public interface GPTResponseCallback {
+
         void onResponse(String result);
         void onFailure(Exception e);
     }
 
-    public void generateLocationRecommendations(String prompt, GeminiResponseCallback callback) {
+    // ✅ GPT 호출 메서드
+    public void generateLocationRecommendations(String prompt, GPTResponseCallback callback) {
         executorService.execute(() -> {
             try {
-                // 요청 JSON 만들기
+                // 요청 JSON 생성
                 JSONObject requestBody = new JSONObject();
-                JSONArray contents = new JSONArray();
-                JSONObject content = new JSONObject();
-                content.put("role", "user");
-                JSONArray parts = new JSONArray();
-                JSONObject part = new JSONObject();
-                part.put("text", prompt);
-                parts.put(part);
-                content.put("parts", parts);
-                contents.put(content);
-                requestBody.put("contents", contents);
+                requestBody.put("model", "gpt-4o-mini");
 
-                // HTTP 연결 설정
+                JSONArray messages = new JSONArray();
+                JSONObject userMessage = new JSONObject();
+                userMessage.put("role", "user");
+                userMessage.put("content", prompt);
+                messages.put(userMessage);
+
+                requestBody.put("messages", messages);
+
+                // HTTP 연결
                 URL url = new URL(API_URL);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json");
+                conn.setRequestProperty("Authorization", "Bearer " + API_KEY);
                 conn.setDoOutput(true);
 
                 try (OutputStream os = conn.getOutputStream()) {
@@ -74,30 +79,25 @@ public class GeminiApi {
         });
     }
 
+    // ✅ OpenAI 응답 파싱
     private String parseApiResponse(String responseString) {
         try {
+            Log.d(TAG, "API Raw Response: " + responseString);
             JSONObject jsonObject = new JSONObject(responseString);
-            JSONArray candidates = jsonObject.getJSONArray("candidates");
-            if (candidates.length() > 0) {
-                JSONObject firstCandidate = candidates.getJSONObject(0);
-                JSONObject content = firstCandidate.getJSONObject("content");
-                JSONArray parts = content.getJSONArray("parts");
-                if (parts.length() > 0) {
-                    return parts.getJSONObject(0).getString("text");
-                }
+            JSONArray choices = jsonObject.getJSONArray("choices");
+            if (choices.length() > 0) {
+                JSONObject firstChoice = choices.getJSONObject(0);
+                JSONObject message = firstChoice.getJSONObject("message");
+                return message.getString("content");
             }
         } catch (JSONException e) {
             Log.e(TAG, "Failed to parse API response", e);
+            return "API 응답 처리 중 오류 발생";
         }
         return "응답을 처리하는 데 실패했습니다.";
     }
 
-    /**
-     * ✅ InputStream에서 모든 바이트를 읽는 호환성 있는 유틸리티 메서드
-     * @param inputStream 읽을 InputStream
-     * @return InputStream의 모든 내용을 담은 문자열
-     * @throws IOException
-     */
+    // ✅ InputStream → String 변환
     private String readStream(InputStream inputStream) throws IOException {
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];

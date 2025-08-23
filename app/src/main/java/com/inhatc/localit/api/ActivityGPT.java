@@ -1,28 +1,20 @@
-package com.inhatc.localit.Fragment;
+package com.inhatc.localit.api;
 
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ProgressBar;
+import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.inhatc.localit.R;
-import com.inhatc.localit.api.GPTApi;
-import com.inhatc.localit.api.Message;
-import com.inhatc.localit.api.MessageAdapter;
-
 import java.util.ArrayList;
 import java.util.List;
 
-public class ChatFragment extends Fragment {
+public class ActivityGPT extends AppCompatActivity {
 
     private GPTApi gptApi;
     private EditText etMessage;
@@ -33,65 +25,57 @@ public class ChatFragment extends Fragment {
     private List<Message> messageList = new ArrayList<>();
     private MessageAdapter adapter;
 
-    public ChatFragment() {
-        // Required empty public constructor
-    }
-
-    @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_chat, container, false);
-    }
-
-    @Override
-    public void onViewCreated(@NonNull View view,
-                              @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.fragment_chat);
 
         gptApi = new GPTApi();
 
-        // ✅ View 연결
-        etMessage = view.findViewById(R.id.etMessage);
-        btnSend = view.findViewById(R.id.btnSend);
-        rvMessages = view.findViewById(R.id.rvMessages);
-        typingIndicator = view.findViewById(R.id.typingIndicator);
+        // XML 연결
+        etMessage = findViewById(R.id.etMessage);
+        btnSend = findViewById(R.id.btnSend);
+        rvMessages = findViewById(R.id.rvMessages);
+        typingIndicator = findViewById(R.id.typingIndicator);
 
         // ✅ RecyclerView 초기화
         adapter = new MessageAdapter(messageList);
-        rvMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvMessages.setLayoutManager(new LinearLayoutManager(this));
         rvMessages.setAdapter(adapter);
 
-        // ✅ 전송 버튼 클릭 이벤트
+        // 메시지 전송 버튼 클릭 이벤트
         btnSend.setOnClickListener(v -> {
             String prompt = etMessage.getText().toString().trim();
             if (!prompt.isEmpty()) {
                 showTyping(true);
 
-                // 사용자 메시지 추가
+                // ✅ 사용자 메시지 추가
                 addMessage("user", prompt);
 
-                // 입력창 초기화
+                // ✅ IME 관련 스팬 제거 후 안전하게 텍스트 초기화
                 etMessage.clearComposingText();
-                etMessage.setText("");
+                etMessage.setText("", TextView.BufferType.NORMAL);
 
-                // GPT API 호출
+                // ✅ GPT API 호출
                 gptApi.generateLocationRecommendations(prompt, new GPTApi.GPTResponseCallback() {
                     @Override
                     public void onResponse(String result) {
-                        requireActivity().runOnUiThread(() -> {
+                        runOnUiThread(() -> {
                             showTyping(false);
                             addMessage("bot", result);
+
+                            // ✅ RecyclerView 갱신 + 스크롤
                             rvMessages.post(() -> rvMessages.smoothScrollToPosition(messageList.size() - 1));
                         });
                     }
 
                     @Override
                     public void onFailure(Exception e) {
-                        requireActivity().runOnUiThread(() -> {
+                        runOnUiThread(() -> {
                             showTyping(false);
                             addMessage("bot", "오류 발생: " + e.getMessage());
+
+                            // ✅ 스크롤 보장
                             rvMessages.post(() -> rvMessages.smoothScrollToPosition(messageList.size() - 1));
                         });
                     }
@@ -106,11 +90,13 @@ public class ChatFragment extends Fragment {
 
     private void addMessage(String sender, String message) {
         Message.Sender senderEnum;
+
         if ("USER".equalsIgnoreCase(sender)) {
             senderEnum = Message.Sender.USER;
         } else {
             senderEnum = Message.Sender.BOT;
         }
+
         messageList.add(new Message(message, senderEnum));
         adapter.notifyItemInserted(messageList.size() - 1);
         rvMessages.scrollToPosition(messageList.size() - 1);

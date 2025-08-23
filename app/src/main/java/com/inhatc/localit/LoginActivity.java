@@ -38,6 +38,14 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
+import android.util.Base64;
+import android.util.Log;
+
+import java.security.MessageDigest;
+
 public class LoginActivity extends AppCompatActivity {
 
     private static final int RC_KAKAO_SIGN_IN = 64206;
@@ -63,7 +71,6 @@ public class LoginActivity extends AppCompatActivity {
 
         initViews();
         setClickListeners();
-
         // Google
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
@@ -120,7 +127,6 @@ public class LoginActivity extends AppCompatActivity {
         try { NaverIdLoginSDK.INSTANCE.logout(); } catch (Throwable ignore) {}
         try { UserApiClient.getInstance().logout(throwable -> null); } catch (Throwable ignore) {}
     }
-
     /** 소셜 로그인 후 Firebase 세션 없으면 익명 로그인으로 세션 보장 */
     private void ensureFirebaseSessionForSocial(Runnable onReady) {
         FirebaseUser cur = FirebaseAuth.getInstance().getCurrentUser();

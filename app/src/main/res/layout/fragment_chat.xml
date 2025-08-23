@@ -255,26 +255,33 @@
         <!-- 둥근 입력 필 -->
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:orientation="vertical"
             android:background="@drawable/bg_input_pill"
             android:gravity="center_vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp">
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etMessage"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:maxHeight="150dp"
                 android:hint="여기에 질문을 입력해 주세요.."
                 android:imeOptions="actionSend"
                 android:inputType="textMultiLine|textCapSentences"
+                android:scrollbars="vertical"
+                android:overScrollMode="always"
                 android:singleLine="false"
-                android:maxLines="5"
+                android:gravity="top|start"
                 android:focusable="true"
-                android:focusableInTouchMode="true">
-                <requestFocus/>
-            </com.google.android.material.textfield.TextInputEditText>
+                android:focusableInTouchMode="true"
+                android:padding="8dp"/>
+
         </LinearLayout>
 
         <!-- 우측 전송 버튼 -->
