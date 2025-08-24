@@ -1,8 +1,10 @@
 package com.inhatc.localit;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -19,6 +21,9 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
+import com.inhatc.localit.api.naver.NaverApiService;
+import com.inhatc.localit.api.naver.NaverNewsResponse;
+import com.inhatc.localit.api.naver.RetrofitClient;
 import com.inhatc.localit.ui.category.FestivalActivity;
 import com.inhatc.localit.ui.category.FestivalDetailActivity;
 import com.inhatc.localit.ui.category.NewsActivity;
@@ -54,9 +59,21 @@ public class RegionDetailActivity extends AppCompatActivity {
     private TextView textFestival1Title, textFestival1Date, textFestival1DateInfo;
     private TextView textFestival2Title, textFestival2Date, textFestival2DateInfo;
 
+    // 뉴스 뷰 변수 (textNews3 추가)
+    private TextView textNews1, textNews2, textNews3;
+
     // 미리보기 데이터
     private List<SpotResponse.Item> tourismPreview = new ArrayList<>();
     private List<SpotResponse.Item> festivalPreview = new ArrayList<>();
+
+    // 뉴스 링크 저장용 리스트 추가
+    private List<String> newsLinks = new ArrayList<>();
+
+    // NaverApiService 인스턴스 추가
+    private NaverApiService naverApiService;
+    private final String NAVER_CLIENT_ID = "hjVfnk_wdgYqW0xT86Ts"; // 실제 키로 변경
+    private final String NAVER_CLIENT_SECRET = "yFyvd5aHZ9"; // 실제 키로 변경
+
 
     private static final String SERVICE_KEY =
             "wL/Ry8EMiMg43mPRl3wyQhKosVExsJbLLDcZebat4S4eedobtNuBG+eqrj5GPKHvEAxy4NjYPz25Parbyeg8PA==";
@@ -110,6 +127,9 @@ public class RegionDetailActivity extends AppCompatActivity {
         NaverMapSdk.getInstance(this).setClient(
                 new NaverMapSdk.NcpKeyClient("j6uu2y26y1"));
 
+        // NaverApiService 인스턴스 초기화
+        naverApiService = RetrofitClient.getInstance().create(NaverApiService.class);
+
         // 인텐트
         String rawRegion = getIntent().getStringExtra("regionName");    // 예: "경기"
         String rawSub    = getIntent().getStringExtra("subRegionName"); // 예: "수원시"
@@ -142,17 +162,20 @@ public class RegionDetailActivity extends AppCompatActivity {
                     subRegionName = String.valueOf(parent.getItemAtPosition(position));
                     fetchTourismPreview();
                     fetchFestivalPreview();
+                    fetchNewsPreview(); // 스피너 선택 시 뉴스도 갱신
                 }
                 @Override public void onNothingSelected(AdapterView<?> parent) { }
             });
 
             fetchTourismPreview();
             fetchFestivalPreview();
+            fetchNewsPreview();
         } else {
             if (cardSubRegion != null) cardSubRegion.setVisibility(View.GONE);
             subRegionName = null;
             fetchTourismPreview();
             fetchFestivalPreview();
+            fetchNewsPreview();
         }
     }
 
@@ -184,6 +207,18 @@ public class RegionDetailActivity extends AppCompatActivity {
         textFestival2Title = findViewById(R.id.textFestival2Title);
         textFestival2Date = findViewById(R.id.textFestival2Date);
         textFestival2DateInfo = findViewById(R.id.textFestival2DateInfo);
+
+        // 뉴스 뷰 초기화 (textNews3 추가)
+        textNews1 = findViewById(R.id.textNews1);
+        textNews2 = findViewById(R.id.textNews2);
+        textNews3 = findViewById(R.id.textNews3);
+
+        // 뉴스 텍스트뷰에 클릭 리스너 설정
+        textNews1.setOnClickListener(v -> onClickNews(0));
+        textNews2.setOnClickListener(v -> onClickNews(1));
+        if (textNews3 != null) {
+            textNews3.setOnClickListener(v -> onClickNews(2));
+        }
 
         // 관광 카드 클릭 타깃
         View[] tourismTargets = new View[]{ imageTourism1, textTourism1Title, imageTourism2, textTourism2Title };
@@ -318,6 +353,86 @@ public class RegionDetailActivity extends AppCompatActivity {
         });
     }
 
+    // 뉴스 데이터를 가져오는 메서드 (네이버 API 연동)
+    private void fetchNewsPreview() {
+        String query;
+        if (!TextUtils.isEmpty(subRegionName)) {
+            query = subRegionName + " 축제 행사 관광";
+        } else {
+            query = regionName + " 축제 행사 관광";
+        }
+
+        if (TextUtils.isEmpty(query)) {
+            bindNewsPreview(null);
+            return;
+        }
+
+        Call<NaverNewsResponse> call = naverApiService.getNews(
+                NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, query, 3, "sim" // 3개 항목 요청
+        );
+        call.enqueue(new Callback<NaverNewsResponse>() {
+            @Override
+            public void onResponse(Call<NaverNewsResponse> call, Response<NaverNewsResponse> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().getItems() != null) {
+                    List<String> titles = new ArrayList<>();
+                    newsLinks.clear(); // 링크 리스트 초기화
+                    for (NaverNewsResponse.Item item : response.body().getItems()) {
+                        String title = item.getTitle().replaceAll("<b>|</b>", ""); // <b> 태그 제거
+                        titles.add(title);
+                        newsLinks.add(item.getLink()); // 링크 저장
+                    }
+                    bindNewsPreview(titles);
+                } else {
+                    bindNewsPreview(null);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<NaverNewsResponse> call, Throwable t) {
+                Log.e("RegionDetailActivity", "뉴스 가져오기 실패", t);
+                bindNewsPreview(null);
+            }
+        });
+    }
+
+
+    // 뉴스 데이터를 뷰에 바인딩하는 메서드 (3개 항목)
+    private void bindNewsPreview(List<String> newsItems) {
+        textNews1.setText("");
+        textNews2.setText("");
+        if (textNews3 != null) textNews3.setText("");
+
+        if (newsItems == null || newsItems.isEmpty()) {
+            textNews1.setText("데이터가 없습니다");
+            textNews2.setText("");
+            if (textNews3 != null) textNews3.setText("");
+            return;
+        }
+
+        if (newsItems.size() > 0) {
+            textNews1.setText(safe(newsItems.get(0)));
+        }
+        if (newsItems.size() > 1) {
+            textNews2.setText(safe(newsItems.get(1)));
+        }
+        if (newsItems.size() > 2) { // 세 번째 뉴스 항목을 바인딩
+            if (textNews3 != null) {
+                textNews3.setText(safe(newsItems.get(2)));
+            }
+        }
+    }
+
+    // 뉴스 항목 클릭 시 링크로 이동하는 메서드
+    private void onClickNews(int index) {
+        if (newsLinks.size() > index) {
+            String link = newsLinks.get(index);
+            if (!TextUtils.isEmpty(link)) {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
+                startActivity(intent);
+            }
+        }
+    }
+
     /** addr1에 하위도시명이 포함된 것만 남기기 (fallback) */
     private List<SpotResponse.Item> filterByAddr(List<SpotResponse.Item> src, String key) {
         if (src == null) return new ArrayList<>();
@@ -337,13 +452,12 @@ public class RegionDetailActivity extends AppCompatActivity {
         if (items == null) items = new ArrayList<>();
         if (items.size() >= 2) {
             SpotResponse.Item item1 = items.get(0);
-            SpotResponse.Item item2 = items.get(1);
-
             textTourism1Title.setText(safe(item1.title));
             textTourism1Location.setText(safe(item1.addr1));
             textTourism1Date.setText(formatDate(item1.createdtime));
             Glide.with(this).load(safe(item1.firstimage)).placeholder(R.drawable.sample1).error(R.drawable.sample1).into(imageTourism1);
 
+            SpotResponse.Item item2 = items.get(1);
             textTourism2Title.setText(safe(item2.title));
             textTourism2Location.setText(safe(item2.addr1));
             textTourism2Date.setText(formatDate(item2.createdtime));
@@ -371,13 +485,12 @@ public class RegionDetailActivity extends AppCompatActivity {
         if (items == null) items = new ArrayList<>();
         if (items.size() >= 2) {
             SpotResponse.Item item1 = items.get(0);
-            SpotResponse.Item item2 = items.get(1);
-
             textFestival1Title.setText(safe(item1.title));
             textFestival1Date.setText("시작일: " + formatDate(item1.eventstartdate));
             textFestival1DateInfo.setText("종료일: " + formatDate(item1.eventenddate));
             Glide.with(this).load(safe(item1.firstimage)).placeholder(R.drawable.sample1).error(R.drawable.sample1).into(imageFestival1);
 
+            SpotResponse.Item item2 = items.get(1);
             textFestival2Title.setText(safe(item2.title));
             textFestival2Date.setText("시작일: " + formatDate(item2.eventstartdate));
             textFestival2DateInfo.setText("종료일: " + formatDate(item2.eventenddate));
