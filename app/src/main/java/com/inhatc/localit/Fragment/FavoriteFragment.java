@@ -25,11 +25,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.inhatc.localit.R;
+import com.inhatc.localit.Fragment.WishedSpotAdapter;
 import com.inhatc.localit.db.TouristSpot;
 import com.inhatc.localit.ui.category.FestivalDetailActivity;
 import com.inhatc.localit.ui.category.SpotDetailActivity;
 
 import java.util.ArrayList;
+import java.util.HashSet; // [추가]
 import java.util.List;
 
 public class FavoriteFragment extends Fragment {
@@ -39,7 +41,7 @@ public class FavoriteFragment extends Fragment {
     private TextView titleText;
     private TextView tabFestival, tabTour, tabNews;
     private View indicator;
-    private int selectedTab = 0; // 0: 축제, 1: 관광지, 2: 뉴스
+    private int selectedTab = 0;
 
     // 콘텐츠 영역
     private FrameLayout contentFrame;
@@ -48,6 +50,10 @@ public class FavoriteFragment extends Fragment {
     private WishedSpotAdapter adapter;
     private FavoriteViewModel viewModel;
     private List<TouristSpot> allWishedSpots = new ArrayList<>();
+
+    // [추가] 비활성화된 아이템의 ID를 임시로 저장하는 Set
+    private HashSet<String> deactivatedSpotIds = new HashSet<>();
+    private boolean isInitialLoad = true;
 
     @Nullable
     @Override
@@ -58,6 +64,10 @@ public class FavoriteFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        // [추가] 뷰가 생성될 때마다 비활성화 목록을 새로 초기화
+        isInitialLoad = true;
+        deactivatedSpotIds = new HashSet<>();
 
         viewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
 
@@ -102,9 +112,34 @@ public class FavoriteFragment extends Fragment {
         if (fragmentView != null) fragmentView.post(this::applyTabState);
     }
 
-    /** RecyclerView 및 어댑터 설정 (아이템 클릭 → 상세 이동 포함) */
+    /** [수정됨] 활성화/비활성화 로직을 처리하도록 RecyclerView 설정 변경 */
     private void setupRecyclerView() {
-        adapter = new WishedSpotAdapter(requireContext(), this::openDetailFor);
+        // 1. 아이템 전체 클릭 리스너
+        WishedSpotAdapter.OnSpotClickListener itemClickListener = this::openDetailFor;
+
+        // 2. 하트 버튼 클릭 리스너 (활성화/비활성화 로직)
+        WishedSpotAdapter.OnHeartClickListener heartClickListener = spot -> {
+            String contentId = spot.contentid;
+
+            if (deactivatedSpotIds.contains(contentId)) {
+                // 비활성화 상태(빈 하트)를 클릭한 경우 -> 다시 활성화 (Undo)
+                deactivatedSpotIds.remove(contentId);
+                viewModel.addWishedSpot(spot); // DB에 다시 추가
+                Toast.makeText(getContext(), "찜 목록에 다시 추가했습니다.", Toast.LENGTH_SHORT).show();
+            } else {
+                // 활성화 상태(채워진 하트)를 클릭한 경우 -> 비활성화
+                deactivatedSpotIds.add(contentId);
+                viewModel.removeWishedSpot(spot); // DB에서 삭제
+                Toast.makeText(getContext(), "찜을 취소했습니다.", Toast.LENGTH_SHORT).show();
+            }
+
+            // 어댑터에 변경된 비활성화 목록을 알려주고, UI를 새로고침
+            adapter.setDeactivatedSpotIds(deactivatedSpotIds);
+            adapter.notifyDataSetChanged();
+        };
+
+        // 어댑터 생성 및 설정
+        adapter = new WishedSpotAdapter(requireContext(), itemClickListener, heartClickListener);
         recyclerView = new RecyclerView(requireContext());
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(adapter);
@@ -114,11 +149,18 @@ public class FavoriteFragment extends Fragment {
         ));
     }
 
-    /** LiveData 구독하여 원본 데이터 업데이트 */
+    /** [수정됨] LiveData 구독 시 어댑터에 비활성화 목록 전달 */
     private void observeViewModel() {
         viewModel.getWishedSpots().observe(getViewLifecycleOwner(), wishedSpots -> {
-            this.allWishedSpots = (wishedSpots != null) ? wishedSpots : new ArrayList<>();
-            filterAndDisplayList();
+            // ▼▼▼▼▼ [수정된 로직] ▼▼▼▼▼
+            // isInitialLoad 플래그가 true일 때 (즉, 화면에 처음 진입했을 때)만 목록을 새로고침합니다.
+            if (isInitialLoad) {
+                this.allWishedSpots = (wishedSpots != null) ? wishedSpots : new ArrayList<>();
+                adapter.setDeactivatedSpotIds(deactivatedSpotIds);
+                filterAndDisplayList();
+                isInitialLoad = false; // 플래그를 false로 바꿔서 다음부터는 이 코드가 실행되지 않도록 함
+            }
+            // ▲▲▲▲▲ [수정된 로직] ▲▲▲▲▲
         });
     }
 
@@ -127,13 +169,13 @@ public class FavoriteFragment extends Fragment {
         List<TouristSpot> filteredList = new ArrayList<>();
         for (TouristSpot spot : allWishedSpots) {
             switch (selectedTab) {
-                case 0: // 축제(15)
+                case 0:
                     if (spot.contenttypeid == 15) filteredList.add(spot);
                     break;
-                case 1: // 관광지(12)
+                case 1:
                     if (spot.contenttypeid == 12) filteredList.add(spot);
                     break;
-                case 2: // 뉴스(99)
+                case 2:
                     if (spot.contenttypeid == 99) filteredList.add(spot);
                     break;
             }
@@ -157,7 +199,7 @@ public class FavoriteFragment extends Fragment {
         String firstImage  = spot.firstimage == null ? "" : spot.firstimage;
 
         if (spot.contenttypeid == 12) {
-            // 관광지 → SpotDetailActivity (activity_spot_detail.xml 로딩)
+            // 관광지 → SpotDetailActivity
             Intent intent = new Intent(requireContext(), SpotDetailActivity.class)
                     .putExtra(SpotDetailActivity.EXTRA_CONTENT_ID, contentId)
                     .putExtra(SpotDetailActivity.EXTRA_CONTENT_TYPE_ID, "12")
@@ -167,7 +209,7 @@ public class FavoriteFragment extends Fragment {
             startActivity(intent);
 
         } else if (spot.contenttypeid == 15) {
-            // 축제 → FestivalDetailActivity (activity_festival_detail.xml 로딩)
+            // 축제 → FestivalDetailActivity
             Intent intent = new Intent(requireContext(), FestivalDetailActivity.class)
                     .putExtra(FestivalDetailActivity.EXTRA_CONTENT_ID, contentId)
                     .putExtra(FestivalDetailActivity.EXTRA_CONTENT_TYPE_ID, "15")
@@ -177,7 +219,7 @@ public class FavoriteFragment extends Fragment {
             startActivity(intent);
 
         } else if (spot.contenttypeid == 99) {
-            // 뉴스 → 바로 외부 브라우저 열기 (contentid에 링크 저장됨)
+            // 뉴스 → 외부 브라우저
             String url = normalizeUrl(contentId);
             if (TextUtils.isEmpty(url)) {
                 Toast.makeText(requireContext(), "유효한 뉴스 링크가 없습니다.", Toast.LENGTH_SHORT).show();
@@ -194,7 +236,6 @@ public class FavoriteFragment extends Fragment {
         if (TextUtils.isEmpty(link)) return null;
         String trimmed = link.trim();
         if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
-        // 네이버 뉴스 링크 등 스킴이 빠진 경우 대비
         return "https://" + trimmed;
     }
 

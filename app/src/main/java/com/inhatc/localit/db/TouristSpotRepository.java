@@ -37,11 +37,22 @@ public class TouristSpotRepository {
      */
     public void insert(TouristSpot touristSpot) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            // ▼▼▼▼▼ 오타 수정 ▼▼▼▼▼
             mTouristSpotDao.insert(touristSpot);
-            // ▲▲▲▲▲ 오타 수정 ▲▲▲▲▲
         });
     }
+
+    // ▼▼▼▼▼ [추가된 부분] ▼▼▼▼▼
+    /**
+     * TouristSpot 객체를 DB에서 삭제하는 메서드입니다.
+     * ViewModel에서 찜 해제를 위해 직접 호출합니다.
+     * @param touristSpot 삭제할 객체
+     */
+    public void delete(TouristSpot touristSpot) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            mTouristSpotDao.delete(touristSpot);
+        });
+    }
+    // ▲▲▲▲▲ [추가된 부분] ▲▲▲▲▲
 
     /**
      * 찜 상태를 토글(추가 또는 삭제)하는 메인 로직입니다.

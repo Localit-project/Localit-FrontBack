@@ -34,4 +34,23 @@ public class FavoriteViewModel extends AndroidViewModel {
     public LiveData<List<TouristSpot>> getWishedSpots() {
         return mWishedSpots;
     }
+
+    /**
+     * 찜 목록에서 아이템을 삭제하도록 Repository에 요청합니다.
+     * @param spot 삭제할 TouristSpot 객체
+     */
+    public void removeWishedSpot(TouristSpot spot) {
+        mRepository.delete(spot);
+    }
+
+    // ▼▼▼▼▼ [추가된 부분] ▼▼▼▼▼
+    /**
+     * 찜 목록에 아이템을 다시 추가하도록 Repository에 요청합니다. (Undo 기능)
+     * @param spot 추가할 TouristSpot 객체
+     */
+    public void addWishedSpot(TouristSpot spot) {
+        // Repository에 구현된 insert 메서드를 호출합니다.
+        mRepository.insert(spot);
+    }
+    // ▲▲▲▲▲ [추가된 부분] ▲▲▲▲▲
 }
