@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -59,8 +60,10 @@ public class RegionDetailActivity extends AppCompatActivity {
     private TextView textFestival1Title, textFestival1Date, textFestival1DateInfo;
     private TextView textFestival2Title, textFestival2Date, textFestival2DateInfo;
 
-    // 뉴스 뷰 변수 (textNews3 추가)
-    private TextView textNews1, textNews2, textNews3;
+    // 뉴스 뷰 변수 (CardView 및 TextView 추가)
+    private CardView cardNews1, cardNews2, cardNews3;
+    private TextView textNews1Title, textNews2Title, textNews3Title;
+    private TextView textNews1Date, textNews2Date, textNews3Date;
 
     // 미리보기 데이터
     private List<SpotResponse.Item> tourismPreview = new ArrayList<>();
@@ -68,6 +71,8 @@ public class RegionDetailActivity extends AppCompatActivity {
 
     // 뉴스 링크 저장용 리스트 추가
     private List<String> newsLinks = new ArrayList<>();
+    // 뉴스 발행일 저장용 리스트 추가
+    private List<String> newsPubDates = new ArrayList<>();
 
     // NaverApiService 인스턴스 추가
     private NaverApiService naverApiService;
@@ -208,17 +213,23 @@ public class RegionDetailActivity extends AppCompatActivity {
         textFestival2Date = findViewById(R.id.textFestival2Date);
         textFestival2DateInfo = findViewById(R.id.textFestival2DateInfo);
 
-        // 뉴스 뷰 초기화 (textNews3 추가)
-        textNews1 = findViewById(R.id.textNews1);
-        textNews2 = findViewById(R.id.textNews2);
-        textNews3 = findViewById(R.id.textNews3);
+        // 뉴스 CardView 및 TextView 초기화
+        cardNews1 = findViewById(R.id.cardNews1);
+        cardNews2 = findViewById(R.id.cardNews2);
+        cardNews3 = findViewById(R.id.cardNews3);
 
-        // 뉴스 텍스트뷰에 클릭 리스너 설정
-        textNews1.setOnClickListener(v -> onClickNews(0));
-        textNews2.setOnClickListener(v -> onClickNews(1));
-        if (textNews3 != null) {
-            textNews3.setOnClickListener(v -> onClickNews(2));
-        }
+        textNews1Title = findViewById(R.id.textNews1Title);
+        textNews2Title = findViewById(R.id.textNews2Title);
+        textNews3Title = findViewById(R.id.textNews3Title);
+
+        textNews1Date = findViewById(R.id.textNews1Date);
+        textNews2Date = findViewById(R.id.textNews2Date);
+        textNews3Date = findViewById(R.id.textNews3Date);
+
+        // 뉴스 카드에 클릭 리스너 설정
+        if (cardNews1 != null) cardNews1.setOnClickListener(v -> onClickNews(0));
+        if (cardNews2 != null) cardNews2.setOnClickListener(v -> onClickNews(1));
+        if (cardNews3 != null) cardNews3.setOnClickListener(v -> onClickNews(2));
 
         // 관광 카드 클릭 타깃
         View[] tourismTargets = new View[]{ imageTourism1, textTourism1Title, imageTourism2, textTourism2Title };
@@ -363,7 +374,7 @@ public class RegionDetailActivity extends AppCompatActivity {
         }
 
         if (TextUtils.isEmpty(query)) {
-            bindNewsPreview(null);
+            bindNewsPreview(null, null);
             return;
         }
 
@@ -376,51 +387,79 @@ public class RegionDetailActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null && response.body().getItems() != null) {
                     List<String> titles = new ArrayList<>();
                     newsLinks.clear(); // 링크 리스트 초기화
+                    newsPubDates.clear(); // 발행일 리스트 초기화
                     for (NaverNewsResponse.Item item : response.body().getItems()) {
                         String title = item.getTitle().replaceAll("<b>|</b>", ""); // <b> 태그 제거
                         titles.add(title);
                         newsLinks.add(item.getLink()); // 링크 저장
+                        newsPubDates.add(item.getPubDate()); // 발행일 저장
                     }
-                    bindNewsPreview(titles);
+                    bindNewsPreview(titles, newsPubDates);
                 } else {
-                    bindNewsPreview(null);
+                    bindNewsPreview(null, null);
                 }
             }
 
             @Override
             public void onFailure(Call<NaverNewsResponse> call, Throwable t) {
                 Log.e("RegionDetailActivity", "뉴스 가져오기 실패", t);
-                bindNewsPreview(null);
+                bindNewsPreview(null, null);
             }
         });
     }
 
-
     // 뉴스 데이터를 뷰에 바인딩하는 메서드 (3개 항목)
-    private void bindNewsPreview(List<String> newsItems) {
-        textNews1.setText("");
-        textNews2.setText("");
-        if (textNews3 != null) textNews3.setText("");
+    private void bindNewsPreview(List<String> newsItems, List<String> pubDates) {
+        // 모든 카드와 텍스트뷰 초기화
+        textNews1Title.setText("");
+        textNews1Date.setText("");
+        cardNews1.setVisibility(View.GONE);
+
+        textNews2Title.setText("");
+        textNews2Date.setText("");
+        cardNews2.setVisibility(View.GONE);
+
+        if (textNews3Title != null) {
+            textNews3Title.setText("");
+            textNews3Date.setText("");
+        }
+        if (cardNews3 != null) {
+            cardNews3.setVisibility(View.GONE);
+        }
 
         if (newsItems == null || newsItems.isEmpty()) {
-            textNews1.setText("데이터가 없습니다");
-            textNews2.setText("");
-            if (textNews3 != null) textNews3.setText("");
+            // 데이터가 없을 때 첫 번째 카드만 "데이터 없음" 메시지 표시
+            cardNews1.setVisibility(View.VISIBLE);
+            textNews1Title.setText("데이터가 없습니다");
             return;
         }
 
+        // 데이터가 있을 때 각 카드에 바인딩
         if (newsItems.size() > 0) {
-            textNews1.setText(safe(newsItems.get(0)));
+            cardNews1.setVisibility(View.VISIBLE);
+            textNews1Title.setText(safe(newsItems.get(0)));
+            if (pubDates.size() > 0) {
+                textNews1Date.setText(formatPubDate(pubDates.get(0)));
+            }
         }
         if (newsItems.size() > 1) {
-            textNews2.setText(safe(newsItems.get(1)));
+            cardNews2.setVisibility(View.VISIBLE);
+            textNews2Title.setText(safe(newsItems.get(1)));
+            if (pubDates.size() > 1) {
+                textNews2Date.setText(formatPubDate(pubDates.get(1)));
+            }
         }
-        if (newsItems.size() > 2) { // 세 번째 뉴스 항목을 바인딩
-            if (textNews3 != null) {
-                textNews3.setText(safe(newsItems.get(2)));
+        if (newsItems.size() > 2) {
+            if (cardNews3 != null) {
+                cardNews3.setVisibility(View.VISIBLE);
+                textNews3Title.setText(safe(newsItems.get(2)));
+                if (pubDates.size() > 2) {
+                    textNews3Date.setText(formatPubDate(pubDates.get(2)));
+                }
             }
         }
     }
+
 
     // 뉴스 항목 클릭 시 링크로 이동하는 메서드
     private void onClickNews(int index) {
@@ -611,6 +650,20 @@ public class RegionDetailActivity extends AppCompatActivity {
         }
         return "";
     }
+
+    private String formatPubDate(String raw) {
+        // "Sun, 01 Jan 2023 00:00:00 +0900" 형식 파싱
+        try {
+            SimpleDateFormat inputFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
+            Date date = inputFormat.parse(raw);
+            SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy.MM.dd", Locale.getDefault());
+            return outputFormat.format(date);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
 
     private String safe(String s) { return s == null ? "" : s; }
 
