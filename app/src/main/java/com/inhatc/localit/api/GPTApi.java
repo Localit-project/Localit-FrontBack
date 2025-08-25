@@ -27,7 +27,6 @@ public class GPTApi {
     private final ExecutorService executorService = Executors.newFixedThreadPool(4);
 
     public interface GPTResponseCallback {
-
         void onResponse(String result);
         void onFailure(Exception e);
     }
@@ -39,8 +38,24 @@ public class GPTApi {
                 // 요청 JSON 생성
                 JSONObject requestBody = new JSONObject();
                 requestBody.put("model", "gpt-4o-mini");
+                requestBody.put("temperature", 0.7); // 창의성 조정 가능
 
+                // ✅ 메시지 배열 생성
                 JSONArray messages = new JSONArray();
+
+                // 🔹 System 역할 메시지 추가 (한국 여행 가이드 제한)
+                JSONObject systemMessage = new JSONObject();
+                systemMessage.put("role", "system");
+                systemMessage.put("content",
+                        "너는 여행 가이드이며 앱 localit의 챗 봇 '컬이'야.존댓말을 기본으로 사용하고 귀엽고 깍듯한 게 너의 컨셉이야.(직접 컨셉 언급하진 말고)너에 대한 정보를 요구할 땐 간단하게만 답변해" +
+                                "오직 한국 여행과 관련된 정보만 제공해." +
+                                "지역 축제, 명소, 음식, 여행 코스, 숙박 정보 외에 다른 정보를 요구하면 상황에 맞게 대응해." +
+                                "주제에 많이 벗어나는 질문에는 '국내 여행 관련 정보만 제공합니다.'라고 대답해줘." +
+                                "능동적으로 제공하는 정보 범위를 확장해서 답변해줘.예를 들어서 인사를 나누거나 날씨에 대해 이야기 하는 등에는 답변해도 돼 "
+                        );
+                messages.put(systemMessage);
+
+                // 🔹 User 메시지 추가
                 JSONObject userMessage = new JSONObject();
                 userMessage.put("role", "user");
                 userMessage.put("content", prompt);

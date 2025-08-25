@@ -41,7 +41,7 @@
             android:ellipsize="end"
             android:gravity="center"
             android:maxLines="1"
-            android:text="Localit 챗봇"
+            android:text="챗봇 컬이"
             android:textColor="#111111"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -121,75 +121,15 @@
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:padding="16dp"
-                android:layout_marginBottom="12dp">
+                android:padding="10dp"
+                android:layout_marginBottom="8dp">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="원하시는 서비스를 선택해 주세요. 여행 챗봇이 도와드릴게요~"
+                    android:text="지역 축제,명소,맛집,여행 코스 등 여행 관련 도움이 필요하시면 질문해주세요!"
                     android:textColor="#1C1C1C"
                     android:textSize="15sp" />
             </LinearLayout>
-
-            <!-- 추천 액션: Flexbox (wrap) -->
-            <com.google.android.flexbox.FlexboxLayout
-                android:id="@+id/quickActions"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                app:flexWrap="wrap"
-                app:justifyContent="flex_start">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_reco_spots"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="여행지 추천해줘"
-                    android:textAllCaps="false"
-                    android:layout_marginEnd="12dp"
-                    android:layout_marginBottom="12dp"/>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_make_course"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="하루 코스 만들어줘"
-                    android:textAllCaps="false"
-                    android:layout_marginEnd="12dp"
-                    android:layout_marginBottom="12dp"/>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_live_event"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="실시간 행사 뭐 있어?"
-                    android:textAllCaps="false"
-                    android:layout_marginEnd="12dp"
-                    android:layout_marginBottom="12dp"/>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_nearby"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="내 주변 관광지"
-                    android:textAllCaps="false"
-                    android:layout_marginEnd="12dp"
-                    android:layout_marginBottom="12dp"/>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_transport"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="교통/길찾기"
-                    android:textAllCaps="false"
-                    android:layout_marginEnd="12dp"
-                    android:layout_marginBottom="12dp"/>
-            </com.google.android.flexbox.FlexboxLayout>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
