@@ -1,6 +1,7 @@
 package com.inhatc.localit.Fragment;
 
 import android.content.Context;
+import android.text.Html;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.os.Build;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,7 +19,7 @@ import com.inhatc.localit.R;
 import com.inhatc.localit.db.TouristSpot;
 
 import java.util.ArrayList;
-import java.util.HashSet; // [추가]
+import java.util.HashSet;
 import java.util.List;
 
 public class WishedSpotAdapter extends RecyclerView.Adapter<WishedSpotAdapter.VH> {
@@ -35,7 +37,6 @@ public class WishedSpotAdapter extends RecyclerView.Adapter<WishedSpotAdapter.VH
     private final List<TouristSpot> items = new ArrayList<>();
     private final OnHeartClickListener heartClickListener;
 
-    // [추가] 비활성화된 아이템들의 ID를 저장할 Set
     private HashSet<String> deactivatedSpotIds = new HashSet<>();
 
     public WishedSpotAdapter(@NonNull Context context, OnSpotClickListener listener, OnHeartClickListener heartClickListener) {
@@ -45,7 +46,6 @@ public class WishedSpotAdapter extends RecyclerView.Adapter<WishedSpotAdapter.VH
         setHasStableIds(true);
     }
 
-    // [추가] Fragment로부터 비활성화 목록을 전달받는 메서드
     public void setDeactivatedSpotIds(HashSet<String> deactivatedSpotIds) {
         this.deactivatedSpotIds = deactivatedSpotIds;
     }
@@ -56,7 +56,8 @@ public class WishedSpotAdapter extends RecyclerView.Adapter<WishedSpotAdapter.VH
         notifyDataSetChanged();
     }
 
-    @Override public long getItemId(int position) {
+    @Override
+    public long getItemId(int position) {
         try {
             return Long.parseLong(String.valueOf(items.get(position).contentid));
         } catch (Exception e) {
@@ -64,7 +65,8 @@ public class WishedSpotAdapter extends RecyclerView.Adapter<WishedSpotAdapter.VH
         }
     }
 
-    @NonNull @Override
+    @NonNull
+    @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(context).inflate(R.layout.item_wished_spot, parent, false);
         return new VH(v);
@@ -74,26 +76,37 @@ public class WishedSpotAdapter extends RecyclerView.Adapter<WishedSpotAdapter.VH
     public void onBindViewHolder(@NonNull VH h, int position) {
         TouristSpot spot = items.get(position);
 
-        h.title.setText(spot.title != null ? spot.title : "");
-        h.addr.setText(spot.addr1 != null ? spot.addr1 : "");
+        if (spot.contenttypeid == 99) {
+            // 뉴스 항목의 경우, HTML 태그를 제거하고 이미지를 숨깁니다.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                h.title.setText(Html.fromHtml(spot.title, Html.FROM_HTML_MODE_LEGACY));
+                h.addr.setText(Html.fromHtml(spot.addr1, Html.FROM_HTML_MODE_LEGACY));
+            } else {
+                h.title.setText(Html.fromHtml(spot.title));
+                h.addr.setText(Html.fromHtml(spot.addr1));
+            }
+            h.thumb.setVisibility(View.GONE);
+        } else {
+            // 다른 콘텐츠 항목의 경우, 제목, 주소, 이미지를 정상적으로 표시합니다.
+            h.title.setText(spot.title != null ? spot.title : "");
+            h.addr.setText(spot.addr1 != null ? spot.addr1 : "");
+            h.thumb.setVisibility(View.VISIBLE);
 
-        String img = !TextUtils.isEmpty(spot.firstimage) ? spot.firstimage : null;
-        Glide.with(context)
-                .load(img)
-                .placeholder(R.drawable.sample1)
-                .error(R.drawable.sample1)
-                .into(h.thumb);
+            String img = !TextUtils.isEmpty(spot.firstimage) ? spot.firstimage : null;
+            Glide.with(context)
+                    .load(img)
+                    .placeholder(R.drawable.sample1)
+                    .error(R.drawable.sample1)
+                    .into(h.thumb);
+        }
 
         h.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onClick(spot);
         });
 
-        // [수정] 하트 버튼 상태를 비활성화 목록에 따라 다르게 표시
         if (deactivatedSpotIds.contains(spot.contentid)) {
-            // 비활성화 상태이면 '빈 하트'
             h.heartButton.setImageResource(R.drawable.ic_favorite_border_24);
         } else {
-            // 활성화 상태이면 '채워진 하트'
             h.heartButton.setImageResource(R.drawable.ic_favorite_full);
         }
 
@@ -104,7 +117,10 @@ public class WishedSpotAdapter extends RecyclerView.Adapter<WishedSpotAdapter.VH
         });
     }
 
-    @Override public int getItemCount() { return items.size(); }
+    @Override
+    public int getItemCount() {
+        return items.size();
+    }
 
     static class VH extends RecyclerView.ViewHolder {
         ImageView thumb;
@@ -116,7 +132,7 @@ public class WishedSpotAdapter extends RecyclerView.Adapter<WishedSpotAdapter.VH
             super(itemView);
             thumb = itemView.findViewById(R.id.imageThumb);
             title = itemView.findViewById(R.id.textTitle);
-            addr  = itemView.findViewById(R.id.textAddr);
+            addr = itemView.findViewById(R.id.textAddr);
             heartButton = itemView.findViewById(R.id.imageButtonHeart);
         }
     }
