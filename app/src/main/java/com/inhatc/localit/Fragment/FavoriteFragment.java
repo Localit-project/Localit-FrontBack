@@ -13,6 +13,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -26,6 +27,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.inhatc.localit.R;
 import com.inhatc.localit.Fragment.WishedSpotAdapter;
+import com.inhatc.localit.databinding.FragmentChatBinding;
 import com.inhatc.localit.db.TouristSpot;
 import com.inhatc.localit.ui.category.FestivalDetailActivity;
 import com.inhatc.localit.ui.category.SpotDetailActivity;
@@ -37,6 +39,7 @@ import java.util.List;
 public class FavoriteFragment extends Fragment {
 
     // 상단바/탭
+    private FragmentChatBinding binding;
     private ImageButton btnBack;
     private TextView titleText;
     private TextView tabFestival, tabTour, tabNews;
@@ -57,8 +60,29 @@ public class FavoriteFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_favorite, container, false);
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        View root = inflater.inflate(R.layout.fragment_favorite, container, false);
+
+        // 뒤로가기 버튼 (UI)
+        View btnBack = root.findViewById(R.id.btn_back);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> goHomeSingleTop());
+        }
+
+        // 물리/소프트 뒤로가기 키 처리
+        requireActivity().getOnBackPressedDispatcher().addCallback(
+                getViewLifecycleOwner(),
+                new OnBackPressedCallback(true) {
+                    @Override
+                    public void handleOnBackPressed() {
+                        goHomeSingleTop();
+                    }
+                }
+        );
+
+        return root;
     }
 
     @Override
@@ -271,15 +295,21 @@ public class FavoriteFragment extends Fragment {
         try {
             NavController nav = NavHostFragment.findNavController(this);
             int homeId = nav.getGraph().getStartDestinationId();
+
             NavOptions opts = new NavOptions.Builder()
                     .setPopUpTo(homeId, false)
                     .setLaunchSingleTop(true)
                     .build();
-            if (nav.getCurrentDestination() != null && nav.getCurrentDestination().getId() != homeId) {
+
+            if (nav.getCurrentDestination() == null ||
+                    nav.getCurrentDestination().getId() != homeId) {
                 nav.navigate(homeId, null, opts);
             }
-            BottomNavigationView bottomNav = requireActivity().findViewById(R.id.nav_view);
-            if (bottomNav != null) bottomNav.setSelectedItemId(R.id.navigation_home);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) { }
+
+        BottomNavigationView bottom = requireActivity().findViewById(R.id.nav_view);
+        if (bottom != null) {
+            bottom.setSelectedItemId(R.id.navigation_home);
+        }
     }
 }

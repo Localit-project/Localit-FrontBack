@@ -4,32 +4,32 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ProgressBar;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.inhatc.localit.R;
 import com.inhatc.localit.api.GPTApi;
 import com.inhatc.localit.api.Message;
 import com.inhatc.localit.api.MessageAdapter;
+import com.inhatc.localit.databinding.FragmentChatBinding;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChatFragment extends Fragment {
 
+    private FragmentChatBinding binding; // ✅ ViewBinding
     private GPTApi gptApi;
-    private EditText etMessage;
-    private Button btnSend;
-    private RecyclerView rvMessages;
-    private View typingIndicator;
-
     private List<Message> messageList = new ArrayList<>();
     private MessageAdapter adapter;
 
@@ -42,7 +42,24 @@ public class ChatFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_chat, container, false);
+        // ✅ binding 초기화
+        binding = FragmentChatBinding.inflate(inflater, container, false);
+
+        // 뒤로가기 버튼 (UI)
+        binding.btnBack.setOnClickListener(v -> goHomeSingleTop());
+
+        // 물리/소프트 뒤로가기 키 처리
+        requireActivity().getOnBackPressedDispatcher().addCallback(
+                getViewLifecycleOwner(),
+                new OnBackPressedCallback(true) {
+                    @Override
+                    public void handleOnBackPressed() {
+                        goHomeSingleTop();
+                    }
+                }
+        );
+
+        return binding.getRoot(); // ✅ root view 반환
     }
 
     @Override
@@ -52,20 +69,14 @@ public class ChatFragment extends Fragment {
 
         gptApi = new GPTApi();
 
-        // ✅ View 연결
-        etMessage = view.findViewById(R.id.etMessage);
-        btnSend = view.findViewById(R.id.btnSend);
-        rvMessages = view.findViewById(R.id.rvMessages);
-        typingIndicator = view.findViewById(R.id.typingIndicator);
-
         // ✅ RecyclerView 초기화
         adapter = new MessageAdapter(messageList);
-        rvMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
-        rvMessages.setAdapter(adapter);
+        binding.rvMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvMessages.setAdapter(adapter);
 
         // ✅ 전송 버튼 클릭 이벤트
-        btnSend.setOnClickListener(v -> {
-            String prompt = etMessage.getText().toString().trim();
+        binding.btnSend.setOnClickListener(v -> {
+            String prompt = binding.etMessage.getText().toString().trim();
             if (!prompt.isEmpty()) {
                 showTyping(true);
 
@@ -73,8 +84,7 @@ public class ChatFragment extends Fragment {
                 addMessage("user", prompt);
 
                 // 입력창 초기화
-                etMessage.clearComposingText();
-                etMessage.setText("");
+                binding.etMessage.setText("");
 
                 // GPT API 호출
                 gptApi.generateLocationRecommendations(prompt, new GPTApi.GPTResponseCallback() {
@@ -83,7 +93,8 @@ public class ChatFragment extends Fragment {
                         requireActivity().runOnUiThread(() -> {
                             showTyping(false);
                             addMessage("bot", result);
-                            rvMessages.post(() -> rvMessages.smoothScrollToPosition(messageList.size() - 1));
+                            binding.rvMessages.post(() ->
+                                    binding.rvMessages.smoothScrollToPosition(messageList.size() - 1));
                         });
                     }
 
@@ -92,7 +103,8 @@ public class ChatFragment extends Fragment {
                         requireActivity().runOnUiThread(() -> {
                             showTyping(false);
                             addMessage("bot", "오류 발생: " + e.getMessage());
-                            rvMessages.post(() -> rvMessages.smoothScrollToPosition(messageList.size() - 1));
+                            binding.rvMessages.post(() ->
+                                    binding.rvMessages.smoothScrollToPosition(messageList.size() - 1));
                         });
                     }
                 });
@@ -100,8 +112,31 @@ public class ChatFragment extends Fragment {
         });
     }
 
+    // 🔹 홈으로 이동 메소드
+    private void goHomeSingleTop() {
+        try {
+            NavController nav = NavHostFragment.findNavController(this);
+            int homeId = nav.getGraph().getStartDestinationId();
+
+            NavOptions opts = new NavOptions.Builder()
+                    .setPopUpTo(homeId, false)
+                    .setLaunchSingleTop(true)
+                    .build();
+
+            if (nav.getCurrentDestination() == null ||
+                    nav.getCurrentDestination().getId() != homeId) {
+                nav.navigate(homeId, null, opts);
+            }
+        } catch (Exception ignored) { }
+
+        BottomNavigationView bottom = requireActivity().findViewById(R.id.nav_view);
+        if (bottom != null) {
+            bottom.setSelectedItemId(R.id.navigation_home);
+        }
+    }
+
     private void showTyping(boolean show) {
-        typingIndicator.setVisibility(show ? View.VISIBLE : View.GONE);
+        binding.typingIndicator.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
     private void addMessage(String sender, String message) {
@@ -113,6 +148,6 @@ public class ChatFragment extends Fragment {
         }
         messageList.add(new Message(message, senderEnum));
         adapter.notifyItemInserted(messageList.size() - 1);
-        rvMessages.scrollToPosition(messageList.size() - 1);
+        binding.rvMessages.scrollToPosition(messageList.size() - 1);
     }
 }

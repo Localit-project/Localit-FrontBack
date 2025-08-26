@@ -16,6 +16,7 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -81,12 +82,22 @@ public class MypageFragment extends Fragment {
 
         initActivityResultLaunchers();
 
-        // 뒤로가기(홈으로 singleTop)
+        // 뒤로가기 버튼 (UI)
+        binding.btnBack.setOnClickListener(v -> goHomeSingleTop());
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> goHomeSingleTop());
-        } else {
-            Log.e("MypageFragment", "btn_back is null. Check MypageFragment.xml id.");
         }
+
+        // 물리/소프트 뒤로가기 키 처리
+        requireActivity().getOnBackPressedDispatcher().addCallback(
+                getViewLifecycleOwner(),
+                new OnBackPressedCallback(true) {
+                    @Override
+                    public void handleOnBackPressed() {
+                        goHomeSingleTop();
+                    }
+                }
+        );
 
         // 알림 화면
         binding.btnNotification.setOnClickListener(v ->

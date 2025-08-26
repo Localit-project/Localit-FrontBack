@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="#FFFFFF"
     tools:context=".Fragment.ChatFragment">
-
+ 
     <!-- Top Bar -->
     <LinearLayout
         android:id="@+id/topBar"
