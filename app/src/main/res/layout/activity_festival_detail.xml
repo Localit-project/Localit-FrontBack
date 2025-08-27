@@ -90,44 +90,8 @@
                 android:layout_marginTop="12dp"
                 android:background="#E0E0E0" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="개요"
-                android:textStyle="bold"
-                android:layout_marginTop="8dp"/>
-            <TextView
-                android:id="@+id/tvOverview"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#444"
-                android:lineSpacingExtra="4dp"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="행사소개"
-                android:textStyle="bold"
-                android:layout_marginTop="8dp"/>
-            <TextView
-                android:id="@+id/tvProgram"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#444"
-                android:lineSpacingExtra="4dp"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="행사내용"
-                android:textStyle="bold"
-                android:layout_marginTop="8dp"/>
-            <TextView
-                android:id="@+id/tvContent"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#444"
-                android:lineSpacingExtra="4dp"/>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -163,10 +127,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="#444"/>
-
-
-
-
 
             <View
                 android:layout_width="match_parent"
@@ -228,7 +188,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="#444"/>
-
 
             <!-- 지도 -->
             <com.naver.maps.map.MapView

@@ -41,6 +41,16 @@
             android:textSize="18sp"
             android:textStyle="bold" />
 
+        <ImageView
+            android:id="@+id/btnNotifications"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:src="@drawable/ic_notifications_24" />
+
+
         <View
             android:layout_width="24dp"
             android:layout_height="24dp" />
@@ -503,6 +513,7 @@
                                 android:text=""
                                 android:textColor="#666666"
                                 android:textSize="10sp" />
+
                         </LinearLayout>
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>

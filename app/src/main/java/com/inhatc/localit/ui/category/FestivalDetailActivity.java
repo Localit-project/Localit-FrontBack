@@ -5,7 +5,6 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.text.util.Linkify;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -33,7 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 
-/** 축제 상세 화면 — 지도 마커 표시(좌표/주소), 행사소개/개요 보강 */
+/** 축제 상세 화면 — 지도 마커 표시(좌표/주소) */
 public class FestivalDetailActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static final String TAG = "FestivalDetail";
@@ -49,12 +48,11 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
     private TextView  textTitle;
 
     // 공통(detailCommon)
-    private TextView tvAddr, tvOverview;
+    private TextView tvAddr;
 
     // 인트로(detailIntro: 축제)
     private TextView tvSponsor1, tvSponsor1Tel, tvSponsor2,
-            tvStartDate, tvEndDate, tvPlaytime,
-            tvProgram, tvContent;
+            tvStartDate, tvEndDate, tvPlaytime;
 
     // (선택) XML에 있으면 분리 표기
     private TextView tvUsefee; // 없으면 null
@@ -107,18 +105,9 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
             imageMain.setImageResource(R.drawable.sample1);
         }
 
-        // 공통 상세 (개요/주소/이미지/좌표)
+        // 공통 상세 (주소/이미지/좌표)
         SpotApiHelper.fetchDetailCommon(contentId, contentTypeId, (SpotDetailCommonResponse.Item item) -> runOnUiThread(() -> {
             if (item == null) { Log.w(TAG, "COMMON item is null"); return; }
-
-            // 개요
-            String rawOv = item.overview;
-            String cookedOv = cookOverview(rawOv);
-            Log.d(TAG, "COMMON overview isNull=" + (rawOv == null)
-                    + ", rawLen=" + (rawOv == null ? -1 : rawOv.length())
-                    + ", cookedLen=" + cookedOv.length());
-            tvOverview.setVisibility(android.view.View.VISIBLE);
-            tvOverview.setText(TextUtils.isEmpty(cookedOv) ? "개요 정보가 없습니다." : cookedOv);
 
             // 주소
             String addrJoined = joinAddr(item.addr1, item.addr2);
@@ -141,7 +130,7 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
                     lat = Double.parseDouble(item.mapy); // 위도
                     lng = Double.parseDouble(item.mapx); // 경도
                     Log.d(TAG, "COMMON parsed coords lat=" + lat + ", lng=" + lng);
-                    updateMapMarker(); // 지도 준비됐으면 바로 표시, 아니면 onMapReady 후 표시
+                    updateMapMarker(); // 지도 준비됐으면 바로 표시
                 } else if (!TextUtils.isEmpty(addrJoined)) {
                     geocodeAndMove(addrJoined);
                 }
@@ -154,25 +143,6 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
         SpotApiHelper.fetchDetailIntro(contentId, safeInt(contentTypeId, 15), (SpotDetailIntroResponse.Item intro) -> runOnUiThread(() -> {
             if (intro == null) { Log.w(TAG, "INTRO item is null"); return; }
 
-            // 행사소개
-            Log.d(TAG, "INTRO program.isNull=" + (intro.program == null)
-                    + ", programLen=" + (intro.program == null ? -1 : intro.program.length())
-                    + ", subevent.isNull=" + (intro.subevent == null)
-                    + ", subeventLen=" + (intro.subevent == null ? -1 : intro.subevent.length())
-                    + ", start=" + intro.eventstartdate + ", end=" + intro.eventenddate);
-
-            String program = s(intro.program);
-            if (TextUtils.isEmpty(program.trim())) program = s(intro.subevent);
-            if (TextUtils.isEmpty(program.trim())) {
-                CharSequence ovTxt = tvOverview.getText();
-                if (!TextUtils.isEmpty(ovTxt)) program = ovTxt.toString();
-            }
-            setTextWithBrOrGone(tvProgram, program);
-
-            // 행사내용 칸
-            tvContent.setText("");
-            tvContent.setVisibility(TextUtils.isEmpty(program.trim()) ? android.view.View.GONE : android.view.View.VISIBLE);
-
             // 날짜
             setTextOrGone(tvStartDate, fmtDate(s(intro.eventstartdate)));
             setTextOrGone(tvEndDate,   fmtDate(s(intro.eventenddate)));
@@ -181,7 +151,6 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
             setTextOrGone(tvPlaytime,    intro.playtime);
             setTextOrGone(tvSponsor1,    intro.sponsor1);
             setTextOrGone(tvSponsor1Tel, intro.sponsor1tel);
-            // 주최/주관은 겹치면 위/아래 하나만 쓰는 구조였는데, 현재는 모두 노출
             setTextOrGone(tvSponsor2,    intro.sponsor2);
 
             // 입장료
@@ -191,16 +160,7 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
 
             if (tvUsefee != null) {
                 setTextOrGone(tvUsefee, fee);
-            } else {
-                String base = s(tvContent.getText() == null ? "" : tvContent.getText().toString()).trim();
-                String appended = base.isEmpty() ? ("입장료: " + fee) : (base + "\n\n입장료: " + fee);
-                tvContent.setVisibility(TextUtils.isEmpty(appended.trim()) ? android.view.View.GONE : android.view.View.VISIBLE);
-                tvContent.setText(appended);
             }
-
-            // 링크 자동 인식
-            Linkify.addLinks(tvProgram, Linkify.WEB_URLS);
-            Linkify.addLinks(tvContent, Linkify.WEB_URLS);
         }));
     }
 
@@ -208,10 +168,6 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
         imageMain = findViewById(R.id.imageMain);
         btnBack   = findViewById(R.id.btnBack);
         textTitle = findViewById(R.id.textTitle);
-
-        tvOverview = findViewById(R.id.tvOverview);
-        tvProgram  = findViewById(R.id.tvProgram);
-        tvContent  = findViewById(R.id.tvContent);
 
         tvStartDate    = findViewById(R.id.tvStartDate);
         tvEndDate      = findViewById(R.id.tvEndDate);
@@ -237,45 +193,24 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
         naverMap.getUiSettings().setScaleBarEnabled(false);
         naverMap.getUiSettings().setZoomControlEnabled(true);
 
-        Log.d(TAG, "onMapReady: map ready. lat=" + lat + ", lng=" + lng);
-        // 지도 보이는지 확인용(디버그): 한국 중부로 1회 이동
         if (lat == null || lng == null) {
             naverMap.moveCamera(CameraUpdate.scrollAndZoomTo(new LatLng(36.5, 127.9), 6.5));
         }
-
-        // 좌표가 이미 있으면 즉시 마커
         updateMapMarker();
 
-        // 좌표가 아직 없고, 주소가 있다면 바로 지오코딩 폴백
         if ((lat == null || lng == null) && tvAddr != null) {
             CharSequence addr = tvAddr.getText();
             if (addr != null && addr.toString().trim().length() > 0) {
-                Log.d(TAG, "onMapReady: no coords yet -> geocode fallback with addr=" + addr);
                 geocodeAndMove(addr.toString());
             } else {
-                Log.w(TAG, "onMapReady: no coords and no address available");
                 Toast.makeText(this, "지도 좌표/주소가 아직 준비되지 않았습니다.", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-    /** 지도 & 좌표가 준비되었을 때만 마커 표시 */
-    /** 지도 & 좌표가 준비되었을 때만 마커 표시 */
     private void updateMapMarker() {
-        Log.d(TAG, "updateMapMarker called. naverMap=" + (naverMap != null)
-                + ", lat=" + lat + ", lng=" + lng);
-
-        if (naverMap == null) {
-            Log.w(TAG, "updateMapMarker: naverMap is null (map not ready yet)");
-            return;
-        }
-        if (lat == null || lng == null) {
-            Log.w(TAG, "updateMapMarker: lat/lng is null (coords not ready yet)");
-            return;
-        }
-
+        if (naverMap == null || lat == null || lng == null) return;
         LatLng pos = new LatLng(lat, lng);
-
         if (marker == null) marker = new Marker();
         marker.setPosition(pos);
         marker.setMap(naverMap);
@@ -286,10 +221,8 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
         if (!TextUtils.isEmpty(caption)) marker.setCaptionText(caption);
 
         naverMap.moveCamera(CameraUpdate.scrollAndZoomTo(pos, 15.0));
-        Log.d(TAG, "updateMapMarker: moved camera to lat=" + lat + ", lng=" + lng);
-        Toast.makeText(this, "지도 위치가 설정되었습니다.", Toast.LENGTH_SHORT).show();
     }
-    /** 주소 → 위경도 변환 후 마커 표시 */
+
     private void geocodeAndMove(String address) {
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
@@ -298,14 +231,9 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
                 if (r != null && !r.isEmpty()) {
                     lat = r.get(0).getLatitude();
                     lng = r.get(0).getLongitude();
-                    Log.d(TAG, "GEOCODER lat=" + lat + ", lng=" + lng + " for addr=" + address);
                     runOnUiThread(this::updateMapMarker);
-                } else {
-                    Log.w(TAG, "GEOCODER no result for addr=" + address);
                 }
-            } catch (Exception e) {
-                Log.e(TAG, "Geocoder failed for address=" + address, e);
-            }
+            } catch (Exception e) { Log.e(TAG, "Geocoder failed for address=" + address, e); }
         });
     }
 
@@ -336,77 +264,11 @@ public class FestivalDetailActivity extends AppCompatActivity implements OnMapRe
         finish();
     }
 
-    // ---------- 유틸 ----------
     private String s(String v) { return v == null ? "" : v; }
-
-    private String cookOverview(String v) {
-        if (v == null) return "";
-        String s = v
-                .replaceAll("(?i)&nbsp;|&#160;", " ")
-                .replaceAll("(?i)<br\\s*/?>", "\n")
-                .replaceAll("(?i)</p>", "\n")
-                .replaceAll("(?s)<[^>]*>", "")
-                .replace("\r", "\n")
-                .trim();
-        s = s.replaceAll("\\n{3,}", "\n\n");
-        if (s.replaceAll("\\s+", "").isEmpty()) return "";
-        return s;
-    }
-
-    private String nl(String v) {
-        if (v == null) return "";
-        return v.replaceAll("(?i)<br\\s*/?>", "\n")
-                .replaceAll("(?i)</p>", "\n")
-                .replaceAll("(?s)<[^>]*>", "")
-                .trim();
-    }
-
-    private void setTextWithBrOrGone(TextView tv, String value) {
-        String cooked = nl(value);
-        if (TextUtils.isEmpty(cooked.trim())) {
-            tv.setText("");
-            tv.setVisibility(android.view.View.GONE);
-        } else {
-            tv.setVisibility(android.view.View.VISIBLE);
-            tv.setText(cooked);
-            tv.setSingleLine(false);
-            tv.setEllipsize(null);
-        }
-    }
-
-    private void setTextOrGone(TextView tv, String value) {
-        String val = s(value);
-        if (TextUtils.isEmpty(val.trim())) {
-            tv.setText("");
-            tv.setVisibility(android.view.View.GONE);
-        } else {
-            tv.setVisibility(android.view.View.VISIBLE);
-            tv.setText(val);
-        }
-    }
-
-    private String joinAddr(String a1, String a2) {
-        if (TextUtils.isEmpty(a1)) return s(a2);
-        if (TextUtils.isEmpty(a2)) return s(a1);
-        return a1 + " " + a2;
-    }
-
+    private String nl(String v) { return v == null ? "" : v.replaceAll("(?i)<br\\s*/?>", "\n").replaceAll("(?i)</p>", "\n").replaceAll("(?s)<[^>]*>", "").trim(); }
+    private void setTextOrGone(TextView tv, String value) { if (tv == null) return; String val = s(value); if (TextUtils.isEmpty(val.trim())) { tv.setText(""); tv.setVisibility(android.view.View.GONE); } else { tv.setVisibility(android.view.View.VISIBLE); tv.setText(val); } }
+    private String joinAddr(String a1, String a2) { if (TextUtils.isEmpty(a1)) return s(a2); if (TextUtils.isEmpty(a2)) return s(a1); return a1 + " " + a2; }
     private String nvl(String a, String b) { return TextUtils.isEmpty(a) ? b : a; }
-
     private int safeInt(String s, int def) { try { return Integer.parseInt(s); } catch (Exception e) { return def; } }
-
-    private String fmtDate(String raw) {
-        if (raw == null) return "";
-        String digits = raw.replaceAll("\\D+", "");
-        if (digits.length() >= 8) digits = digits.substring(0, 8);
-        else return raw;
-        try {
-            String yyyy = digits.substring(0, 4);
-            String MM   = digits.substring(4, 6);
-            String dd   = digits.substring(6, 8);
-            return yyyy + "." + MM + "." + dd;
-        } catch (Exception e) {
-            return raw;
-        }
-    }
+    private String fmtDate(String raw) { if (raw == null) return ""; String digits = raw.replaceAll("\\D+", ""); if (digits.length() >= 8) digits = digits.substring(0, 8); else return raw; try { return digits.substring(0, 4) + "." + digits.substring(4, 6) + "." + digits.substring(6, 8); } catch (Exception e) { return raw; } }
 }

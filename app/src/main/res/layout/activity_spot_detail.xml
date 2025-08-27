@@ -143,21 +143,7 @@
                 android:layout_marginTop="12dp"
                 android:background="#E0E0E0" />
 
-            <!-- 개요 -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="ㆍ개요"
-                android:textStyle="bold" />
-            <TextView
-                android:id="@+id/textOverview"
-                style="@style/TextMultiline"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:textColor="#444"
-                android:lineSpacingExtra="4dp" />
+
 
             <!-- 문의 및 안내 -->
             <TextView
