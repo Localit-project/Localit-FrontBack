@@ -284,7 +284,7 @@ public class NotificationsFragment extends Fragment {
         }
     }
 
-    /** Activity에서 RecyclerView에서도 알림 제거를 위해 구현해야 함 */
+    /** Activity에서 RecyclerView에서도 알림 제거를 위해 구현해야 함 */ //
     public interface NotificationsFragmentHost {
         void removeNotification(long notiId);
     }
