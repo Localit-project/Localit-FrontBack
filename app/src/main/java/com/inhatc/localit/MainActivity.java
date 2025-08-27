@@ -1,5 +1,6 @@
 package com.inhatc.localit;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.IdRes;
@@ -26,6 +27,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        // 다른 액티비티에서 전달된 "open_notifications" 플래그를 처리합니다.
+        if (getIntent().getBooleanExtra("open_notifications", false)) {
+            openNotifications();
+            // 알림 화면으로 이동 후, onCreate의 나머지 코드를 실행하지 않도록 합니다.
+            return;
+        }
 
         BottomNavigationView navView = binding.navView;
 
@@ -66,6 +74,22 @@ public class MainActivity extends AppCompatActivity {
 
         // 하단 네비게이션 클릭 시 프래그먼트 전환
         setupBottomNavigationView();
+    }
+
+    /**
+     * 다른 액티비티에서 MainActivity가 이미 실행 중일 때
+     * 새로운 Intent를 받으면 이 메서드가 호출됩니다.
+     */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        // 새로운 Intent로 현재 Intent를 업데이트합니다.
+        setIntent(intent);
+
+        // "open_notifications" 플래그가 있는지 확인하고 알림 화면을 엽니다.
+        if (getIntent().getBooleanExtra("open_notifications", false)) {
+            openNotifications();
+        }
     }
 
     /** 하단 네비게이션 클릭 핸들러 */

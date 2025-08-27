@@ -47,11 +47,11 @@ import retrofit2.Response;
 public class RegionDetailActivity extends AppCompatActivity {
 
     private Spinner spinnerSubRegion;
-    private ImageView btnBack, imageTourism1, imageTourism2;
+    private ImageView btnBack, btnNotifications, imageTourism1, imageTourism2;
     private TextView btnMoreFestivals, btnMoreTourism, btnMoreNews;
     private BottomNavigationView navView;
-    private String regionName;     // 예: 경기→경기도
-    private String subRegionName;  // 경기도일 때만 사용
+    private String regionName;
+    private String subRegionName;
 
     private TextView textTourism1Title, textTourism1Location, textTourism1Date;
     private TextView textTourism2Title, textTourism2Location, textTourism2Date;
@@ -60,30 +60,23 @@ public class RegionDetailActivity extends AppCompatActivity {
     private TextView textFestival1Title, textFestival1Date, textFestival1DateInfo;
     private TextView textFestival2Title, textFestival2Date, textFestival2DateInfo;
 
-    // 뉴스 뷰 변수 (CardView 및 TextView 추가)
     private CardView cardNews1, cardNews2, cardNews3;
     private TextView textNews1Title, textNews2Title, textNews3Title;
     private TextView textNews1Date, textNews2Date, textNews3Date;
 
-    // 미리보기 데이터
     private List<SpotResponse.Item> tourismPreview = new ArrayList<>();
     private List<SpotResponse.Item> festivalPreview = new ArrayList<>();
 
-    // 뉴스 링크 저장용 리스트 추가
     private List<String> newsLinks = new ArrayList<>();
-    // 뉴스 발행일 저장용 리스트 추가
     private List<String> newsPubDates = new ArrayList<>();
 
-    // NaverApiService 인스턴스 추가
     private NaverApiService naverApiService;
-    private final String NAVER_CLIENT_ID = "hjVfnk_wdgYqW0xT86Ts"; // 실제 키로 변경
-    private final String NAVER_CLIENT_SECRET = "yFyvd5aHZ9"; // 실제 키로 변경
-
+    private final String NAVER_CLIENT_ID = "hjVfnk_wdgYqW0xT86Ts";
+    private final String NAVER_CLIENT_SECRET = "yFyvd5aHZ9";
 
     private static final String SERVICE_KEY =
             "wL/Ry8EMiMg43mPRl3wyQhKosVExsJbLLDcZebat4S4eedobtNuBG+eqrj5GPKHvEAxy4NjYPz25Parbyeg8PA==";
 
-    /** 시/도 → areaCode */
     private static final Map<String, Integer> AREA_CODE_MAP = new HashMap<>();
     static {
         AREA_CODE_MAP.put("서울특별시", 1);
@@ -105,7 +98,6 @@ public class RegionDetailActivity extends AppCompatActivity {
         AREA_CODE_MAP.put("제주특별자치도", 39);
     }
 
-    /** 경기도 시‧군 → sigunguCode */
     private static final Map<String, Integer> GG_SIGUNGU = new HashMap<>();
     static {
         GG_SIGUNGU.put("수원시", 13); GG_SIGUNGU.put("성남시", 12); GG_SIGUNGU.put("고양시", 2);
@@ -132,20 +124,17 @@ public class RegionDetailActivity extends AppCompatActivity {
         NaverMapSdk.getInstance(this).setClient(
                 new NaverMapSdk.NcpKeyClient("j6uu2y26y1"));
 
-        // NaverApiService 인스턴스 초기화
         naverApiService = RetrofitClient.getInstance().create(NaverApiService.class);
 
-        // 인텐트
-        String rawRegion = getIntent().getStringExtra("regionName");    // 예: "경기"
-        String rawSub    = getIntent().getStringExtra("subRegionName"); // 예: "수원시"
+        String rawRegion = getIntent().getStringExtra("regionName");
+        String rawSub = getIntent().getStringExtra("subRegionName");
 
-        regionName    = normalizeRegionName(rawRegion);
+        regionName = normalizeRegionName(rawRegion);
         subRegionName = rawSub;
 
         TextView textRegionTitle = findViewById(R.id.textRegionTitle);
         if (textRegionTitle != null) textRegionTitle.setText(regionName != null ? regionName : "");
 
-        // 경기도면 스피너 노출
         View cardSubRegion = findViewById(R.id.cardSubRegion);
         if (isGyeonggi(regionName) && spinnerSubRegion != null && cardSubRegion != null) {
             cardSubRegion.setVisibility(View.VISIBLE);
@@ -167,7 +156,7 @@ public class RegionDetailActivity extends AppCompatActivity {
                     subRegionName = String.valueOf(parent.getItemAtPosition(position));
                     fetchTourismPreview();
                     fetchFestivalPreview();
-                    fetchNewsPreview(); // 스피너 선택 시 뉴스도 갱신
+                    fetchNewsPreview();
                 }
                 @Override public void onNothingSelected(AdapterView<?> parent) { }
             });
@@ -184,9 +173,9 @@ public class RegionDetailActivity extends AppCompatActivity {
         }
     }
 
-    // ----------------------------- View / Clicks -----------------------------
     private void initViews() {
         btnBack = findViewById(R.id.btnBack);
+        btnNotifications = findViewById(R.id.btnNotifications);
         btnMoreFestivals = findViewById(R.id.btnMoreFestivals);
         btnMoreTourism = findViewById(R.id.btnMoreTourism);
         btnMoreNews = findViewById(R.id.btnMoreNews);
@@ -213,7 +202,6 @@ public class RegionDetailActivity extends AppCompatActivity {
         textFestival2Date = findViewById(R.id.textFestival2Date);
         textFestival2DateInfo = findViewById(R.id.textFestival2DateInfo);
 
-        // 뉴스 CardView 및 TextView 초기화
         cardNews1 = findViewById(R.id.cardNews1);
         cardNews2 = findViewById(R.id.cardNews2);
         cardNews3 = findViewById(R.id.cardNews3);
@@ -226,18 +214,16 @@ public class RegionDetailActivity extends AppCompatActivity {
         textNews2Date = findViewById(R.id.textNews2Date);
         textNews3Date = findViewById(R.id.textNews3Date);
 
-        // 뉴스 카드에 클릭 리스너 설정
         if (cardNews1 != null) cardNews1.setOnClickListener(v -> onClickNews(0));
         if (cardNews2 != null) cardNews2.setOnClickListener(v -> onClickNews(1));
         if (cardNews3 != null) cardNews3.setOnClickListener(v -> onClickNews(2));
 
-        // 관광 카드 클릭 타깃
         View[] tourismTargets = new View[]{ imageTourism1, textTourism1Title, imageTourism2, textTourism2Title };
         for (int i = 0; i < tourismTargets.length; i++) {
             final int idx = (i < 2) ? 0 : 1;
             if (tourismTargets[i] != null) tourismTargets[i].setOnClickListener(v -> onClickTourismCard(idx));
         }
-        // 축제 카드 클릭 타깃
+
         View[] festivalTargets = new View[]{ imageFestival1, textFestival1Title, imageFestival2, textFestival2Title };
         for (int i = 0; i < festivalTargets.length; i++) {
             final int idx = (i < 2) ? 0 : 1;
@@ -250,6 +236,16 @@ public class RegionDetailActivity extends AppCompatActivity {
         if (btnMoreFestivals != null) btnMoreFestivals.setOnClickListener(v -> openCategoryActivity(FestivalActivity.class));
         if (btnMoreTourism != null) btnMoreTourism.setOnClickListener(v -> openCategoryActivity(SpotActivity.class));
         if (btnMoreNews != null) btnMoreNews.setOnClickListener(v -> openCategoryActivity(NewsActivity.class));
+
+        if (btnNotifications != null) {
+            btnNotifications.setOnClickListener(v -> {
+                Intent intent = new Intent(this, MainActivity.class);
+                intent.putExtra("open_notifications", true);
+                // 이 두 플래그를 추가하여 기존 MainActivity를 재활용하도록 합니다.
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+            });
+        }
     }
 
     private void openCategoryActivity(Class<?> activityClass) {
@@ -273,13 +269,15 @@ public class RegionDetailActivity extends AppCompatActivity {
             else if (id == R.id.navigation_search) intent.putExtra("start_fragment", 2);
             else if (id == R.id.navigation_favorite) intent.putExtra("start_fragment", 3);
             else if (id == R.id.navigation_mypage) intent.putExtra("start_fragment", 4);
+
+            // 수정된 부분: 하단 네비게이션에서도 플래그를 사용합니다.
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
-            finish();
+
             return true;
         });
     }
 
-    // ----------------------------- Networking -----------------------------
     private Integer getSigunguCodeIfGyeonggi() {
         if (!isGyeonggi(regionName)) return null;
         if (TextUtils.isEmpty(subRegionName)) return null;
@@ -364,7 +362,6 @@ public class RegionDetailActivity extends AppCompatActivity {
         });
     }
 
-    // 뉴스 데이터를 가져오는 메서드 (네이버 API 연동)
     private void fetchNewsPreview() {
         String query;
         if (!TextUtils.isEmpty(subRegionName)) {
@@ -379,20 +376,20 @@ public class RegionDetailActivity extends AppCompatActivity {
         }
 
         Call<NaverNewsResponse> call = naverApiService.getNews(
-                NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, query, 3, "sim" // 3개 항목 요청
+                NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, query, 3, "sim"
         );
         call.enqueue(new Callback<NaverNewsResponse>() {
             @Override
             public void onResponse(Call<NaverNewsResponse> call, Response<NaverNewsResponse> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().getItems() != null) {
                     List<String> titles = new ArrayList<>();
-                    newsLinks.clear(); // 링크 리스트 초기화
-                    newsPubDates.clear(); // 발행일 리스트 초기화
+                    newsLinks.clear();
+                    newsPubDates.clear();
                     for (NaverNewsResponse.Item item : response.body().getItems()) {
-                        String title = item.getTitle().replaceAll("<b>|</b>", ""); // <b> 태그 제거
+                        String title = item.getTitle().replaceAll("<b>|</b>", "");
                         titles.add(title);
-                        newsLinks.add(item.getLink()); // 링크 저장
-                        newsPubDates.add(item.getPubDate()); // 발행일 저장
+                        newsLinks.add(item.getLink());
+                        newsPubDates.add(item.getPubDate());
                     }
                     bindNewsPreview(titles, newsPubDates);
                 } else {
@@ -408,9 +405,7 @@ public class RegionDetailActivity extends AppCompatActivity {
         });
     }
 
-    // 뉴스 데이터를 뷰에 바인딩하는 메서드 (3개 항목)
     private void bindNewsPreview(List<String> newsItems, List<String> pubDates) {
-        // 모든 카드와 텍스트뷰 초기화
         textNews1Title.setText("");
         textNews1Date.setText("");
         cardNews1.setVisibility(View.GONE);
@@ -428,13 +423,11 @@ public class RegionDetailActivity extends AppCompatActivity {
         }
 
         if (newsItems == null || newsItems.isEmpty()) {
-            // 데이터가 없을 때 첫 번째 카드만 "데이터 없음" 메시지 표시
             cardNews1.setVisibility(View.VISIBLE);
             textNews1Title.setText("데이터가 없습니다");
             return;
         }
 
-        // 데이터가 있을 때 각 카드에 바인딩
         if (newsItems.size() > 0) {
             cardNews1.setVisibility(View.VISIBLE);
             textNews1Title.setText(safe(newsItems.get(0)));
@@ -461,7 +454,6 @@ public class RegionDetailActivity extends AppCompatActivity {
     }
 
 
-    // 뉴스 항목 클릭 시 링크로 이동하는 메서드
     private void onClickNews(int index) {
         if (newsLinks.size() > index) {
             String link = newsLinks.get(index);
@@ -472,7 +464,6 @@ public class RegionDetailActivity extends AppCompatActivity {
         }
     }
 
-    /** addr1에 하위도시명이 포함된 것만 남기기 (fallback) */
     private List<SpotResponse.Item> filterByAddr(List<SpotResponse.Item> src, String key) {
         if (src == null) return new ArrayList<>();
         if (TextUtils.isEmpty(key)) return src;

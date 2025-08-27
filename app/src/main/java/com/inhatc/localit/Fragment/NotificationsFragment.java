@@ -12,6 +12,8 @@ import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.RemoteViews;
 
 import androidx.annotation.NonNull;
@@ -25,6 +27,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.chip.ChipGroup;
 import com.inhatc.localit.R;
+import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.databinding.FragmentNotificationsBinding;
 import com.inhatc.localit.db.AppDatabase;
 import com.inhatc.localit.db.TouristSpot;
@@ -84,6 +87,9 @@ public class NotificationsFragment extends Fragment {
     private NotiAdapter adapter;
     private final List<Noti> allNotifications = new ArrayList<>();
 
+    // 뒤로가기 버튼 변수 추가
+    private ImageView btnBack;
+
     // 채널
     private static final String CH_WISH = "wish_channel";
     private static final String CH_FESTIVAL = "festival_channel";
@@ -104,6 +110,17 @@ public class NotificationsFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentNotificationsBinding.inflate(inflater, container, false);
+
+        // 뒤로가기 버튼 초기화 및 클릭 리스너 설정
+        btnBack = binding.getRoot().findViewById(R.id.btnBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                // 부모 액티비티의 onBackPressed를 호출하여 이전 화면으로 돌아갑니다.
+                if (requireActivity() instanceof MainActivity) {
+                    requireActivity().onBackPressed();
+                }
+            });
+        }
 
         ensureChannels(requireContext());
 

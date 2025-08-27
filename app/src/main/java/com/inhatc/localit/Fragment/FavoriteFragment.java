@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView; // Import ImageView
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,6 +26,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
 import com.inhatc.localit.Fragment.WishedSpotAdapter;
 import com.inhatc.localit.databinding.FragmentChatBinding;
@@ -33,7 +35,7 @@ import com.inhatc.localit.ui.category.FestivalDetailActivity;
 import com.inhatc.localit.ui.category.SpotDetailActivity;
 
 import java.util.ArrayList;
-import java.util.HashSet; // [추가]
+import java.util.HashSet;
 import java.util.List;
 
 public class FavoriteFragment extends Fragment {
@@ -41,6 +43,7 @@ public class FavoriteFragment extends Fragment {
     // 상단바/탭
     private FragmentChatBinding binding;
     private ImageButton btnBack;
+    private ImageView btnNotifications; // Change from ImageButton to ImageView
     private TextView titleText;
     private TextView tabFestival, tabTour, tabNews;
     private View indicator;
@@ -66,7 +69,7 @@ public class FavoriteFragment extends Fragment {
         View root = inflater.inflate(R.layout.fragment_favorite, container, false);
 
         // 뒤로가기 버튼 (UI)
-        View btnBack = root.findViewById(R.id.btn_back);
+        ImageButton btnBack = root.findViewById(R.id.btn_back);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> goHomeSingleTop());
         }
@@ -82,6 +85,14 @@ public class FavoriteFragment extends Fragment {
                 }
         );
 
+        // 알림 버튼 클릭 리스너 추가
+        ImageView btnNotifications = root.findViewById(R.id.btnNotifications);
+        if (btnNotifications != null) {
+            btnNotifications.setOnClickListener(v ->
+                    ((MainActivity) requireActivity()).openNotifications()
+            );
+        }
+
         return root;
     }
 
@@ -89,7 +100,6 @@ public class FavoriteFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // [추가] 뷰가 생성될 때마다 비활성화 목록을 새로 초기화
         isInitialLoad = true;
         deactivatedSpotIds = new HashSet<>();
 
@@ -101,22 +111,28 @@ public class FavoriteFragment extends Fragment {
         observeViewModel();
     }
 
-    /** XML의 뷰들을 찾아서 변수에 할당합니다. */
     private void initializeViews(View view) {
-        btnBack       = view.findViewById(R.id.btn_back);
-        titleText     = view.findViewById(R.id.text_search);
-        tabFestival   = view.findViewById(R.id.tabFestival);
-        tabTour       = view.findViewById(R.id.tabTour);
-        tabNews       = view.findViewById(R.id.tabNews);
-        indicator     = view.findViewById(R.id.indicator);
-        contentFrame  = view.findViewById(R.id.favoriteContent);
+        btnBack = view.findViewById(R.id.btn_back);
+        titleText = view.findViewById(R.id.text_search);
+        tabFestival = view.findViewById(R.id.tabFestival);
+        tabTour = view.findViewById(R.id.tabTour);
+        tabNews = view.findViewById(R.id.tabNews);
+        indicator = view.findViewById(R.id.underline);
+        contentFrame = view.findViewById(R.id.favoriteContent);
         emptyTextView = view.findViewById(R.id.textEmptyFavorite);
+        btnNotifications = view.findViewById(R.id.btnNotifications); // 알림 버튼 변수 초기화
 
         titleText.setText("찜 목록");
         btnBack.setOnClickListener(v -> goHomeSingleTop());
+
+        // 알림 버튼 리스너 다시 설정 (onCreateView에 이미 있지만, 여기에서도 안전하게)
+        if (btnNotifications != null) {
+            btnNotifications.setOnClickListener(v ->
+                    ((MainActivity) requireActivity()).openNotifications()
+            );
+        }
     }
 
-    /** 탭 클릭 리스너를 설정하고 초기 상태를 적용합니다. */
     private void setupTabs() {
         View.OnClickListener tabClick = v -> {
             int id = v.getId();
@@ -136,33 +152,26 @@ public class FavoriteFragment extends Fragment {
         if (fragmentView != null) fragmentView.post(this::applyTabState);
     }
 
-    /** [수정됨] 활성화/비활성화 로직을 처리하도록 RecyclerView 설정 변경 */
     private void setupRecyclerView() {
-        // 1. 아이템 전체 클릭 리스너
         WishedSpotAdapter.OnSpotClickListener itemClickListener = this::openDetailFor;
 
-        // 2. 하트 버튼 클릭 리스너 (활성화/비활성화 로직)
         WishedSpotAdapter.OnHeartClickListener heartClickListener = spot -> {
             String contentId = spot.contentid;
 
             if (deactivatedSpotIds.contains(contentId)) {
-                // 비활성화 상태(빈 하트)를 클릭한 경우 -> 다시 활성화 (Undo)
                 deactivatedSpotIds.remove(contentId);
-                viewModel.addWishedSpot(spot); // DB에 다시 추가
+                viewModel.addWishedSpot(spot);
                 Toast.makeText(getContext(), "찜 목록에 다시 추가했습니다.", Toast.LENGTH_SHORT).show();
             } else {
-                // 활성화 상태(채워진 하트)를 클릭한 경우 -> 비활성화
                 deactivatedSpotIds.add(contentId);
-                viewModel.removeWishedSpot(spot); // DB에서 삭제
+                viewModel.removeWishedSpot(spot);
                 Toast.makeText(getContext(), "찜을 취소했습니다.", Toast.LENGTH_SHORT).show();
             }
 
-            // 어댑터에 변경된 비활성화 목록을 알려주고, UI를 새로고침
             adapter.setDeactivatedSpotIds(deactivatedSpotIds);
             adapter.notifyDataSetChanged();
         };
 
-        // 어댑터 생성 및 설정
         adapter = new WishedSpotAdapter(requireContext(), itemClickListener, heartClickListener);
         recyclerView = new RecyclerView(requireContext());
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -173,22 +182,17 @@ public class FavoriteFragment extends Fragment {
         ));
     }
 
-    /** [수정됨] LiveData 구독 시 어댑터에 비활성화 목록 전달 */
     private void observeViewModel() {
         viewModel.getWishedSpots().observe(getViewLifecycleOwner(), wishedSpots -> {
-            // ▼▼▼▼▼ [수정된 로직] ▼▼▼▼▼
-            // isInitialLoad 플래그가 true일 때 (즉, 화면에 처음 진입했을 때)만 목록을 새로고침합니다.
             if (isInitialLoad) {
                 this.allWishedSpots = (wishedSpots != null) ? wishedSpots : new ArrayList<>();
                 adapter.setDeactivatedSpotIds(deactivatedSpotIds);
                 filterAndDisplayList();
-                isInitialLoad = false; // 플래그를 false로 바꿔서 다음부터는 이 코드가 실행되지 않도록 함
+                isInitialLoad = false;
             }
-            // ▲▲▲▲▲ [수정된 로직] ▲▲▲▲▲
         });
     }
 
-    /** 현재 탭에 맞게 목록 필터링 후 표시 */
     private void filterAndDisplayList() {
         List<TouristSpot> filteredList = new ArrayList<>();
         for (TouristSpot spot : allWishedSpots) {
@@ -215,15 +219,13 @@ public class FavoriteFragment extends Fragment {
         }
     }
 
-    // ========= 상세/브라우저 이동 로직 =========
     private void openDetailFor(@NonNull TouristSpot spot) {
-        String contentId   = String.valueOf(spot.contentid);
-        String title       = spot.title == null ? "" : spot.title;
-        String addr1       = spot.addr1 == null ? "" : spot.addr1;
-        String firstImage  = spot.firstimage == null ? "" : spot.firstimage;
+        String contentId = String.valueOf(spot.contentid);
+        String title = spot.title == null ? "" : spot.title;
+        String addr1 = spot.addr1 == null ? "" : spot.addr1;
+        String firstImage = spot.firstimage == null ? "" : spot.firstimage;
 
         if (spot.contenttypeid == 12) {
-            // 관광지 → SpotDetailActivity
             Intent intent = new Intent(requireContext(), SpotDetailActivity.class)
                     .putExtra(SpotDetailActivity.EXTRA_CONTENT_ID, contentId)
                     .putExtra(SpotDetailActivity.EXTRA_CONTENT_TYPE_ID, "12")
@@ -233,7 +235,6 @@ public class FavoriteFragment extends Fragment {
             startActivity(intent);
 
         } else if (spot.contenttypeid == 15) {
-            // 축제 → FestivalDetailActivity
             Intent intent = new Intent(requireContext(), FestivalDetailActivity.class)
                     .putExtra(FestivalDetailActivity.EXTRA_CONTENT_ID, contentId)
                     .putExtra(FestivalDetailActivity.EXTRA_CONTENT_TYPE_ID, "15")
@@ -243,7 +244,6 @@ public class FavoriteFragment extends Fragment {
             startActivity(intent);
 
         } else if (spot.contenttypeid == 99) {
-            // 뉴스 → 외부 브라우저
             String url = normalizeUrl(contentId);
             if (TextUtils.isEmpty(url)) {
                 Toast.makeText(requireContext(), "유효한 뉴스 링크가 없습니다.", Toast.LENGTH_SHORT).show();
@@ -253,9 +253,7 @@ public class FavoriteFragment extends Fragment {
             startActivity(browser);
         }
     }
-    // =====================================
 
-    /** http/https 스킴 누락 시 자동 보정 */
     private String normalizeUrl(String link) {
         if (TextUtils.isEmpty(link)) return null;
         String trimmed = link.trim();
@@ -263,7 +261,6 @@ public class FavoriteFragment extends Fragment {
         return "https://" + trimmed;
     }
 
-    // --- 탭/인디케이터 ---
     private void applyTabState() {
         if (!isAdded() || getView() == null) return;
         if (tabFestival == null || tabTour == null || tabNews == null || indicator == null) return;

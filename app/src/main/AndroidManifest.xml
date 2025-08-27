@@ -97,9 +97,7 @@
             android:exported="true"
             android:label="@string/app_name" />
 
-        <activity
-            android:name=".Fragment.NotificationsActivity"
-            android:exported="false" />
+
 
         <activity
             android:name=".api.ApiMainActivity"

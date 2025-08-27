@@ -6,12 +6,14 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import com.inhatc.localit.MainActivity; // MainActivity import
 import com.inhatc.localit.R;
 import com.inhatc.localit.RegionDetailActivity;
 import com.inhatc.localit.databinding.FragmentHomeBinding;
@@ -55,6 +57,17 @@ public class HomeFragment extends Fragment {
 
         setRegionNames();
         setupRegionInteractions();
+
+        // 알림 버튼 클릭 리스너 추가
+        ImageView btnNotifications = binding.getRoot().findViewById(R.id.btnNotifications);
+        if (btnNotifications != null) {
+            btnNotifications.setOnClickListener(v -> {
+                // MainActivity의 openNotifications() 메서드를 호출하여 알림 화면으로 이동
+                if (getActivity() instanceof MainActivity) {
+                    ((MainActivity) getActivity()).openNotifications();
+                }
+            });
+        }
 
         return root;
     }
