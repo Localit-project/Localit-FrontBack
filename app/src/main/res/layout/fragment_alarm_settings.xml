@@ -83,9 +83,7 @@
                     android:id="@+id/rowWishSpot"
                     layout="@layout/view_setting_row_switch"/>
 
-                <include
-                    android:id="@+id/rowWishNews"
-                    layout="@layout/view_setting_row_switch"/>
+
             </LinearLayout>
 
             <Space

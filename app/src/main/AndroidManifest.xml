@@ -135,6 +135,7 @@
             android:name="com.naver.maps.map.NCP_KEY_ID"
             android:value="YOUR_NCP_KEY_ID_HERE" />
 
+
     </application>
 
 </manifest>

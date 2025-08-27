@@ -26,7 +26,6 @@ public class AlarmSettingsFragment extends Fragment {
         // 찜목록
         setupRow(binding.rowWishFestival.getRoot(),  getString(R.string.festival), AlarmPrefs.KEY_WISH_FESTIVAL);
         setupRow(binding.rowWishSpot.getRoot(),      getString(R.string.spot),     AlarmPrefs.KEY_WISH_SPOT);
-        setupRow(binding.rowWishNews.getRoot(),      getString(R.string.news),     AlarmPrefs.KEY_WISH_NEWS);
 
         // 관심 지역
 

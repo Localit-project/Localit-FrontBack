@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.inhatc.localit.R;
+import com.inhatc.localit.util.AlarmPrefs;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -85,6 +86,17 @@ public final class NotiHelper {
             @NonNull String description,
             @Nullable PendingIntent contentIntent
     ) {
+        // 🔒 스위치 상태에 따라 알림 차단
+        if (source == NotificationsFragment.Source.WISH && type == NotificationsFragment.Type.FESTIVAL) {
+            if (!AlarmPrefs.isEnabled(ctx, AlarmPrefs.KEY_WISH_FESTIVAL)) return;
+        } else if (source == NotificationsFragment.Source.WISH && type == NotificationsFragment.Type.SPOT) {
+            if (!AlarmPrefs.isEnabled(ctx, AlarmPrefs.KEY_WISH_SPOT)) return;
+        } else if (source == NotificationsFragment.Source.FESTIVAL) {
+            if (!AlarmPrefs.allowFestival(ctx)) return;
+        } else if (source == NotificationsFragment.Source.SPOT_NEW) {
+            if (!AlarmPrefs.allowSpot(ctx)) return;
+        }
+
         ensureChannels(ctx);
 
         String channelId = (source == NotificationsFragment.Source.FESTIVAL) ? CH_FESTIVAL : CH_WISH;
