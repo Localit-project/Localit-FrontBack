@@ -8,9 +8,12 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
+import android.text.style.URLSpan;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -44,8 +47,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executors;
-import android.text.Spanned;
-import android.text.style.URLSpan;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -147,18 +150,25 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         }
         if (btnCall != null) {
             btnCall.setOnClickListener(v -> {
-                String phone = tvPhone != null ? tvPhone.getText().toString().trim() : "";
-                if (!TextUtils.isEmpty(phone)) {
-                    startActivity(new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + phone)));
+                String raw = tvPhone != null && tvPhone.getText()!=null ? tvPhone.getText().toString() : null;
+                String number = extractFirstPhone(raw);
+                if (!TextUtils.isEmpty(number)) {
+                    startActivity(new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + number)));
+                } else {
+                    Toast.makeText(this, "전화번호가 없습니다.", Toast.LENGTH_SHORT).show();
                 }
             });
         }
         if (btnOpenSite != null) {
             btnOpenSite.setOnClickListener(v -> {
-                String url = tvHomepage != null ? tvHomepage.getText().toString().trim() : "";
+                CharSequence sp = tvHomepage != null ? tvHomepage.getText() : null;
+                String url = extractFirstUrl(sp);
+                if (TextUtils.isEmpty(url) && sp != null) url = sp.toString().trim();
                 if (!TextUtils.isEmpty(url)) {
                     if (!url.startsWith("http")) url = "http://" + url;
                     startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                } else {
+                    Toast.makeText(this, "홈페이지 주소가 없습니다.", Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -209,20 +219,19 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
             mapView.getMapAsync(this);
         }
 
-        // detailCommon (주소/연락처/좌표/대표이미지 등)
+        // detailCommon (주소/연락처/좌표/대표이미지/홈페이지 등)
         SpotApiHelper.fetchDetailCommon(contentId, contentTypeId, (SpotDetailCommonResponse.Item item) -> runOnUiThread(() -> {
             if (item == null) return;
 
             // 주소
-            setTextOrGone(tvAddress, joinAddr(item.addr1, item.addr2));
+            setTextOrGone(tvAddress, joinAddr(item.addr1, item.addr2)); // (이전 textAddr -> tvAddress)
 
-            // 전화: HTML/평문 모두 대응
-            setTextWithHtmlOrGone(tvPhone, item.tel);
-            if (rowTel != null) rowTel.setVisibility(TextUtils.isEmpty(tvPhone.getText()) ? View.GONE : View.VISIBLE);
-
-            // 홈페이지: HTML <a> 로 내려와도 표시 & 클릭 가능
-            setTextWithHtmlOrGone(tvHomepage, item.homepage);
-            if (rowHomepage != null) rowHomepage.setVisibility(TextUtils.isEmpty(tvHomepage.getText()) ? View.GONE : View.VISIBLE);
+            // 전화 (HTML 포함 가능 → HTML 처리)
+            // 전화 (HTML/br 가능)
+            setPhoneHtmlOrGone(tvPhone, item.tel);
+            if (rowTel != null) rowTel.setVisibility(
+                    tvPhone == null || TextUtils.isEmpty(tvPhone.getText()) ? View.GONE : View.VISIBLE
+            );
 
             // 대표 이미지
             String img = !TextUtils.isEmpty(item.firstimage) ? item.firstimage
@@ -230,7 +239,7 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
                     : passedFirstImage;
             Glide.with(this).load(img).placeholder(R.drawable.sample1).error(R.drawable.sample1).into(imageMain);
 
-            // 좌표 or 주소 지오코딩
+            // 좌표/지오코딩
             try {
                 if (!TextUtils.isEmpty(item.mapy) && !TextUtils.isEmpty(item.mapx)) {
                     lat = Double.parseDouble(item.mapy);
@@ -244,30 +253,44 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         }));
 
 
-        // detailIntro
+        // detailIntro (영업/휴무/주차 + 전화/홈페이지 보강)
         SpotApiHelper.fetchDetailIntro(contentId, safeInt(contentTypeId, 12), intro -> runOnUiThread(() -> {
             if (intro == null) return;
 
             setTextWithHtmlOrGone(tvHoliday, intro.restdate);
-            if (rowRestdate != null) rowRestdate.setVisibility(TextUtils.isEmpty(tvHoliday.getText()) ? View.GONE : View.VISIBLE);
+            if (rowRestdate != null) rowRestdate.setVisibility(
+                    TextUtils.isEmpty(tvHoliday.getText()) ? View.GONE : View.VISIBLE
+            );
 
             setTextWithHtmlOrGone(tvHours, intro.usetime);
-            if (rowUsetime != null) rowUsetime.setVisibility(TextUtils.isEmpty(tvHours.getText()) ? View.GONE : View.VISIBLE);
+            if (rowUsetime != null) rowUsetime.setVisibility(
+                    TextUtils.isEmpty(tvHours.getText()) ? View.GONE : View.VISIBLE
+            );
 
             setTextWithHtmlOrGone(tvParking, intro.parking);
-            if (rowParking != null) rowParking.setVisibility(TextUtils.isEmpty(tvParking.getText()) ? View.GONE : View.VISIBLE);
+            if (rowParking != null) rowParking.setVisibility(
+                    TextUtils.isEmpty(tvParking.getText()) ? View.GONE : View.VISIBLE
+            );
 
-            // 전화 비어있으면 infocenter 대체
+            // 전화: detailCommon에서 못 받았으면 intro.infocenter(변형키 포함)로 대체
             if (tvPhone != null && TextUtils.isEmpty(tvPhone.getText())) {
-                setTextWithHtmlOrGone(tvPhone, intro.infocenter);
-                if (rowTel != null) rowTel.setVisibility(TextUtils.isEmpty(tvPhone.getText()) ? View.GONE : View.VISIBLE);
+                setPhoneHtmlOrGone(tvPhone, intro.infocenter);
+                if (rowTel != null) rowTel.setVisibility(
+                        TextUtils.isEmpty(tvPhone.getText()) ? View.GONE : View.VISIBLE
+                );
             }
 
-            // (필요 시 홈페이지도 여기에서 세팅하세요. 응답 모델에 있다면 setTextOrGone(tvHomepage, intro.homepage); 등)
+            // 홈페이지(HTML 앵커/BR 처리)
+            setHomepageOrGone(tvHomepage, intro.homepage);
+            if (rowHomepage != null) rowHomepage.setVisibility(
+                    TextUtils.isEmpty(tvHomepage.getText()) ? View.GONE : View.VISIBLE
+            );
         }));
 
-        // detailInfo2
-        // detailInfo2
+
+
+
+        // detailInfo2 (추가정보: <br> 줄바꿈 처리)
         SpotApiHelper.fetchDetailInfo(contentId, safeInt(contentTypeId, 12), items -> runOnUiThread(() -> {
             if (tvExtra == null || rowExtra == null) return;
 
@@ -275,31 +298,23 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
                 rowExtra.setVisibility(View.GONE);
                 return;
             }
-
             StringBuilder sb = new StringBuilder();
             for (SpotDetailInfoResponse.Item it : items) {
-                String name = it.infoname == null ? "" : it.infoname.replaceAll("\\s+", " ").trim();
-                String text = it.infotext == null ? "" : it.infotext.trim();
-                if (!name.isEmpty() && !text.isEmpty()) {
-                    if (sb.length() > 0) sb.append("\n"); // 항목 간 구분용 개행
-                    sb.append(name).append(" : ").append(text);
+                if (!TextUtils.isEmpty(it.infoname) && !TextUtils.isEmpty(it.infotext)) {
+                    if (sb.length() > 0) sb.append("\n");
+                    String clean = it.infotext.replaceAll("(?i)<br\\s*/?>", "\n").trim();
+                    sb.append(it.infoname.replaceAll("\\s+", " ").trim())
+                            .append(" : ")
+                            .append(clean);
                 }
             }
-
             if (sb.length() > 0) {
                 rowExtra.setVisibility(View.VISIBLE);
-
-                //  <br>, <br/>, <br /> 모두 개행 처리 + 우리가 넣은 \n 도 <br/>로 변환해 HTML로 렌더
-                String html = sb.toString()
-                        .replaceAll("(?i)<br\\s*/?>", "\n")  // 들어온 <br>들을 우선 \n으로 통일
-                        .replace("\n", "<br/>");             // 그 다음 전체를 HTML 줄바꿈으로
-
-                setTextWithHtmlOrGone(tvExtra, html);        // 이미 HtmlCompat + LinkMovementMethod 적용됨
+                tvExtra.setText(sb.toString());
             } else {
                 rowExtra.setVisibility(View.GONE);
             }
         }));
-
 
         // detailImage
         SpotApiHelper.fetchDetailImages(contentId, urls -> runOnUiThread(() -> {
@@ -357,7 +372,13 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         if (rowHomepage != null && tvHomepage != null) {
             if (TextUtils.isEmpty(tvHomepage.getText())) rowHomepage.setVisibility(View.GONE);
         }
+        tvPhone = findViewById(R.id.tvPhone);
+        rowTel  = findViewById(R.id.textTel);
+        // 초기 상태: 비우고 숨김
+        if (tvPhone != null) tvPhone.setText("");
+        if (rowTel != null)  rowTel.setVisibility(View.GONE);
     }
+
 
     @Override public void onMapReady(@NonNull NaverMap map) {
         naverMap = map;
@@ -480,15 +501,13 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
 
     private String s(String v) { return v == null ? "" : v; }
 
+    /** HTML 문자열을 줄바꿈 포함 Spanned로 그려주고, 비었으면 GONE */
     private void setTextWithHtmlOrGone(TextView tv, String html) {
         if (tv == null) return;
-        if (TextUtils.isEmpty(html) ||
-                HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY).toString().trim().isEmpty()) {
-            tv.setVisibility(View.GONE);
-            return;
-        }
-        CharSequence spanned = HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY);
-        if (TextUtils.isEmpty(spanned)) {
+        if (TextUtils.isEmpty(html)) { tv.setVisibility(View.GONE); return; }
+        String normalized = html.replaceAll("(?i)<br\\s*/?>", "\n");
+        CharSequence spanned = HtmlCompat.fromHtml(normalized, HtmlCompat.FROM_HTML_MODE_LEGACY);
+        if (TextUtils.isEmpty(spanned) || spanned.toString().trim().isEmpty()) {
             tv.setText("");
             tv.setVisibility(View.GONE);
         } else {
@@ -510,6 +529,73 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
             tv.setVisibility(View.VISIBLE);
             tv.setText(ss);
         }
+    }
+
+    /** 전화 텍스트 전용(HTML/줄바꿈 처리 + autolink) */
+    private void setPhoneHtmlOrGone(TextView tv, String raw) {
+        if (tv == null) return;
+        if (TextUtils.isEmpty(raw)) { tv.setText(""); tv.setVisibility(View.GONE); return; }
+        String normalized = raw.replaceAll("(?i)<br\\s*/?>", "\n");
+        CharSequence sp = HtmlCompat.fromHtml(normalized, HtmlCompat.FROM_HTML_MODE_LEGACY);
+        if (TextUtils.isEmpty(sp) || sp.toString().trim().isEmpty()) {
+            tv.setText(""); tv.setVisibility(View.GONE);
+        } else {
+            tv.setVisibility(View.VISIBLE);
+            tv.setText(sp);
+            tv.setMovementMethod(LinkMovementMethod.getInstance());
+        }
+    }
+
+    /** 홈페이지 전용(HTML 앵커 → 클릭 가능) */
+    private void setHomepageOrGone(TextView tv, String html) {
+        if (tv == null) return;
+        if (TextUtils.isEmpty(html)) { tv.setText(""); tv.setVisibility(View.GONE); return; }
+        String normalized = html.replaceAll("(?i)<br\\s*/?>", "\n");
+        CharSequence sp = HtmlCompat.fromHtml(normalized, HtmlCompat.FROM_HTML_MODE_LEGACY);
+        if (TextUtils.isEmpty(sp) || sp.toString().trim().isEmpty()) {
+            tv.setText(""); tv.setVisibility(View.GONE);
+        } else {
+            tv.setVisibility(View.VISIBLE);
+            tv.setText(sp);
+            tv.setMovementMethod(LinkMovementMethod.getInstance());
+        }
+    }
+
+    /** 표시된 Spanned에서 첫 URL 추출 (없으면 텍스트에서 패턴 검색) */
+    @Nullable
+    private String extractFirstUrl(CharSequence sp) {
+        if (sp instanceof Spanned) {
+            URLSpan[] spans = ((Spanned) sp).getSpans(0, sp.length(), URLSpan.class);
+            if (spans != null && spans.length > 0) return spans[0].getURL();
+        }
+        if (sp == null) return null;
+        Matcher m = Patterns.WEB_URL.matcher(sp.toString());
+        return m.find() ? m.group() : null;
+    }
+
+    /** HTML/텍스트에서 첫 전화번호 추출 (tel: 또는 일반 패턴) */
+    @Nullable
+    private String extractFirstPhone(String htmlOrText) {
+        if (TextUtils.isEmpty(htmlOrText)) return null;
+        CharSequence sp = HtmlCompat.fromHtml(htmlOrText, HtmlCompat.FROM_HTML_MODE_LEGACY);
+        if (sp instanceof Spanned) {
+            URLSpan[] spans = ((Spanned) sp).getSpans(0, sp.length(), URLSpan.class);
+            if (spans != null) {
+                for (URLSpan u : spans) {
+                    if (u.getURL() != null && u.getURL().startsWith("tel:")) {
+                        return u.getURL().substring(4);
+                    }
+                }
+            }
+        }
+        // 02-1234-5678 / 043-232-1117 / 010-1234-5678 형태
+        Matcher m = Pattern.compile("(0\\d{1,2}-?\\d{3,4}-?\\d{4})").matcher(sp.toString());
+        return m.find() ? m.group(1) : null;
+    }
+
+    private String firstNonEmpty(String... arr) {
+        for (String s : arr) if (!TextUtils.isEmpty(s) && s.trim().length() > 0) return s;
+        return null;
     }
 
     private String joinAddr(String a1, String a2) {

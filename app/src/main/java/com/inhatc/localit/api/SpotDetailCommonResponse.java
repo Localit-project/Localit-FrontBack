@@ -51,8 +51,10 @@ public class SpotDetailCommonResponse {
         @SerializedName("addr1")         public String addr1;
         @SerializedName("addr2")         public String addr2;
         @SerializedName("zipcode")       public String zipcode;
-        @SerializedName("tel")           public String tel;
-        @SerializedName("homepage")      public String homepage;
+
+        @SerializedName("tel")           public String tel;       // ← 추가되어 있어야 함
+        @SerializedName("telname")       public String telname;   // ← 추가
+        @SerializedName("homepage")      public String homepage;  // ← 추가 (HTML 앵커 형태로 내려옴)
 
         // 좌표
         @SerializedName("mapx")          public String mapx;
