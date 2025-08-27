@@ -29,9 +29,6 @@ public class AlarmSettingsFragment extends Fragment {
         setupRow(binding.rowWishNews.getRoot(),      getString(R.string.news),     AlarmPrefs.KEY_WISH_NEWS);
 
         // 관심 지역
-        setupRow(binding.rowRegionFestival.getRoot(),getString(R.string.festival), AlarmPrefs.KEY_REGION_FESTIVAL);
-        setupRow(binding.rowRegionSpot.getRoot(),    getString(R.string.spot),     AlarmPrefs.KEY_REGION_SPOT);
-        setupRow(binding.rowRegionNews.getRoot(),    getString(R.string.news),     AlarmPrefs.KEY_REGION_NEWS);
 
         binding.btnBack.setOnClickListener(v ->
                 requireActivity().getOnBackPressedDispatcher().onBackPressed());

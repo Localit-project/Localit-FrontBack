@@ -55,6 +55,11 @@ public interface TouristSpotDao {
     TouristSpot getSpotByContentId(String contentid);
 
     /**
+     * 찜한 관광지 목록을 동기적으로 가져옵니다. (LiveData가 아닌 List)
+     */
+    @Query("SELECT * FROM tourist_spots WHERE isWished = 1 ORDER BY title ASC")
+    List<TouristSpot> getWishedSpotsSync();
+    /**
      * 주어진 TouristSpot 객체를 데이터베이스에서 삭제합니다.
      * 찜 취소 기능에 사용됩니다.
      * @param spot 삭제할 관광지 객체

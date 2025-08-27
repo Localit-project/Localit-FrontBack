@@ -1,4 +1,3 @@
-// app/src/main/java/com/inhatc/localit/util/AlarmPrefs.java
 package com.inhatc.localit.util;
 
 import android.content.Context;

@@ -82,7 +82,7 @@ public class TouristSpotRepository {
                         apiItem.getAddr1(),
                         apiItem.getFirstimage(),
                         true,
-                        typeId // ✨ 안전하게 변환된 타입 ID 사용
+                        typeId // startDate, endDate, isFestival은 기본 null/false 사용
                 );
                 mTouristSpotDao.insert(newSpot);
             } else {
