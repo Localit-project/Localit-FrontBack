@@ -52,6 +52,7 @@ public class SpotDetailCommonResponse {
         @SerializedName("addr2")         public String addr2;
         @SerializedName("zipcode")       public String zipcode;
         @SerializedName("tel")           public String tel;
+        @SerializedName("homepage")      public String homepage;
 
         // 좌표
         @SerializedName("mapx")          public String mapx;

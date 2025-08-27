@@ -1,8 +1,12 @@
 package com.inhatc.localit.ui.category;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
@@ -40,6 +44,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executors;
+import android.text.Spanned;
+import android.text.style.URLSpan;
 
 public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -51,12 +57,21 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
     public static final String EXTRA_ADDR1           = "extra_addr1";
     public static final String EXTRA_FIRST_IMAGE     = "extra_first_image";
 
+    private TextView textTitle; // 제목(TextView)
+
     private ImageView imageMain, btnBack;
     private RecyclerView recyclerGallery;
     private GalleryAdapter galleryAdapter;
 
-    private TextView textTitle, textAddr, textZipcode,
-            textTel, textRestdate, textUsetime, textParking, labelZip;
+    // 행 컨테이너들 (LinearLayout)
+    private LinearLayout rowAddr, rowTel, rowRestdate, rowUsetime, rowParking, rowExtra, rowHomepage;
+
+    // 각 행의 텍스트(View)
+    private TextView tvAddress, tvPhone, tvHoliday, tvHours, tvParking, tvExtra, tvHomepage;
+
+    // 액션 버튼들
+    private TextView btnCopyAddress, btnCall, btnOpenSite;
+    private ImageView btnHoursMore;
 
     private BottomNavigationView navView;
 
@@ -71,12 +86,12 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
     private static final int GALLERY_ITEM_DP = 118;
 
     private final List<String> gallery = new ArrayList<>();
+
+    // 지도
     private MapView mapView;
     private NaverMap naverMap;
     private Marker marker;
     private Double lat, lng;
-
-    private TextView textExtraInfo;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -101,12 +116,13 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
 
         bindViews();
 
+        // 상단 뒤로가기
         btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
         setupBottomNavigationView();
 
         // 선표시
         setTextOrGone(textTitle, passedTitle);
-        setTextOrGone(textAddr, passedAddr1);
+        setTextOrGone(tvAddress, passedAddr1);
         if (!TextUtils.isEmpty(passedFirstImage)) {
             Glide.with(this).load(passedFirstImage)
                     .placeholder(R.drawable.sample1)
@@ -114,6 +130,37 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
                     .into(imageMain);
         } else {
             imageMain.setImageResource(R.drawable.sample1);
+        }
+
+        // 주소 복사 / 전화 / 사이트 열기 (있을 때만)
+        if (btnCopyAddress != null) {
+            btnCopyAddress.setOnClickListener(v -> {
+                CharSequence addr = tvAddress != null ? tvAddress.getText() : "";
+                if (!TextUtils.isEmpty(addr)) {
+                    ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (cm != null) {
+                        cm.setPrimaryClip(ClipData.newPlainText("address", addr));
+                        Toast.makeText(this, "주소가 복사되었습니다.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        }
+        if (btnCall != null) {
+            btnCall.setOnClickListener(v -> {
+                String phone = tvPhone != null ? tvPhone.getText().toString().trim() : "";
+                if (!TextUtils.isEmpty(phone)) {
+                    startActivity(new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + phone)));
+                }
+            });
+        }
+        if (btnOpenSite != null) {
+            btnOpenSite.setOnClickListener(v -> {
+                String url = tvHomepage != null ? tvHomepage.getText().toString().trim() : "";
+                if (!TextUtils.isEmpty(url)) {
+                    if (!url.startsWith("http")) url = "http://" + url;
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                }
+            });
         }
 
         // Gallery
@@ -156,22 +203,34 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
             });
         }
 
-        // 지도
-        mapView.onCreate(savedInstanceState);
-        mapView.getMapAsync(this);
+        // 지도 (XML에 없으면 안전하게 패스)
+        if (mapView != null) {
+            mapView.onCreate(savedInstanceState);
+            mapView.getMapAsync(this);
+        }
 
-        // detailCommon (주소/연락처/좌표/대표이미지 등, 개요 제거)
+        // detailCommon (주소/연락처/좌표/대표이미지 등)
         SpotApiHelper.fetchDetailCommon(contentId, contentTypeId, (SpotDetailCommonResponse.Item item) -> runOnUiThread(() -> {
-            if (item == null) {
-                return;
-            }
-            setTextOrGone(textAddr, joinAddr(item.addr1, item.addr2));
-            setTextWithHtmlOrGone(textTel, item.tel);
+            if (item == null) return;
 
-            String img = !TextUtils.isEmpty(item.firstimage) ? item.firstimage :
-                    !TextUtils.isEmpty(item.firstimage2) ? item.firstimage2 : passedFirstImage;
+            // 주소
+            setTextOrGone(tvAddress, joinAddr(item.addr1, item.addr2));
+
+            // 전화: HTML/평문 모두 대응
+            setTextWithHtmlOrGone(tvPhone, item.tel);
+            if (rowTel != null) rowTel.setVisibility(TextUtils.isEmpty(tvPhone.getText()) ? View.GONE : View.VISIBLE);
+
+            // 홈페이지: HTML <a> 로 내려와도 표시 & 클릭 가능
+            setTextWithHtmlOrGone(tvHomepage, item.homepage);
+            if (rowHomepage != null) rowHomepage.setVisibility(TextUtils.isEmpty(tvHomepage.getText()) ? View.GONE : View.VISIBLE);
+
+            // 대표 이미지
+            String img = !TextUtils.isEmpty(item.firstimage) ? item.firstimage
+                    : !TextUtils.isEmpty(item.firstimage2) ? item.firstimage2
+                    : passedFirstImage;
             Glide.with(this).load(img).placeholder(R.drawable.sample1).error(R.drawable.sample1).into(imageMain);
 
+            // 좌표 or 주소 지오코딩
             try {
                 if (!TextUtils.isEmpty(item.mapy) && !TextUtils.isEmpty(item.mapx)) {
                     lat = Double.parseDouble(item.mapy);
@@ -184,39 +243,63 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
             } catch (Exception e) { Log.e(TAG,"Parsing map coords failed", e); }
         }));
 
+
         // detailIntro
         SpotApiHelper.fetchDetailIntro(contentId, safeInt(contentTypeId, 12), intro -> runOnUiThread(() -> {
             if (intro == null) return;
-            setTextWithHtmlOrGone(textRestdate, intro.restdate);
-            setTextWithHtmlOrGone(textUsetime,  intro.usetime);
-            setTextWithHtmlOrGone(textParking,  intro.parking);
-            if (TextUtils.isEmpty(textTel.getText())) setTextWithHtmlOrGone(textTel, intro.infocenter);
+
+            setTextWithHtmlOrGone(tvHoliday, intro.restdate);
+            if (rowRestdate != null) rowRestdate.setVisibility(TextUtils.isEmpty(tvHoliday.getText()) ? View.GONE : View.VISIBLE);
+
+            setTextWithHtmlOrGone(tvHours, intro.usetime);
+            if (rowUsetime != null) rowUsetime.setVisibility(TextUtils.isEmpty(tvHours.getText()) ? View.GONE : View.VISIBLE);
+
+            setTextWithHtmlOrGone(tvParking, intro.parking);
+            if (rowParking != null) rowParking.setVisibility(TextUtils.isEmpty(tvParking.getText()) ? View.GONE : View.VISIBLE);
+
+            // 전화 비어있으면 infocenter 대체
+            if (tvPhone != null && TextUtils.isEmpty(tvPhone.getText())) {
+                setTextWithHtmlOrGone(tvPhone, intro.infocenter);
+                if (rowTel != null) rowTel.setVisibility(TextUtils.isEmpty(tvPhone.getText()) ? View.GONE : View.VISIBLE);
+            }
+
+            // (필요 시 홈페이지도 여기에서 세팅하세요. 응답 모델에 있다면 setTextOrGone(tvHomepage, intro.homepage); 등)
         }));
 
         // detailInfo2
-        int realTypeForInfo = safeInt(contentTypeId, 12);
-        SpotApiHelper.fetchDetailInfo(contentId, realTypeForInfo, items -> runOnUiThread(() -> {
-            if (textExtraInfo == null) return;
+        // detailInfo2
+        SpotApiHelper.fetchDetailInfo(contentId, safeInt(contentTypeId, 12), items -> runOnUiThread(() -> {
+            if (tvExtra == null || rowExtra == null) return;
+
             if (items == null || items.isEmpty()) {
-                textExtraInfo.setVisibility(View.GONE);
+                rowExtra.setVisibility(View.GONE);
                 return;
             }
+
             StringBuilder sb = new StringBuilder();
             for (SpotDetailInfoResponse.Item it : items) {
-                if (!TextUtils.isEmpty(it.infoname) && !TextUtils.isEmpty(it.infotext)) {
-                    if (sb.length() > 0) sb.append("\n");
-                    sb.append(it.infoname.replaceAll("\\s+", " ").trim())
-                            .append(" : ")
-                            .append(it.infotext.trim());
+                String name = it.infoname == null ? "" : it.infoname.replaceAll("\\s+", " ").trim();
+                String text = it.infotext == null ? "" : it.infotext.trim();
+                if (!name.isEmpty() && !text.isEmpty()) {
+                    if (sb.length() > 0) sb.append("\n"); // 항목 간 구분용 개행
+                    sb.append(name).append(" : ").append(text);
                 }
             }
+
             if (sb.length() > 0) {
-                textExtraInfo.setVisibility(View.VISIBLE);
-                textExtraInfo.setText(sb.toString());
+                rowExtra.setVisibility(View.VISIBLE);
+
+                //  <br>, <br/>, <br /> 모두 개행 처리 + 우리가 넣은 \n 도 <br/>로 변환해 HTML로 렌더
+                String html = sb.toString()
+                        .replaceAll("(?i)<br\\s*/?>", "\n")  // 들어온 <br>들을 우선 \n으로 통일
+                        .replace("\n", "<br/>");             // 그 다음 전체를 HTML 줄바꿈으로
+
+                setTextWithHtmlOrGone(tvExtra, html);        // 이미 HtmlCompat + LinkMovementMethod 적용됨
             } else {
-                textExtraInfo.setVisibility(View.GONE);
+                rowExtra.setVisibility(View.GONE);
             }
         }));
+
 
         // detailImage
         SpotApiHelper.fetchDetailImages(contentId, urls -> runOnUiThread(() -> {
@@ -237,19 +320,43 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         recyclerGallery = findViewById(R.id.recyclerGallery);
         textTitle       = findViewById(R.id.textTitle);
 
-        textAddr        = findViewById(R.id.textAddr);
-        textTel         = findViewById(R.id.textTel);
-        textRestdate    = findViewById(R.id.textRestdate);
-        textUsetime     = findViewById(R.id.textUsetime);
-        textParking     = findViewById(R.id.textParking);
-        mapView         = findViewById(R.id.mapView);
-        navView         = findViewById(R.id.nav_view);
-        textExtraInfo   = findViewById(R.id.textExtraInfo);
+        // 행 컨테이너(LinearLayout)
+        rowAddr      = findViewById(R.id.textAddr);
+        rowTel       = findViewById(R.id.textTel);
+        rowRestdate  = findViewById(R.id.textRestdate);
+        rowUsetime   = findViewById(R.id.textUsetime);
+        rowParking   = findViewById(R.id.textParking);
+        rowExtra     = findViewById(R.id.textExtraInfo);
+        rowHomepage  = findViewById(R.id.rowHomepage);
 
+        // 실제 텍스트 들어가는 TextView
+        tvAddress = findViewById(R.id.tvAddress);
+        tvPhone   = findViewById(R.id.tvPhone);
+        tvHoliday = findViewById(R.id.tvHoliday);
+        tvHours   = findViewById(R.id.tvHours);
+        tvParking = findViewById(R.id.tvParking);
+        tvExtra   = findViewById(R.id.tvExtra);
+        tvHomepage= findViewById(R.id.tvHomepage);
+
+        // 액션 버튼들
+        btnCopyAddress = findViewById(R.id.btnCopyAddress);
+        btnHoursMore   = findViewById(R.id.btnHoursMore);
+        btnCall        = findViewById(R.id.btnCall);
+        btnOpenSite    = findViewById(R.id.btnOpenSite);
+
+        // 지도(XML에 없을 수도 있으니 null 허용)
+        mapView         = findViewById(R.id.mapView);
+
+        navView         = findViewById(R.id.nav_view);
         galleryContainer= findViewById(R.id.galleryContainer);
         btnGalleryPrev  = findViewById(R.id.btnGalleryPrev);
         btnGalleryNext  = findViewById(R.id.btnGalleryNext);
         galleryDots     = findViewById(R.id.galleryDots);
+
+        // 홈페이지 행은 기본적으로 내용 없으면 숨김
+        if (rowHomepage != null && tvHomepage != null) {
+            if (TextUtils.isEmpty(tvHomepage.getText())) rowHomepage.setVisibility(View.GONE);
+        }
     }
 
     @Override public void onMapReady(@NonNull NaverMap map) {
@@ -262,8 +369,8 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         }
         updateMapMarker();
 
-        if ((lat == null || lng == null) && textAddr != null) {
-            CharSequence addr = textAddr.getText();
+        if ((lat == null || lng == null) && tvAddress != null) {
+            CharSequence addr = tvAddress.getText();
             if (addr != null && addr.toString().trim().length() > 0) geocodeAndMove(addr.toString());
         }
     }
@@ -279,7 +386,7 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
 
         String caption = (textTitle != null && !TextUtils.isEmpty(String.valueOf(textTitle.getText())))
                 ? textTitle.getText().toString()
-                : (textAddr != null ? String.valueOf(textAddr.getText()) : "");
+                : (tvAddress != null ? String.valueOf(tvAddress.getText()) : "");
         if (!TextUtils.isEmpty(caption)) marker.setCaptionText(caption);
 
         naverMap.moveCamera(CameraUpdate.scrollAndZoomTo(pos, 15.0));
@@ -308,12 +415,12 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
         });
     }
 
-    @Override protected void onStart()   { super.onStart();   mapView.onStart(); }
-    @Override protected void onResume()  { super.onResume();  mapView.onResume(); }
-    @Override protected void onPause()   { mapView.onPause(); super.onPause(); }
-    @Override protected void onStop()    { mapView.onStop();  super.onStop(); }
-    @Override protected void onDestroy() { mapView.onDestroy(); super.onDestroy(); }
-    @Override public void onLowMemory()  { super.onLowMemory(); mapView.onLowMemory(); }
+    @Override protected void onStart()   { super.onStart();   if (mapView != null) mapView.onStart(); }
+    @Override protected void onResume()  { super.onResume();  if (mapView != null) mapView.onResume(); }
+    @Override protected void onPause()   { if (mapView != null) mapView.onPause();  super.onPause(); }
+    @Override protected void onStop()    { if (mapView != null) mapView.onStop();   super.onStop(); }
+    @Override protected void onDestroy() { if (mapView != null) mapView.onDestroy(); super.onDestroy(); }
+    @Override public void onLowMemory()  { super.onLowMemory(); if (mapView != null) mapView.onLowMemory(); }
 
     private void setupBottomNavigationView() {
         if (navView == null) return;
@@ -374,6 +481,7 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
     private String s(String v) { return v == null ? "" : v; }
 
     private void setTextWithHtmlOrGone(TextView tv, String html) {
+        if (tv == null) return;
         if (TextUtils.isEmpty(html) ||
                 HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY).toString().trim().isEmpty()) {
             tv.setVisibility(View.GONE);
@@ -393,6 +501,7 @@ public class SpotDetailActivity extends AppCompatActivity implements OnMapReadyC
     }
 
     private void setTextOrGone(TextView tv, String value) {
+        if (tv == null) return;
         String ss = s(value);
         if (TextUtils.isEmpty(ss.trim())) {
             tv.setText("");

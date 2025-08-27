@@ -13,6 +13,9 @@ if (lpFile.exists()) {
 android {
     namespace 'com.inhatc.localit'
     compileSdk 35
+    buildFeatures {
+        viewBinding true
+    }
 
     defaultConfig {
         applicationId "com.inhatc.localit"

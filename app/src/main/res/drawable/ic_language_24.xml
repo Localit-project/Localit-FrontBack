@@ -1,0 +1,64 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+
+    <!-- 공통 스트로크 스타일 -->
+    <!-- (각 path에서 반복되지 않도록 주석만 남깁니다)
+         strokeWidth=2.2, 라운드 캡/조인으로 마감이 부드럽게 보이도록 -->
+    <!-- 바깥 원 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M12,2
+                          A10,10 0 1,1 12,22
+                          A10,10 0 1,1 12,2z"/>
+
+    <!-- 왼쪽 경도선 (중앙에서 더 퍼지도록 곡률↑) -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M7.5,2.6
+                          C5.8,7.2 5.8,16.8 7.5,21.4"/>
+
+    <!-- 오른쪽 경도선 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M16.5,2.6
+                          C18.2,7.2 18.2,16.8 16.5,21.4"/>
+
+    <!-- 중앙 세로선(경도 0) -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M12,2.6 L12,21.4"/>
+
+
+
+    <!-- 중앙 위도선(적도: 직선) -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M2.6,12 H21.4"/>
+    <!-- 가로선 위쪽 --> <path android:fillColor="@android:color/transparent" android:strokeColor="@android:color/black" android:strokeWidth="2" android:pathData="M2,12 H22"/> <!-- 가로선 위/아래 --> <path android:fillColor="@android:color/transparent" android:strokeColor="@android:color/black" android:strokeWidth="2" android:pathData="M4,7 H20"/> <path android:fillColor="@android:color/transparent" android:strokeColor="@android:color/black" android:strokeWidth="2" android:pathData="M4,17 H20"/>
+
+
+</vector>
