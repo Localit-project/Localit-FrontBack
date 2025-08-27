@@ -1,30 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
+
     <item
         android:id="@+id/navigation_category"
-        android:icon="@drawable/ic_menu"
-        android:title="" />
+        android:icon="@drawable/ic_category_selector"
+        android:title="카테고리" />
 
     <item
         android:id="@+id/navigation_search"
-        android:icon="@android:drawable/ic_search_category_default"
-        android:title="" />
+        android:icon="@drawable/ic_search_selector"
+        android:title="검색" />
 
     <item
         android:id="@+id/navigation_home"
-        android:icon="@drawable/ic_home_black_24dp"
-        android:title="" />
+        android:icon="@drawable/ic_home_selector"
+        android:title="홈" />
 
     <item
         android:id="@+id/navigation_favorite"
-        android:icon="@drawable/ic_favorite_border_24"
-        android:title="" />
+        android:icon="@drawable/ic_favorite_selector"
+        android:title="찜" />
 
     <item
         android:id="@+id/navigation_mypage"
-        android:icon="@drawable/ic_person"
-        android:title="" />
-
-
-
+        android:icon="@drawable/ic_mypage_selector"
+        android:title="마이" />
 </menu>
