@@ -1,55 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:padding="12dp"
-    android:orientation="vertical"
-    android:background="#FFFFFF">
+    android:orientation="vertical" android:padding="16dp"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical">
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/ivLogo"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_alignParentStart="true"
+            android:src="@drawable/logo"/>
 
         <TextView
-            android:id="@+id/tvCategory"
-            android:layout_width="0dp"
+            android:id="@+id/tvBadge"
+            android:layout_toEndOf="@id/ivLogo"
+            android:layout_marginStart="6dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:text="찜 목록 (축제·행사)"
-            android:textColor="#6F6F6F"
-            android:textSize="12sp"/>
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:textStyle="bold"/>
 
         <TextView
             android:id="@+id/tvWhen"
+            android:layout_alignParentEnd="true"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/new_badge"
-            android:textColor="#22A36A"
-            android:textSize="12sp"/>
-    </LinearLayout>
+            android:text="방금"
+            android:textSize="12sp"
+            android:textColor="#888888"/>
+
+        <View
+            android:id="@+id/viewDot"
+            android:layout_toStartOf="@id/tvWhen"
+            android:layout_marginEnd="6dp"
+            android:layout_width="6dp"
+            android:layout_height="6dp"
+            android:background="@drawable/bg_dot_red"
+            android:layout_centerVertical="true"/>
+    </RelativeLayout>
 
     <TextView
         android:id="@+id/tvTitle"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
         android:text="인천 송도맥주축제"
+        android:textColor="#111111"
         android:textStyle="bold"
-        android:textSize="16sp"
-        android:layout_marginTop="6dp"/>
+        android:textSize="16sp"/>
 
     <TextView
-        android:id="@+id/tvBody"
-        android:layout_width="match_parent"
+        android:id="@+id/tvPeriod"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="기간 : 2025.08.22 ~ 2025.08.30\n찜 목록의 축제 · 행사가 1주 뒤에 시작됩니다."
-        android:textSize="13sp"
-        android:textColor="#444444"
-        android:layout_marginTop="4dp" />
+        android:layout_marginTop="2dp"
+        android:text="기간 : 2025.08.22 ~ 2025.08.30"
+        android:textSize="12sp"
+        android:textColor="#666666"/>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#EFEFEF"
-        android:layout_marginTop="12dp"/>
+    <TextView
+        android:id="@+id/tvDesc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="찜 목록의 축제·행사가 1주 뒤에 시작됩니다."
+        android:textSize="12sp"
+        android:textColor="#666666"/>
 </LinearLayout>
