@@ -96,12 +96,19 @@
             android:name=".ui.category.SpotActivity"
             android:exported="true"
             android:label="@string/app_name" />
-
+        <activity
+            android:name=".MapActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
 
 
         <activity
             android:name=".api.ApiMainActivity"
             android:exported="true"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".ui.settings.InterestRegionActivity"
+            android:exported="false"
             android:label="@string/app_name" />
 
         <provider

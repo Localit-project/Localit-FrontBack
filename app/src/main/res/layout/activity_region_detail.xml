@@ -11,7 +11,7 @@
         android:id="@+id/topBar"
         android:layout_width="0dp"
         android:layout_height="60dp"
-        android:layout_marginTop="30dp"
+        android:layout_marginTop="25dp"
         android:background="#FFFFFF"
         android:gravity="center_vertical"
         android:orientation="horizontal"
@@ -50,10 +50,6 @@
             android:focusable="true"
             android:src="@drawable/ic_notifications_24" />
 
-
-        <View
-            android:layout_width="24dp"
-            android:layout_height="24dp" />
     </LinearLayout>
 
     <ScrollView

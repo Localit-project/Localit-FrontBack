@@ -75,10 +75,8 @@
     <string name="toggle_spot">관광지 알림 동의</string>
     <string name="toggle_news">뉴스 알림 동의</string>
 
-    <!-- AlarmSettingsFragment에서 제목으로 사용 (필수 추가) -->
-    <string name="festival">축제 · 행사 알림 동의</string>
-    <string name="spot">관광지 알림 동의</string>
-    <string name="news">뉴스 알림 동의</string>
+    <string name="previous">이전</string>
+    <string name="next">다음</string>
 
     <!-- Notifications -->
     <string name="notifications_title">알림</string>
