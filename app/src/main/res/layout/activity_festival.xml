@@ -74,21 +74,20 @@
             app:boxCornerRadiusBottomStart="24dp"
             app:boxCornerRadiusBottomEnd="24dp"
             app:endIconMode="custom"
-            app:endIconDrawable="@android:drawable/ic_search_category_default"
-            app:endIconMinSize="24dp"
-            app:endIconScaleType="fitCenter"
+            app:endIconDrawable="@drawable/ic_search_selector"
             app:endIconTint="#42000000"
             app:endIconContentDescription="@string/search">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etSearch"
                 android:layout_width="match_parent"
-                android:layout_height="55dp"
+                android:layout_height="50dp"
                 android:gravity="center_vertical"
                 android:imeOptions="actionSearch"
                 android:inputType="text"
                 android:singleLine="true" />
         </com.google.android.material.textfield.TextInputLayout>
+
     </LinearLayout>
 
     <!-- 타이틀: 검색 섹션 아래 -->
