@@ -32,6 +32,10 @@
             android:name="com.kakao.sdk.AppKey"
             android:value="47032f657514090a03eb23e26657b152" />
 
+        <meta-data
+            android:name="com.naver.maps.map.NCP_KEY_ID"
+            android:value="YOUR_NCP_KEY_ID_HERE" />
+
         <activity
             android:name=".StartActivity"
             android:exported="true"
@@ -43,28 +47,62 @@
         </activity>
 
         <activity
-            android:name=".LoginActivity"
-            android:exported="true"
-            android:label="@string/app_name" />
-
-        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name" />
 
         <activity
+            android:name=".LoginActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+        <activity
             android:name=".SignUpActivity"
             android:exported="true"
             android:label="@string/app_name" />
-
         <activity
             android:name=".FindIdActivity"
             android:exported="true"
             android:label="@string/app_name" />
-
         <activity
             android:name=".ChangePwActivity"
             android:exported="true"
+            android:label="@string/app_name" />
+
+        <activity
+            android:name=".RegionDetailActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".MapActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+
+        <activity
+            android:name=".ui.category.NewsActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".ui.category.FestivalActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".ui.category.SpotActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".ui.category.MarketActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".ui.category.SpotDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.category.FestivalDetailActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.settings.InterestRegionActivity"
+            android:exported="false"
             android:label="@string/app_name" />
 
         <activity
@@ -79,38 +117,10 @@
                     android:scheme="kakao47032f657514090a03eb23e26657b152" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".RegionDetailActivity"
-            android:exported="true"
-            android:label="@string/app_name" />
-        <activity
-            android:name=".ui.category.NewsActivity"
-            android:exported="true"
-            android:label="@string/app_name" />
-        <activity
-            android:name=".ui.category.FestivalActivity"
-            android:exported="true"
-            android:label="@string/app_name" />
-        <activity
-            android:name=".ui.category.SpotActivity"
-            android:exported="true"
-            android:label="@string/app_name" />
-        <activity
-            android:name=".MapActivity"
-            android:exported="true"
-            android:label="@string/app_name" />
-
-
         <activity
             android:name=".api.ApiMainActivity"
             android:exported="true"
             android:label="@string/app_name" />
-        <activity
-            android:name=".ui.settings.InterestRegionActivity"
-            android:exported="false"
-            android:label="@string/app_name" />
-
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -121,18 +131,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-
-        <activity
-            android:name=".ui.category.SpotDetailActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ui.category.FestivalDetailActivity"
-            android:exported="false" />
-
-        <meta-data
-            android:name="com.naver.maps.map.NCP_KEY_ID"
-            android:value="YOUR_NCP_KEY_ID_HERE" />
-
 
     </application>
 
