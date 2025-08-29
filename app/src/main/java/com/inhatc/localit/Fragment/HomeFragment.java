@@ -3,7 +3,7 @@ package com.inhatc.localit.Fragment;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri; // Intent.ACTION_VIEW를 위해 추가
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -97,7 +97,7 @@ public class HomeFragment extends Fragment {
         });
 
         String pkg = requireContext().getPackageName();
-        courseImageOverride.put("3517031", "android.resource://" + pkg + "/drawable/cos1"); // 사용자 요청에 따라 cos1로 변경
+        courseImageOverride.put("3517031", "android.resource://" + pkg + "/drawable/travel1");
         courseImageOverride.put("3516944", "android.resource://" + pkg + "/drawable/travel2");
         courseImageOverride.put("3516594", "android.resource://" + pkg + "/drawable/travel3");
         courseImageOverride.put("2022929", "android.resource://" + pkg + "/drawable/travel4");
@@ -105,8 +105,13 @@ public class HomeFragment extends Fragment {
         courseImageOverride.put("2018433", "android.resource://" + pkg + "/drawable/travel6");
         courseImageOverride.put("2833450", "android.resource://" + pkg + "/drawable/travel7");
 
-        // 여기가 수정된 부분입니다.
         courseUrlOverride.put("3517031", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=e42e60b7-eac0-4540-a1e4-749bed108154&big_category=&mid_category=&big_area=37");
+        courseUrlOverride.put("3516944", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=223fa941-e1ee-4853-aa8d-3faa620263d3&big_category=&mid_category=&big_area=33");
+        courseUrlOverride.put("3516594", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=9f4873a0-ba10-4bdb-bb05-97f00a029c67&big_category=&mid_category=&big_area=38");
+        courseUrlOverride.put("2022929", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=cf46676f-41d0-495f-972c-bfb32d59ff0b&big_category=C01&mid_category=C0115&big_area=1");
+        courseUrlOverride.put("2987504", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=2d54823f-a765-4b64-8693-72bc59e6798b&big_category=C01&mid_category=C0114&big_area=2");
+        courseUrlOverride.put("2018433", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=5064fda9-ac0a-40a4-8abf-b50dc5fdb797&big_category=C01&mid_category=C0112&big_area=31");
+        courseUrlOverride.put("2833450", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=36c7d072-de3d-4c4b-9c7e-e1ddaade2a7d&big_category=C01&mid_category=C0114&big_area=32");
 
         List<TourItem> fixedSkeleton = Arrays.asList(
                 make("3517031", "코스 1"),
@@ -121,7 +126,7 @@ public class HomeFragment extends Fragment {
         courseAdapter = new HomeCoursePagerAdapter(courseImageOverride, this::openCourseDetail);
         binding.pagerCourses.setAdapter(courseAdapter);
         binding.pagerCourses.setOffscreenPageLimit(1);
-        courseAdapter.submit(fixedSkeleton);
+        courseAdapter.submit(fixedSkeleton); // 먼저 임시 데이터로 화면을 구성
 
         ViewPager2 pager = binding.pagerCourses;
         binding.btnPrev.setOnClickListener(v -> {
@@ -151,6 +156,15 @@ public class HomeFragment extends Fragment {
         binding.recyclerFestivals.setAdapter(festivalAdapter);
         binding.btnMoreFestivals.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), FestivalActivity.class)));
+
+        // 여기가 수정된 부분입니다. 주석을 해제하여 API를 호출합니다.
+        List<String> ids = new ArrayList<>();
+        for (TourItem t : fixedSkeleton) ids.add(t.contentid);
+        TourApiHelper.fetchCourseSummaries(ids, courseItems -> {
+            if (getActivity() == null) return;
+            // API 응답을 받으면 ViewPager의 내용을 실제 데이터로 업데이트
+            getActivity().runOnUiThread(() -> courseAdapter.submit(courseItems));
+        });
 
         wireHomeCards();
         fetchNationwideSpotCards();
