@@ -3,6 +3,7 @@ package com.inhatc.localit.Fragment;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri; // Intent.ACTION_VIEW를 위해 추가
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -48,12 +49,11 @@ public class HomeFragment extends Fragment {
     public HomeCoursePagerAdapter courseAdapter;
     public FestivalAdapter festivalAdapter;
 
-    // 대표이미지 수동 오버라이드 (로컬 플레이스홀더)
     private final Map<String, String> courseImageOverride = new LinkedHashMap<>();
+    private final Map<String, String> courseUrlOverride = new LinkedHashMap<>();
 
     private ActivityResultLauncher<Intent> interestRegionLauncher;
 
-    // 전국 카드 데이터(관광지/축제)
     private final List<TourItem> spotCardItems = new ArrayList<>();
     private final List<TourItem> festivalCardItems = new ArrayList<>();
 
@@ -80,29 +80,24 @@ public class HomeFragment extends Fragment {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        // 사용자 정보 표시
         setupUserProfile();
 
-        // 알림 아이콘
         binding.btnNotification.setOnClickListener(v -> {
             if (getActivity() instanceof MainActivity) {
                 ((MainActivity) getActivity()).openNotifications();
             }
         });
 
-        // 지도 카드
         binding.cardOpenMap.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), MapActivity.class)));
 
-        // 관심지역 카드
         binding.cardInterestRegion.setOnClickListener(v -> {
             Intent i = new Intent(requireContext(), InterestRegionActivity.class);
             interestRegionLauncher.launch(i);
         });
 
-        // 고정 7장 매핑 (로컬 리소스 URI)
         String pkg = requireContext().getPackageName();
-        courseImageOverride.put("3517031", "android.resource://" + pkg + "/drawable/travel1");
+        courseImageOverride.put("3517031", "android.resource://" + pkg + "/drawable/cos1"); // 사용자 요청에 따라 cos1로 변경
         courseImageOverride.put("3516944", "android.resource://" + pkg + "/drawable/travel2");
         courseImageOverride.put("3516594", "android.resource://" + pkg + "/drawable/travel3");
         courseImageOverride.put("2022929", "android.resource://" + pkg + "/drawable/travel4");
@@ -110,7 +105,9 @@ public class HomeFragment extends Fragment {
         courseImageOverride.put("2018433", "android.resource://" + pkg + "/drawable/travel6");
         courseImageOverride.put("2833450", "android.resource://" + pkg + "/drawable/travel7");
 
-        // 7개 contentId 고정
+        // 여기가 수정된 부분입니다.
+        courseUrlOverride.put("3517031", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=e42e60b7-eac0-4540-a1e4-749bed108154&big_category=&mid_category=&big_area=37");
+
         List<TourItem> fixedSkeleton = Arrays.asList(
                 make("3517031", "코스 1"),
                 make("3516944", "코스 2"),
@@ -121,13 +118,11 @@ public class HomeFragment extends Fragment {
                 make("2833450", "코스 7")
         );
 
-        // 코스 페이저 어댑터 : 일단 스켈레톤으로 세팅
         courseAdapter = new HomeCoursePagerAdapter(courseImageOverride, this::openCourseDetail);
         binding.pagerCourses.setAdapter(courseAdapter);
         binding.pagerCourses.setOffscreenPageLimit(1);
         courseAdapter.submit(fixedSkeleton);
 
-        // 좌우 버튼
         ViewPager2 pager = binding.pagerCourses;
         binding.btnPrev.setOnClickListener(v -> {
             int pos = pager.getCurrentItem();
@@ -135,7 +130,6 @@ public class HomeFragment extends Fragment {
         });
         binding.btnNext.setOnClickListener(v -> pager.setCurrentItem(pager.getCurrentItem() + 1, true));
 
-        // 축제 리스트(리사이클러) - 기존 유지
         festivalAdapter = new FestivalAdapter(
                 new ArrayList<>(),
                 (item, position) -> {
@@ -158,20 +152,9 @@ public class HomeFragment extends Fragment {
         binding.btnMoreFestivals.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), FestivalActivity.class)));
 
-        // 7개 코스의 요약(제목/대표이미지/주소) API로 채우기
-//        List<String> ids = new ArrayList<>();
-//        for (TourItem t : fixedSkeleton) ids.add(t.contentid);
-//        TourApiHelper.fetchCourseSummaries(ids, courseItems -> {
-//            if (getActivity() == null) return;
-//            getActivity().runOnUiThread(() -> courseAdapter.submit(courseItems));
-//        });
-
-        // 전국 기준 카드 2장: 관광지/축제
         wireHomeCards();
         fetchNationwideSpotCards();
         fetchNationwideFestivalCards();
-
-        // (선택) 축제 리스트 섹션(리사이클러) 데이터
         fetchFestivalsListForRecycler();
 
         return root;
@@ -197,16 +180,13 @@ public class HomeFragment extends Fragment {
     }
 
     private void wireHomeCards() {
-        // 관광지 더보기 → SpotActivity
         if (binding.btnMoreMarkets != null) {
             binding.btnMoreMarkets.setOnClickListener(v ->
                     startActivity(new Intent(requireContext(), SpotActivity.class)));
         }
-        // 관광지 카드 클릭
         if (binding.cardMarket1 != null) binding.cardMarket1.setOnClickListener(v -> openSpotDetailFromCard(0));
         if (binding.cardMarket2 != null) binding.cardMarket2.setOnClickListener(v -> openSpotDetailFromCard(1));
 
-        // 축제 카드 클릭
         if (binding.cardFestival1 != null) binding.cardFestival1.setOnClickListener(v -> openFestivalDetailFromCard(0));
         if (binding.cardFestival2 != null) binding.cardFestival2.setOnClickListener(v -> openFestivalDetailFromCard(1));
     }
@@ -220,16 +200,22 @@ public class HomeFragment extends Fragment {
 
     private void openCourseDetail(TourItem item) {
         if (getContext() == null || item == null) return;
-        Intent i = new Intent(requireContext(), CourseDetailActivity.class);
-        i.putExtra(CourseDetailActivity.EXTRA_CONTENT_ID, item.contentid);
-        i.putExtra(CourseDetailActivity.EXTRA_TITLE, TextUtils.isEmpty(item.title) ? "상세 정보" : item.title);
-        if (courseImageOverride.containsKey(item.contentid)) {
-            i.putExtra(CourseDetailActivity.EXTRA_FALLBACK_IMAGE_URI, courseImageOverride.get(item.contentid));
+
+        if (courseUrlOverride.containsKey(item.contentid)) {
+            String url = courseUrlOverride.get(item.contentid);
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            startActivity(browserIntent);
+        } else {
+            Intent i = new Intent(requireContext(), CourseDetailActivity.class);
+            i.putExtra(CourseDetailActivity.EXTRA_CONTENT_ID, item.contentid);
+            i.putExtra(CourseDetailActivity.EXTRA_TITLE, TextUtils.isEmpty(item.title) ? "상세 정보" : item.title);
+            if (courseImageOverride.containsKey(item.contentid)) {
+                i.putExtra(CourseDetailActivity.EXTRA_FALLBACK_IMAGE_URI, courseImageOverride.get(item.contentid));
+            }
+            startActivity(i);
         }
-        startActivity(i);
     }
 
-    // ---------------- 전국 2개: 관광지 카드 ----------------
     private void fetchNationwideSpotCards() {
         TourApiHelper.fetchHomeSpots(items -> {
             if (getActivity() == null) return;
@@ -240,11 +226,10 @@ public class HomeFragment extends Fragment {
     }
 
     private void bindSpotCards(List<TourItem> items) {
-        // 카드 1
         if (items != null && items.size() > 0) {
             TourItem it = items.get(0);
             binding.textMarket1Title.setText(safe(it.title));
-            binding.textMarket1Date.setText(""); // 필요시 등록일/분류 등 표시
+            binding.textMarket1Date.setText("");
             binding.textMarket1DateInfo.setText(safe(it.addr1));
             Glide.with(this)
                     .load(!TextUtils.isEmpty(it.firstimage) ? it.firstimage : R.drawable.sample1)
@@ -257,7 +242,6 @@ public class HomeFragment extends Fragment {
             binding.imageMarket1.setImageResource(R.drawable.sample1);
         }
 
-        // 카드 2
         if (items != null && items.size() > 1) {
             TourItem it = items.get(1);
             binding.textMarket2Title.setText(safe(it.title));
@@ -287,7 +271,6 @@ public class HomeFragment extends Fragment {
         startActivity(i);
     }
 
-    // ---------------- 전국 2개: 축제 카드 ----------------
     private void fetchNationwideFestivalCards() {
         TourApiHelper.fetchHomeFestivals(items -> {
             if (getActivity() == null) return;
@@ -298,7 +281,6 @@ public class HomeFragment extends Fragment {
     }
 
     private void bindFestivalCards(List<TourItem> items) {
-        // 카드 1
         if (items != null && items.size() > 0) {
             TourItem it = items.get(0);
             binding.textFestival1Title.setText(safe(it.title));
@@ -315,7 +297,6 @@ public class HomeFragment extends Fragment {
             binding.imageFestival1.setImageResource(R.drawable.sample1);
         }
 
-        // 카드 2
         if (items != null && items.size() > 1) {
             TourItem it = items.get(1);
             binding.textFestival2Title.setText(safe(it.title));
@@ -345,7 +326,6 @@ public class HomeFragment extends Fragment {
         startActivity(i);
     }
 
-    // ---------------- 기존 리사이클러용 축제 목록 (유지) ----------------
     private void fetchFestivalsListForRecycler() {
         TourApiHelper.fetchHomeFestivals(items -> {
             if (getActivity() != null) {
@@ -374,7 +354,6 @@ public class HomeFragment extends Fragment {
         binding = null;
     }
 
-    // ---------------- Utils ----------------
     private String formatDate(String raw) {
         if (!TextUtils.isEmpty(raw) && raw.length() == 8) {
             return raw.substring(0, 4) + "." + raw.substring(4, 6) + "." + raw.substring(6);
