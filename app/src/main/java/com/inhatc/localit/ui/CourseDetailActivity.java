@@ -93,8 +93,8 @@ public class CourseDetailActivity extends AppCompatActivity {
         recyclerCourse.setLayoutManager(new LinearLayoutManager(this));
         recyclerCourse.setAdapter(courseAdapter);
 
-        ImageButton back = findViewById(R.id.btnBack);
-        if (back != null) back.setOnClickListener(v -> finish());
+//        ImageButton back = findViewById(R.id.btnBack);
+//        if (back != null) back.setOnClickListener(v -> finish());
 
         // 인텐트
         Intent i = getIntent();
