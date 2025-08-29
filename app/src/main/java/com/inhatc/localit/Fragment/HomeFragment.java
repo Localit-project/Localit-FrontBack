@@ -2,6 +2,7 @@ package com.inhatc.localit.Fragment;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -16,8 +17,10 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.bumptech.glide.Glide;
 import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.MapActivity;
+import com.inhatc.localit.R;
 import com.inhatc.localit.api.SpotResponse;
 import com.inhatc.localit.api.home.HomeCoursePagerAdapter;
 import com.inhatc.localit.api.home.TourApiHelper;
@@ -33,6 +36,8 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static android.content.Context.MODE_PRIVATE;
 
 public class HomeFragment extends Fragment {
 
@@ -67,6 +72,9 @@ public class HomeFragment extends Fragment {
 
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
+
+        // 사용자 정보 표시
+        setupUserProfile();
 
         // 알림 아이콘
         binding.btnNotification.setOnClickListener(v -> {
@@ -157,6 +165,28 @@ public class HomeFragment extends Fragment {
         return root;
     }
 
+    private void setupUserProfile() {
+        // 1. SharedPreferences에서 저장된 데이터 불러오기
+        SharedPreferences prefs = requireActivity().getSharedPreferences("user_prefs", MODE_PRIVATE);
+        String userName = prefs.getString("USER_NAME", "방문자"); // 기본값: "방문자"
+        String profileUrl = prefs.getString("USER_PROFILE_URL", null); // 기본값: null
+
+        // 2. 닉네임으로 환영 문구 설정하기
+        binding.tvGreeting.setText(userName + "님, 환영합니다");
+
+        // 3. Glide를 사용해 프로필 사진 설정하기
+        if (profileUrl != null && !profileUrl.isEmpty()) {
+            Glide.with(this)
+                    .load(profileUrl)
+                    .circleCrop()
+                    .placeholder(R.drawable.bg_avatar_placeholder)
+                    .error(R.drawable.bg_avatar_placeholder)
+                    .into(binding.ivUserProfile);
+        } else {
+            binding.ivUserProfile.setImageResource(R.drawable.bg_avatar_placeholder);
+        }
+    }
+
     private TourItem make(String id, String title) {
         TourItem t = new TourItem();
         t.contentid = id;
@@ -171,13 +201,9 @@ public class HomeFragment extends Fragment {
     private void fetchFestivals() {
         TourApiHelper.fetchHomeFestivals(items -> { // 'items' is a List<TourItem>
             if (getActivity() != null) {
-
-                // Create a new list for the converted data
+                // 데이터 변환
                 List<SpotResponse.Item> convertedList = new ArrayList<>();
-
-                // Loop through the List<TourItem> from the API
                 for (TourItem tourItem : items) {
-                    // Create a new SpotResponse.Item and copy the data over
                     SpotResponse.Item spotItem = new SpotResponse.Item();
                     spotItem.contentid = tourItem.contentid;
                     spotItem.title = tourItem.title;
@@ -185,11 +211,10 @@ public class HomeFragment extends Fragment {
                     spotItem.firstimage = tourItem.firstimage;
                     spotItem.eventstartdate = tourItem.eventstartdate;
                     spotItem.eventenddate = tourItem.eventenddate;
-                    spotItem.contenttypeid = "15"; // Set festival content type ID
+                    spotItem.contenttypeid = "15";
                     convertedList.add(spotItem);
                 }
-
-                // Pass the newly converted list to the adapter
+                // 변환된 리스트를 어댑터에 전달
                 getActivity().runOnUiThread(() -> festivalAdapter.submitList(convertedList));
             }
         });
