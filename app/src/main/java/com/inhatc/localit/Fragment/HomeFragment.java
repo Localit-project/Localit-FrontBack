@@ -15,31 +15,39 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.bumptech.glide.Glide;
+import com.inhatc.localit.BuildConfig;
 import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.MapActivity;
 import com.inhatc.localit.R;
+import com.inhatc.localit.api.SpotApiHelper;
+import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
 import com.inhatc.localit.api.home.HomeCoursePagerAdapter;
 import com.inhatc.localit.api.home.TourApiHelper;
 import com.inhatc.localit.api.home.TourItem;
 import com.inhatc.localit.databinding.FragmentHomeBinding;
+import com.inhatc.localit.ui.CourseDetailActivity;
 import com.inhatc.localit.ui.category.FestivalActivity;
-import com.inhatc.localit.ui.category.FestivalAdapter;
 import com.inhatc.localit.ui.category.FestivalDetailActivity;
 import com.inhatc.localit.ui.category.SpotActivity;
 import com.inhatc.localit.ui.category.SpotDetailActivity;
-import com.inhatc.localit.ui.CourseDetailActivity;
 import com.inhatc.localit.ui.settings.InterestRegionActivity;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Date;
 import java.util.Map;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -47,15 +55,14 @@ public class HomeFragment extends Fragment {
 
     private FragmentHomeBinding binding;
     public HomeCoursePagerAdapter courseAdapter;
-    public FestivalAdapter festivalAdapter;
 
     private final Map<String, String> courseImageOverride = new LinkedHashMap<>();
     private final Map<String, String> courseUrlOverride = new LinkedHashMap<>();
 
     private ActivityResultLauncher<Intent> interestRegionLauncher;
 
-    private final List<TourItem> spotCardItems = new ArrayList<>();
-    private final List<TourItem> festivalCardItems = new ArrayList<>();
+    private final List<SpotResponse.Item> spotCardItems = new ArrayList<>();
+    private final List<SpotResponse.Item> festivalCardItems = new ArrayList<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -113,20 +120,10 @@ public class HomeFragment extends Fragment {
         courseUrlOverride.put("2018433", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=5064fda9-ac0a-40a4-8abf-b50dc5fdb797&big_category=C01&mid_category=C0112&big_area=31");
         courseUrlOverride.put("2833450", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=36c7d072-de3d-4c4b-9c7e-e1ddaade2a7d&big_category=C01&mid_category=C0114&big_area=32");
 
-        List<TourItem> fixedSkeleton = Arrays.asList(
-                make("3517031", "코스 1"),
-                make("3516944", "코스 2"),
-                make("3516594", "코스 3"),
-                make("2022929", "코스 4"),
-                make("2987504", "코스 5"),
-                make("2018433", "코스 6"),
-                make("2833450", "코스 7")
-        );
-
+        // ----- 코스 ViewPager (API만 사용) -----
         courseAdapter = new HomeCoursePagerAdapter(courseImageOverride, this::openCourseDetail);
         binding.pagerCourses.setAdapter(courseAdapter);
         binding.pagerCourses.setOffscreenPageLimit(1);
-        courseAdapter.submit(fixedSkeleton); // 먼저 임시 데이터로 화면을 구성
 
         ViewPager2 pager = binding.pagerCourses;
         binding.btnPrev.setOnClickListener(v -> {
@@ -135,41 +132,22 @@ public class HomeFragment extends Fragment {
         });
         binding.btnNext.setOnClickListener(v -> pager.setCurrentItem(pager.getCurrentItem() + 1, true));
 
-        festivalAdapter = new FestivalAdapter(
-                new ArrayList<>(),
-                (item, position) -> {
-                    if (item == null || getContext() == null) return;
-                    Intent i = new Intent(requireContext(), FestivalDetailActivity.class);
-                    i.putExtra(FestivalDetailActivity.EXTRA_CONTENT_ID, item.contentid);
-                    i.putExtra(FestivalDetailActivity.EXTRA_CONTENT_TYPE_ID,
-                            TextUtils.isEmpty(item.contenttypeid) ? "15" : item.contenttypeid);
-                    i.putExtra(FestivalDetailActivity.EXTRA_TITLE,       item.title != null ? item.title : "");
-                    i.putExtra(FestivalDetailActivity.EXTRA_ADDR1,       item.addr1 != null ? item.addr1 : "");
-                    i.putExtra(FestivalDetailActivity.EXTRA_FIRST_IMAGE, item.firstimage != null ? item.firstimage : "");
-                    startActivity(i);
-                },
-                (item, position) -> {
-                    // TODO: 즐겨찾기 버튼 처리
-                }
+        List<String> courseIds = Arrays.asList(
+                "3517031","3516944","3516594","2022929","2987504","2018433","2833450"
         );
-        binding.recyclerFestivals.setLayoutManager(new LinearLayoutManager(requireContext()));
-        binding.recyclerFestivals.setAdapter(festivalAdapter);
-        binding.btnMoreFestivals.setOnClickListener(v ->
-                startActivity(new Intent(requireContext(), FestivalActivity.class)));
-
-        // 여기가 수정된 부분입니다. 주석을 해제하여 API를 호출합니다.
-        List<String> ids = new ArrayList<>();
-        for (TourItem t : fixedSkeleton) ids.add(t.contentid);
-        TourApiHelper.fetchCourseSummaries(ids, courseItems -> {
+        TourApiHelper.fetchCourseSummaries(courseIds, courseItems -> {
             if (getActivity() == null) return;
-            // API 응답을 받으면 ViewPager의 내용을 실제 데이터로 업데이트
-            getActivity().runOnUiThread(() -> courseAdapter.submit(courseItems));
+            getActivity().runOnUiThread(() -> courseAdapter.submit(courseItems)); // List<TourItem>
         });
 
         wireHomeCards();
+
+        // 레이아웃에 리사이클러뷰가 남아 있다면 숨김
+        if (binding.recyclerFestivals != null) binding.recyclerFestivals.setVisibility(View.GONE);
+
+        // 관광/축제 카드: API로 최신 2개 바인딩
         fetchNationwideSpotCards();
-        fetchNationwideFestivalCards();
-        fetchFestivalsListForRecycler();
+        fetchLatestFestivalsForCards();   // ← 목록 없이 카드만 채움
 
         return root;
     }
@@ -203,15 +181,28 @@ public class HomeFragment extends Fragment {
 
         if (binding.cardFestival1 != null) binding.cardFestival1.setOnClickListener(v -> openFestivalDetailFromCard(0));
         if (binding.cardFestival2 != null) binding.cardFestival2.setOnClickListener(v -> openFestivalDetailFromCard(1));
-    }
 
-    private TourItem make(String id, String title) {
-        TourItem t = new TourItem();
-        t.contentid = id;
-        t.title = title;
-        return t;
+        // 더보기 누르면 목록 화면에서 전체 리스트 표시
+        if (binding.btnMoreFestivals != null) {
+            binding.btnMoreFestivals.setOnClickListener(v ->
+                    startActivity(new Intent(requireContext(), FestivalActivity.class)));
+        }
     }
+    // HomeFragment 안에 추가 (openSpotDetailFromCard 아래 추천)
+    private void openFestivalDetailFromCard(int idx) {
+        if (festivalCardItems == null || festivalCardItems.size() <= idx) return;
 
+        SpotResponse.Item it = festivalCardItems.get(idx);
+        Intent i = new Intent(requireContext(), FestivalDetailActivity.class);
+        i.putExtra(FestivalDetailActivity.EXTRA_CONTENT_ID, it.contentid);
+        i.putExtra(FestivalDetailActivity.EXTRA_CONTENT_TYPE_ID,
+                TextUtils.isEmpty(it.contenttypeid) ? "15" : it.contenttypeid);
+        i.putExtra(FestivalDetailActivity.EXTRA_TITLE, safe(it.title));
+        i.putExtra(FestivalDetailActivity.EXTRA_ADDR1, safe(it.addr1));
+        i.putExtra(FestivalDetailActivity.EXTRA_FIRST_IMAGE, safe(it.firstimage));
+        startActivity(i);
+    }
+    // ===== 코스 상세: TourItem 유지 =====
     private void openCourseDetail(TourItem item) {
         if (getContext() == null || item == null) return;
 
@@ -230,20 +221,44 @@ public class HomeFragment extends Fragment {
         }
     }
 
+    // ================= 관광 카드 2개 =================
     private void fetchNationwideSpotCards() {
-        TourApiHelper.fetchHomeSpots(items -> {
-            if (getActivity() == null) return;
-            spotCardItems.clear();
-            if (items != null) spotCardItems.addAll(items);
-            getActivity().runOnUiThread(() -> bindSpotCards(spotCardItems));
+        SpotApiService api = SpotApiHelper.getApiService();
+        Call<SpotResponse> call = api.getTourList(
+                12, 1, "AND", "localit", "C",
+                12,
+                1,         // areaCode: 서울(기본) — 필요 시 관심지역으로 교체
+                null,
+                "json",
+                BuildConfig.TOUR_API_KEY
+        );
+
+        call.enqueue(new Callback<SpotResponse>() {
+            @Override public void onResponse(Call<SpotResponse> call, Response<SpotResponse> response) {
+                spotCardItems.clear();
+                if (response.isSuccessful()
+                        && response.body()!=null
+                        && response.body().response!=null
+                        && response.body().response.body!=null
+                        && response.body().response.body.items!=null
+                        && response.body().response.body.items.item!=null) {
+                    List<SpotResponse.Item> list = response.body().response.body.items.item;
+                    for (int i = 0; i < list.size() && i < 2; i++) spotCardItems.add(list.get(i));
+                }
+                bindSpotCards(spotCardItems);
+            }
+            @Override public void onFailure(Call<SpotResponse> call, Throwable t) {
+                spotCardItems.clear();
+                bindSpotCards(spotCardItems);
+            }
         });
     }
 
-    private void bindSpotCards(List<TourItem> items) {
+    private void bindSpotCards(List<SpotResponse.Item> items) {
         if (items != null && items.size() > 0) {
-            TourItem it = items.get(0);
+            SpotResponse.Item it = items.get(0);
             binding.textMarket1Title.setText(safe(it.title));
-            binding.textMarket1Date.setText("");
+            binding.textMarket1Date.setText(formatDate(it.createdtime));
             binding.textMarket1DateInfo.setText(safe(it.addr1));
             Glide.with(this)
                     .load(!TextUtils.isEmpty(it.firstimage) ? it.firstimage : R.drawable.sample1)
@@ -257,9 +272,9 @@ public class HomeFragment extends Fragment {
         }
 
         if (items != null && items.size() > 1) {
-            TourItem it = items.get(1);
+            SpotResponse.Item it = items.get(1);
             binding.textMarket2Title.setText(safe(it.title));
-            binding.textMarket2Date.setText("");
+            binding.textMarket2Date.setText(formatDate(it.createdtime));
             binding.textMarket2DateInfo.setText(safe(it.addr1));
             Glide.with(this)
                     .load(!TextUtils.isEmpty(it.firstimage) ? it.firstimage : R.drawable.sample1)
@@ -275,28 +290,57 @@ public class HomeFragment extends Fragment {
 
     private void openSpotDetailFromCard(int idx) {
         if (spotCardItems == null || spotCardItems.size() <= idx) return;
-        TourItem it = spotCardItems.get(idx);
+        SpotResponse.Item it = spotCardItems.get(idx);
         Intent i = new Intent(requireContext(), SpotDetailActivity.class);
         i.putExtra(SpotDetailActivity.EXTRA_CONTENT_ID, it.contentid);
-        i.putExtra(SpotDetailActivity.EXTRA_CONTENT_TYPE_ID, "12");
+        i.putExtra(SpotDetailActivity.EXTRA_CONTENT_TYPE_ID,
+                TextUtils.isEmpty(it.contenttypeid) ? "12" : it.contenttypeid);
         i.putExtra(SpotDetailActivity.EXTRA_TITLE, safe(it.title));
         i.putExtra(SpotDetailActivity.EXTRA_ADDR1, safe(it.addr1));
         i.putExtra(SpotDetailActivity.EXTRA_FIRST_IMAGE, safe(it.firstimage));
         startActivity(i);
     }
 
-    private void fetchNationwideFestivalCards() {
-        TourApiHelper.fetchHomeFestivals(items -> {
-            if (getActivity() == null) return;
-            festivalCardItems.clear();
-            if (items != null) festivalCardItems.addAll(items);
-            getActivity().runOnUiThread(() -> bindFestivalCards(festivalCardItems));
+    // ================= 최신 축제 카드 2개만 =================
+    private void fetchLatestFestivalsForCards() {
+        String startDate = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
+
+        SpotApiService api = SpotApiHelper.getApiService();
+        Call<SpotResponse> call = api.getFestivalList(
+                30, 1, "AND", "localit", "json",
+                1,              // areaCode: 서울(기본) — 필요 시 관심지역으로 교체
+                null,
+                startDate,      // 오늘 이후 축제
+                "A",            // 목록에서 최신 잘 나오던 정렬값
+                BuildConfig.TOUR_API_KEY
+        );
+
+        call.enqueue(new Callback<SpotResponse>() {
+            @Override public void onResponse(Call<SpotResponse> call, Response<SpotResponse> response) {
+                festivalCardItems.clear();
+                if (response.isSuccessful()
+                        && response.body()!=null
+                        && response.body().response!=null
+                        && response.body().response.body!=null
+                        && response.body().response.body.items!=null
+                        && response.body().response.body.items.item!=null) {
+                    List<SpotResponse.Item> list = response.body().response.body.items.item;
+                    for (int i = 0; i < list.size() && i < 2; i++) {
+                        festivalCardItems.add(list.get(i));
+                    }
+                }
+                bindFestivalCards(festivalCardItems);
+            }
+            @Override public void onFailure(Call<SpotResponse> call, Throwable t) {
+                festivalCardItems.clear();
+                bindFestivalCards(festivalCardItems);
+            }
         });
     }
 
-    private void bindFestivalCards(List<TourItem> items) {
+    private void bindFestivalCards(List<SpotResponse.Item> items) {
         if (items != null && items.size() > 0) {
-            TourItem it = items.get(0);
+            SpotResponse.Item it = items.get(0);
             binding.textFestival1Title.setText(safe(it.title));
             binding.textFestival1Date.setText("시작일: " + formatDate(it.eventstartdate));
             binding.textFestival1DateInfo.setText("종료일: " + formatDate(it.eventenddate));
@@ -312,7 +356,7 @@ public class HomeFragment extends Fragment {
         }
 
         if (items != null && items.size() > 1) {
-            TourItem it = items.get(1);
+            SpotResponse.Item it = items.get(1);
             binding.textFestival2Title.setText(safe(it.title));
             binding.textFestival2Date.setText("시작일: " + formatDate(it.eventstartdate));
             binding.textFestival2DateInfo.setText("종료일: " + formatDate(it.eventenddate));
@@ -328,40 +372,6 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private void openFestivalDetailFromCard(int idx) {
-        if (festivalCardItems == null || festivalCardItems.size() <= idx) return;
-        TourItem it = festivalCardItems.get(idx);
-        Intent i = new Intent(requireContext(), FestivalDetailActivity.class);
-        i.putExtra(FestivalDetailActivity.EXTRA_CONTENT_ID, it.contentid);
-        i.putExtra(FestivalDetailActivity.EXTRA_CONTENT_TYPE_ID, "15");
-        i.putExtra(FestivalDetailActivity.EXTRA_TITLE, safe(it.title));
-        i.putExtra(FestivalDetailActivity.EXTRA_ADDR1, safe(it.addr1));
-        i.putExtra(FestivalDetailActivity.EXTRA_FIRST_IMAGE, safe(it.firstimage));
-        startActivity(i);
-    }
-
-    private void fetchFestivalsListForRecycler() {
-        TourApiHelper.fetchHomeFestivals(items -> {
-            if (getActivity() != null) {
-                List<SpotResponse.Item> convertedList = new ArrayList<>();
-                if (items != null) {
-                    for (TourItem tourItem : items) {
-                        SpotResponse.Item spotItem = new SpotResponse.Item();
-                        spotItem.contentid = tourItem.contentid;
-                        spotItem.title = tourItem.title;
-                        spotItem.addr1 = tourItem.addr1;
-                        spotItem.firstimage = tourItem.firstimage;
-                        spotItem.eventstartdate = tourItem.eventstartdate;
-                        spotItem.eventenddate = tourItem.eventenddate;
-                        spotItem.contenttypeid = "15";
-                        convertedList.add(spotItem);
-                    }
-                }
-                getActivity().runOnUiThread(() -> festivalAdapter.submitList(convertedList));
-            }
-        });
-    }
-
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -369,8 +379,8 @@ public class HomeFragment extends Fragment {
     }
 
     private String formatDate(String raw) {
-        if (!TextUtils.isEmpty(raw) && raw.length() == 8) {
-            return raw.substring(0, 4) + "." + raw.substring(4, 6) + "." + raw.substring(6);
+        if (!TextUtils.isEmpty(raw) && raw.length() >= 8) {
+            return raw.substring(0, 4) + "." + raw.substring(4, 6) + "." + raw.substring(6, 8);
         }
         return "";
     }

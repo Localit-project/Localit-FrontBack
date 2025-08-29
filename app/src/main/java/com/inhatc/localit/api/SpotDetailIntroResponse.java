@@ -58,7 +58,7 @@ public class SpotDetailIntroResponse {
         @SerializedName("sponsor1tel")        public String sponsor1tel;
         @SerializedName("sponsor2")           public String sponsor2;
 
-        // ★ 문의/안내(전화): 모든 변형 키를 infocenter로 통합 매핑
+        // 문의/안내(전화): 모든 변형 키를 infocenter로 통합 매핑
         @SerializedName(
                 value = "infocenter",
                 alternate = {
@@ -70,7 +70,7 @@ public class SpotDetailIntroResponse {
         )
         public String infocenter;
 
-        // ★ 홈페이지(HTML 앵커 포함)
+        // 홈페이지(HTML 앵커 포함)
         @SerializedName("homepage")
         public String homepage;
     }
