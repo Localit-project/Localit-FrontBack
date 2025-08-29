@@ -55,24 +55,24 @@ public class CourseDetailActivity extends AppCompatActivity {
     private final CourseStepAdapter courseAdapter = new CourseStepAdapter();
 
     private ApiService api;
-    private String serviceKey;
+    private String serviceKey;   // ← 키는 디코딩 없이 그대로
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_course_detail);
 
-        // Retrofit + ApiService
+        // 1) Retrofit 초기화
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         api = retrofit.create(ApiService.class);
 
-        // 키는 디코딩하지 말고 그대로 사용
+        // 2) 키 설정 (절대 URLDecoder 쓰지 말기)
         serviceKey = BuildConfig.TOUR_API_KEY;
 
-        // 뷰
+        // 뷰 바인딩
         imageMain     = findViewById(R.id.imageMain);
         textTitle     = findViewById(R.id.textTitle);
         tvAddress     = findViewById(R.id.tvAddress);
@@ -119,14 +119,14 @@ public class CourseDetailActivity extends AppCompatActivity {
         api.getCourseDetailCommon(
                 serviceKey, "AND", "Localit", "json",
                 contentId, 25,
-                "Y", "Y", "Y", "Y", "Y" // mapinfoYN = "Y" 로 변경
+                "Y", "Y", "Y", "Y", "Y"   // mapinfoYN도 "Y" 추천
         ).enqueue(new Callback<DetailResponse>() {
             @Override public void onResponse(Call<DetailResponse> call, Response<DetailResponse> res) {
-                if (!res.isSuccessful() || res.body() == null ||
-                        res.body().response == null ||
-                        res.body().response.body == null ||
-                        res.body().response.body.items == null ||
-                        res.body().response.body.items.item == null ||
+                if (!res.isSuccessful() || res.body()==null ||
+                        res.body().response==null ||
+                        res.body().response.body==null ||
+                        res.body().response.body.items==null ||
+                        res.body().response.body.items.item==null ||
                         res.body().response.body.items.item.isEmpty()) return;
 
                 DetailResponse.DetailItem it = res.body().response.body.items.item.get(0);
@@ -170,16 +170,15 @@ public class CourseDetailActivity extends AppCompatActivity {
     }
 
     private void fetchImages(String contentId) {
-        api.getDetailImages(serviceKey, "AND", "Localit", "json",
-                        contentId, "Y", "Y")
+        api.getDetailImages(serviceKey, "AND", "Localit", "json", contentId, "Y", "Y")
                 .enqueue(new Callback<ImageResponse>() {
                     @Override public void onResponse(Call<ImageResponse> call, Response<ImageResponse> res) {
                         List<String> list = new ArrayList<>();
-                        if (res.isSuccessful() && res.body() != null &&
-                                res.body().response != null &&
-                                res.body().response.body != null &&
-                                res.body().response.body.items != null &&
-                                res.body().response.body.items.item != null) {
+                        if (res.isSuccessful() && res.body()!=null &&
+                                res.body().response!=null &&
+                                res.body().response.body!=null &&
+                                res.body().response.body.items!=null &&
+                                res.body().response.body.items.item!=null) {
                             for (ImageResponse.ImageItem it : res.body().response.body.items.item) {
                                 if (!TextUtils.isEmpty(it.originimgurl)) list.add(it.originimgurl);
                             }
@@ -194,11 +193,11 @@ public class CourseDetailActivity extends AppCompatActivity {
         api.getCourseIntro(serviceKey, "AND", "Localit", "json", contentId, 25)
                 .enqueue(new Callback<CourseIntroResponse>() {
                     @Override public void onResponse(Call<CourseIntroResponse> call, Response<CourseIntroResponse> res) {
-                        if (!res.isSuccessful() || res.body() == null ||
-                                res.body().response == null ||
-                                res.body().response.body == null ||
-                                res.body().response.body.items == null ||
-                                res.body().response.body.items.item == null ||
+                        if (!res.isSuccessful() || res.body()==null ||
+                                res.body().response==null ||
+                                res.body().response.body==null ||
+                                res.body().response.body.items==null ||
+                                res.body().response.body.items.item==null ||
                                 res.body().response.body.items.item.isEmpty()) return;
 
                         CourseIntroResponse.CourseIntroItem it = res.body().response.body.items.item.get(0);
@@ -218,16 +217,16 @@ public class CourseDetailActivity extends AppCompatActivity {
                 .enqueue(new Callback<CourseInfoResponse>() {
                     @Override public void onResponse(Call<CourseInfoResponse> call, Response<CourseInfoResponse> res) {
                         List<CourseInfoResponse.CourseInfoItem> list = new ArrayList<>();
-                        if (res.isSuccessful() && res.body() != null &&
-                                res.body().response != null &&
-                                res.body().response.body != null &&
-                                res.body().response.body.items != null &&
-                                res.body().response.body.items.item != null) {
+                        if (res.isSuccessful() && res.body()!=null &&
+                                res.body().response!=null &&
+                                res.body().response.body!=null &&
+                                res.body().response.body.items!=null &&
+                                res.body().response.body.items.item!=null) {
                             list = res.body().response.body.items.item;
                         }
                         courseAdapter.submit(list);
                     }
-                    @Override public void onFailure(Call<CourseInfoResponse> call, Throwable t)
+                    @Override public void onFailure(Call<CourseInfoResponse> call, Throwable t) { /* no-op */ }
                 });
     }
 }
