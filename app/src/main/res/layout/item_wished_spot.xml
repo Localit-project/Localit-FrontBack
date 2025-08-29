@@ -2,59 +2,71 @@
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="96dp"
+    android:layout_height="wrap_content"
     android:layout_margin="8dp"
     card_view:cardCornerRadius="12dp"
-    card_view:cardUseCompatPadding="true">
+    card_view:cardUseCompatPadding="true"
+    card_view:cardElevation="4dp">
 
-    <RelativeLayout
+    <!-- 가로(Row) 정렬: 썸네일 | 텍스트 | 하트 -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="10dp">
+        android:layout_height="96dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:background="?attr/selectableItemBackground">
 
+        <!-- 썸네일 -->
         <ImageView
             android:id="@+id/imageThumb"
-            android:layout_width="96dp"
-            android:layout_height="match_parent"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:scaleType="centerCrop"
-            android:contentDescription="@string/app_name" />
+            android:contentDescription="썸네일" />
+        <!-- 텍스트 영역 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="8dp"
+            android:gravity="center_vertical">
 
+            <TextView
+                android:id="@+id/textTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:text="제목"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="#222222" />
+
+            <TextView
+                android:id="@+id/textAddr"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:text="보조 정보"
+                android:textSize="13sp"
+                android:fontFamily="sans-serif"
+                android:textColor="#666666" />
+        </LinearLayout>
+
+        <!-- 우측 하트 -->
         <ImageButton
             android:id="@+id/imageButtonHeart"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_favorite_full"
-            android:contentDescription="찜 됨" />
-
-        <TextView
-            android:id="@+id/textTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_toEndOf="@id/imageThumb"
-            android:layout_toStartOf="@id/imageButtonHeart" android:layout_marginStart="12dp"
-            android:layout_marginEnd="8dp"
-            android:maxLines="2"
-            android:ellipsize="end"
-            android:textSize="16sp"
-            android:textColor="#222222"
-            android:text="제목" />
-
-        <TextView
-            android:id="@+id/textAddr"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/textTitle"
-            android:layout_toEndOf="@id/imageThumb"
-            android:layout_toStartOf="@id/imageButtonHeart" android:layout_marginStart="12dp"
-            android:layout_marginEnd="8dp"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:textSize="13sp"
-            android:textColor="#666666"
-            android:text="주소" />
-
-    </RelativeLayout>
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_favorite_full" />
+    </LinearLayout>
 </androidx.cardview.widget.CardView>
