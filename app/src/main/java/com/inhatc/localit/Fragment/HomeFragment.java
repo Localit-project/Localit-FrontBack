@@ -14,7 +14,6 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.inhatc.localit.MainActivity;
@@ -27,8 +26,6 @@ import com.inhatc.localit.databinding.FragmentHomeBinding;
 import com.inhatc.localit.ui.category.FestivalActivity;
 import com.inhatc.localit.ui.category.FestivalAdapter;
 import com.inhatc.localit.ui.category.FestivalDetailActivity;
-import com.inhatc.localit.ui.category.MarketActivity;
-import com.inhatc.localit.ui.category.MarketAdapter;
 import com.inhatc.localit.ui.settings.InterestRegionActivity;
 
 import java.util.ArrayList;
@@ -41,7 +38,6 @@ public class HomeFragment extends Fragment {
 
     private FragmentHomeBinding binding;
     public HomeCoursePagerAdapter courseAdapter;
-    public MarketAdapter marketAdapter;
     public FestivalAdapter festivalAdapter;
 
     // 대표이미지 수동 오버라이드
@@ -127,15 +123,6 @@ public class HomeFragment extends Fragment {
             pager.setCurrentItem(pos + 1, true);
         });
 
-        // RecyclerView 설정 (시장)
-        marketAdapter = new MarketAdapter();
-        binding.recyclerMarkets.setLayoutManager(new LinearLayoutManager(requireContext()));
-        binding.recyclerMarkets.setAdapter(marketAdapter);
-        binding.btnMoreMarkets.setOnClickListener(v -> {
-            Intent intent = new Intent(requireContext(), MarketActivity.class);
-            startActivity(intent);
-        });
-
         // RecyclerView 설정 (축제)
         festivalAdapter = new FestivalAdapter(
                 new ArrayList<>(),
@@ -165,7 +152,6 @@ public class HomeFragment extends Fragment {
         });
 
         // 데이터 로드
-        fetchMarkets();
         fetchFestivals();
 
         return root;
@@ -180,14 +166,6 @@ public class HomeFragment extends Fragment {
 
     private void openCourseDetail(TourItem item) {
         // TODO: 상세 Activity로 교체
-    }
-
-    private void fetchMarkets() {
-        TourApiHelper.fetchHomeMarkets(items -> {
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(() -> marketAdapter.setItems(items));
-            }
-        });
     }
 
     private void fetchFestivals() {

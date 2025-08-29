@@ -1,568 +1,250 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <androidx.constraintlayout.widget.ConstraintLayout
-
     xmlns:android="http://schemas.android.com/apk/res/android"
-
     xmlns:app="http://schemas.android.com/apk/res-auto"
-
     android:layout_width="match_parent"
-
     android:layout_height="match_parent">
 
-
-
     <androidx.core.widget.NestedScrollView
-
         android:id="@+id/scrollContainer"
-
         android:layout_width="0dp"
-
         android:layout_height="0dp"
-
         android:fillViewport="true"
-
         app:layout_constraintTop_toTopOf="parent"
-
         app:layout_constraintBottom_toBottomOf="parent"
-
         app:layout_constraintStart_toStartOf="parent"
-
         app:layout_constraintEnd_toEndOf="parent">
 
-
-
         <LinearLayout
-
             android:id="@+id/contentRoot"
-
             android:layout_width="match_parent"
-
             android:layout_height="wrap_content"
-
             android:orientation="vertical"
-
             android:padding="16dp">
 
-
-
             <LinearLayout
-
                 android:layout_width="match_parent"
-
                 android:layout_height="wrap_content"
-
                 android:orientation="vertical"
-
                 android:paddingTop="4dp"
-
                 android:paddingBottom="12dp">
 
-
-
                 <LinearLayout
-
                     android:layout_width="match_parent"
-
                     android:layout_height="wrap_content"
-
                     android:orientation="horizontal"
-
                     android:gravity="center_vertical"
-
                     android:layout_marginTop="20dp">
 
-
-
                     <ImageView
-
                         android:layout_width="30dp"
-
                         android:layout_height="30dp"
-
                         android:src="@drawable/logo" />
 
-
-
                     <TextView
-
                         android:layout_width="wrap_content"
-
                         android:layout_height="wrap_content"
-
                         android:layout_marginStart="8dp"
-
                         android:text="LOCALIT"
-
                         android:textStyle="bold"
-
                         android:textColor="#111111"
-
                         android:textSize="25sp"/>
 
-
-
                     <View
-
                         android:layout_width="0dp"
-
                         android:layout_height="0dp"
-
                         android:layout_weight="1"/>
 
-
-
                     <ImageButton
-
                         android:id="@+id/btnTopMenu"
-
                         android:layout_width="24dp"
-
                         android:layout_height="24dp"
-
                         android:background="?attr/selectableItemBackgroundBorderless"/>
-
                 </LinearLayout>
 
-
-
                 <LinearLayout
-
                     android:layout_width="match_parent"
-
                     android:layout_height="wrap_content"
-
                     android:orientation="horizontal"
-
                     android:gravity="center_vertical"
-
                     android:paddingTop="12dp">
 
-
-
                     <ImageView
-
                         android:layout_width="40dp"
-
                         android:layout_height="40dp"
-
                         android:src="@drawable/bg_avatar_placeholder"/>
 
-
-
                     <TextView
-
                         android:id="@+id/tvGreeting"
-
                         android:layout_width="0dp"
-
                         android:layout_height="wrap_content"
-
                         android:layout_weight="1"
-
                         android:layout_marginStart="8dp"
-
                         android:text="이혜빈님, 환영합니다"
-
                         android:textColor="#666666"
-
                         android:textSize="14sp"/>
 
-
-
                     <ImageButton
-
                         android:id="@+id/btnNotification"
-
                         android:layout_width="24dp"
-
                         android:layout_height="24dp"
-
                         android:background="?attr/selectableItemBackgroundBorderless"
-
                         android:src="@drawable/ic_notifications_24"/>
-
                 </LinearLayout>
-
             </LinearLayout>
-
-
 
             <TextView
-
                 android:id="@+id/tvHeroTitle"
-
                 android:layout_width="match_parent"
-
                 android:layout_height="wrap_content"
-
                 android:text="여러가지 여행코스를 따라 떠나볼까요?"
-
                 android:textSize="18sp"
-
                 android:textStyle="bold"
-
                 android:textColor="#111111"
-
                 android:layout_marginBottom="8dp"/>
 
-
-
             <FrameLayout
-
                 android:id="@+id/courseCarousel"
-
                 android:layout_width="match_parent"
-
                 android:layout_height="530dp"
-
                 android:layout_marginBottom="12dp">
-
-
 
                 <androidx.viewpager2.widget.ViewPager2
-
                     android:id="@+id/pagerCourses"
-
                     android:layout_width="match_parent"
-
                     android:layout_height="match_parent"
-
                     android:clipToPadding="false"
-
                     android:paddingStart="8dp"
-
                     android:paddingEnd="8dp"/>
 
-
-
                 <ImageButton
-
                     android:id="@+id/btnPrev"
-
                     style="?attr/borderlessButtonStyle"
-
                     android:layout_width="40dp"
-
                     android:layout_height="40dp"
-
                     android:layout_gravity="center|start"
-
                     android:layout_marginLeft="13dp"
-
                     android:background="@color/white"
-
                     android:contentDescription="@string/previous"
-
                     android:padding="6dp"
-
                     android:src="@drawable/ic_chevron_left" />
 
-
-
                 <ImageButton
-
                     android:id="@+id/btnNext"
-
                     style="?attr/borderlessButtonStyle"
-
                     android:layout_width="40dp"
-
                     android:layout_height="40dp"
-
                     android:layout_gravity="center|end"
-
                     android:layout_marginRight="10dp"
-
                     android:background="@color/white"
-
                     android:contentDescription="@string/next"
-
                     android:padding="10dp"
-
                     android:src="@drawable/ic_chevron_right" />
-
             </FrameLayout>
 
-
-
             <LinearLayout
-
                 android:id="@+id/quickRow"
-
                 android:layout_width="match_parent"
-
                 android:layout_height="wrap_content"
-
                 android:layout_marginTop="8dp"
-
                 android:layout_marginBottom="16dp"
-
                 android:orientation="horizontal"
-
                 android:weightSum="2">
 
-
-
                 <LinearLayout
-
                     android:id="@+id/cardOpenMap"
-
                     android:layout_width="0dp"
-
                     android:layout_height="wrap_content"
-
                     android:layout_weight="1"
-
                     android:minHeight="48dp"
-
                     android:gravity="center_vertical"
-
                     android:paddingVertical="10dp"
-
                     android:paddingStart="12dp"
-
                     android:paddingEnd="12dp"
-
                     android:orientation="horizontal"
-
                     android:background="?attr/selectableItemBackground">
 
-
-
                     <ImageView
-
                         android:layout_width="20dp"
-
                         android:layout_height="20dp"
-
                         android:src="@drawable/ic_location_on_24" />
 
-
-
                     <TextView
-
                         android:layout_width="wrap_content"
-
                         android:layout_height="wrap_content"
-
                         android:layout_marginStart="8dp"
-
                         android:text="지도로 지역 선택"
-
                         android:textStyle="bold"
-
                         android:textColor="#111111"
-
                         android:textSize="14sp" />
-
                 </LinearLayout>
-
-
 
                 <LinearLayout
-
                     android:id="@+id/cardInterestRegion"
-
                     android:layout_width="0dp"
-
                     android:layout_height="wrap_content"
-
                     android:layout_weight="1"
-
                     android:minHeight="48dp"
-
                     android:gravity="center_vertical"
-
                     android:paddingVertical="10dp"
-
                     android:paddingStart="12dp"
-
                     android:paddingEnd="12dp"
-
                     android:orientation="horizontal"
-
                     android:background="?attr/selectableItemBackground">
 
-
-
                     <ImageView
-
                         android:layout_width="20dp"
-
                         android:layout_height="20dp"
-
                         android:src="@drawable/ic_favorite_24" />
 
-
-
                     <TextView
-
                         android:layout_width="wrap_content"
-
                         android:layout_height="wrap_content"
-
                         android:layout_marginStart="8dp"
-
                         android:text="관심지역 설정"
-
                         android:textStyle="bold"
-
                         android:textColor="#111111"
-
                         android:textSize="14sp" />
-
                 </LinearLayout>
 
-
-
             </LinearLayout>
 
-
-
             <LinearLayout
-
                 android:layout_width="match_parent"
-
                 android:layout_height="wrap_content"
-
                 android:orientation="horizontal"
-
                 android:gravity="center_vertical"
-
-                android:layout_marginBottom="12dp">
-
-
-
-                <TextView
-
-                    android:layout_width="0dp"
-
-                    android:layout_height="wrap_content"
-
-                    android:layout_weight="1"
-
-                    android:text="여러지역의 전통시장"
-
-                    android:textColor="#333333"
-
-                    android:textSize="18sp"
-
-                    android:textStyle="bold" />
-
-
-
-                <TextView
-
-                    android:id="@+id/btnMoreMarkets"
-
-                    android:layout_width="wrap_content"
-
-                    android:layout_height="wrap_content"
-
-                    android:background="?attr/selectableItemBackground"
-
-                    android:clickable="true"
-
-                    android:focusable="true"
-
-                    android:padding="4dp"
-
-                    android:text="더보기 >"
-
-                    android:textColor="#666666"
-
-                    android:textSize="12sp" />
-
-            </LinearLayout>
-
-
-
-            <androidx.recyclerview.widget.RecyclerView
-
-                android:id="@+id/recyclerMarkets"
-
-                android:layout_width="match_parent"
-
-                android:layout_height="wrap_content"
-
-                android:scrollbars="vertical"/>
-
-
-
-            <LinearLayout
-
-                android:layout_width="match_parent"
-
-                android:layout_height="wrap_content"
-
-                android:orientation="horizontal"
-
-                android:gravity="center_vertical"
-
                 android:layout_marginTop="24dp"
-
                 android:layout_marginBottom="12dp">
 
-
-
                 <TextView
-
                     android:layout_width="0dp"
-
                     android:layout_height="wrap_content"
-
                     android:layout_weight="1"
-
                     android:text="최신 축제 100"
-
                     android:textColor="#333333"
-
                     android:textSize="18sp"
-
                     android:textStyle="bold" />
 
-
-
                 <TextView
-
                     android:id="@+id/btnMoreFestivals"
-
                     android:layout_width="wrap_content"
-
                     android:layout_height="wrap_content"
-
                     android:background="?attr/selectableItemBackground"
-
                     android:clickable="true"
-
                     android:focusable="true"
-
                     android:padding="4dp"
-
                     android:text="더보기 >"
-
                     android:textColor="#666666"
-
                     android:textSize="12sp" />
-
             </LinearLayout>
 
-
-
             <androidx.recyclerview.widget.RecyclerView
-
                 android:id="@+id/recyclerFestivals"
-
                 android:layout_width="match_parent"
-
                 android:layout_height="wrap_content"
-
                 android:scrollbars="vertical"/>
-
-
 
         </LinearLayout>
-
     </androidx.core.widget.NestedScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>
