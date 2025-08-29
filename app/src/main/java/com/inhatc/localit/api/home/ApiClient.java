@@ -1,10 +1,13 @@
 package com.inhatc.localit.api.home;
 
+
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+
 public class ApiClient {
-    private static final String BASE_URL = "https://apis.data.go.kr/B551011/KorService1/"; // 예시. hub 도메인에 맞게 교체
+    private static final String BASE_URL = "https://apis.data.go.kr/B551011/KorService1/";
+
 
     private static Retrofit retrofit;
     public static Retrofit get() {
@@ -16,6 +19,7 @@ public class ApiClient {
         }
         return retrofit;
     }
+
 
     public static ApiService service() {
         return get().create(ApiService.class);
