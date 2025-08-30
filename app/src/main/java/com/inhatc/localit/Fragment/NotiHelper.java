@@ -1,13 +1,16 @@
 package com.inhatc.localit.Fragment;
 
+import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Build;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
@@ -126,6 +129,15 @@ public final class NotiHelper {
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
         if (contentIntent != null) b.setContentIntent(contentIntent);
+
+        // ▼▼▼ [추가됨] 알림 권한 확인 로직 ▼▼▼
+        // Android 13 (API 33) 이상에서는 POST_NOTIFICATIONS 권한을 확인해야 합니다.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                // 권한이 없다면, 알림을 보내지 않고 여기서 함수를 종료합니다.
+                return;
+            }
+        }
 
         NotificationManagerCompat.from(ctx).notify((int) notiId, b.build());
     }

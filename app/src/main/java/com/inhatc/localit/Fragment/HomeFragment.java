@@ -188,7 +188,7 @@ public class HomeFragment extends Fragment {
                     startActivity(new Intent(requireContext(), FestivalActivity.class)));
         }
     }
-    // HomeFragment 안에 추가 (openSpotDetailFromCard 아래 추천)
+
     private void openFestivalDetailFromCard(int idx) {
         if (festivalCardItems == null || festivalCardItems.size() <= idx) return;
 
@@ -202,7 +202,7 @@ public class HomeFragment extends Fragment {
         i.putExtra(FestivalDetailActivity.EXTRA_FIRST_IMAGE, safe(it.firstimage));
         startActivity(i);
     }
-    // ===== 코스 상세: TourItem 유지 =====
+
     private void openCourseDetail(TourItem item) {
         if (getContext() == null || item == null) return;
 
@@ -255,6 +255,11 @@ public class HomeFragment extends Fragment {
     }
 
     private void bindSpotCards(List<SpotResponse.Item> items) {
+        // ▼▼▼ [수정됨] 뷰가 파괴된 경우를 대비하여 NullPointerException 방지 코드를 추가합니다. ▼▼▼
+        if (binding == null) {
+            return;
+        }
+
         if (items != null && items.size() > 0) {
             SpotResponse.Item it = items.get(0);
             binding.textMarket1Title.setText(safe(it.title));
@@ -339,6 +344,11 @@ public class HomeFragment extends Fragment {
     }
 
     private void bindFestivalCards(List<SpotResponse.Item> items) {
+        // ▼▼▼ [수정됨] 뷰가 파괴된 경우를 대비하여 NullPointerException 방지 코드를 추가합니다. ▼▼▼
+        if (binding == null) {
+            return;
+        }
+
         if (items != null && items.size() > 0) {
             SpotResponse.Item it = items.get(0);
             binding.textFestival1Title.setText(safe(it.title));

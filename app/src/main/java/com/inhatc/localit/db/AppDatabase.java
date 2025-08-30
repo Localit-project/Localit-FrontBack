@@ -37,6 +37,9 @@ public abstract class AppDatabase extends RoomDatabase {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, "tourist_spot_database")
 
+                            // ▼▼▼ [수정됨] 마이그레이션 경로가 없을 때 데이터베이스를 삭제하고 다시 생성하도록 허용합니다. ▼▼▼
+                            // 이렇게 하면 기존 데이터는 모두 사라지지만, 앱 충돌은 발생하지 않습니다. (개발용)
+                            .fallbackToDestructiveMigration()
 
                             .build();
                 }

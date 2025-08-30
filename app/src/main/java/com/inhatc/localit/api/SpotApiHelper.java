@@ -22,7 +22,7 @@ public class SpotApiHelper {
     private static final String TAG = "SpotApiHelper";
 
     private static final SpotApiService API =
-            RetrofitClient.getInstance().create(SpotApiService.class);
+            ApiClient.getInstance().create(SpotApiService.class);
 
     private static int parseCtId(String s) {
         try { return Integer.parseInt(s); } catch (Exception e) { return 12; }

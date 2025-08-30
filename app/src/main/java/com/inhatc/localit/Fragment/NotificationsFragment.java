@@ -1,10 +1,12 @@
 package com.inhatc.localit.Fragment;
 
+import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -12,12 +14,13 @@ import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RemoteViews;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
@@ -26,8 +29,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.chip.ChipGroup;
-import com.inhatc.localit.R;
 import com.inhatc.localit.MainActivity;
+import com.inhatc.localit.R;
 import com.inhatc.localit.databinding.FragmentNotificationsBinding;
 import com.inhatc.localit.db.AppDatabase;
 import com.inhatc.localit.db.TouristSpot;
@@ -111,13 +114,11 @@ public class NotificationsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentNotificationsBinding.inflate(inflater, container, false);
 
-        // 뒤로가기 버튼 초기화 및 클릭 리스너 설정
         btnBack = binding.getRoot().findViewById(R.id.btnBack);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> {
-                // 부모 액티비티의 onBackPressed를 호출하여 이전 화면으로 돌아갑니다.
-                if (requireActivity() instanceof MainActivity) {
-                    requireActivity().onBackPressed();
+                if (getActivity() instanceof MainActivity) {
+                    getActivity().onBackPressed();
                 }
             });
         }
@@ -131,7 +132,6 @@ public class NotificationsFragment extends Fragment {
         binding.rv.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rv.setAdapter(adapter);
 
-        // DB 관찰
         dao.getWishedSpots().observe(getViewLifecycleOwner(), spots -> {
             allNotifications.clear();
             Date now = new Date();
@@ -143,34 +143,15 @@ public class NotificationsFragment extends Fragment {
 
                 // 1) 찜 등록
                 {
-                    String desc = isFestival ? "찜 목록의 축제·행사가 추가되었습니다."
-                            : "찜 목록에 장소가 추가되었습니다.";
-                    Noti n = new Noti(
-                            generateId(spot),
-                            Source.WISH,
-                            type,
-                            spot.title,
-                            now,
-                            spot.startDate, spot.endDate,
-                            periodText,
-                            desc
-                    );
+                    String desc = isFestival ? "찜 목록의 축제·행사가 추가되었습니다." : "찜 목록에 장소가 추가되었습니다.";
+                    Noti n = new Noti(generateId(spot), Source.WISH, type, spot.title, now, spot.startDate, spot.endDate, periodText, desc);
                     allNotifications.add(n);
                     showSystemNotification(requireContext(), n);
                 }
 
                 // 2) 신규 관광지
                 if (spot.isNew && !isFestival) {
-                    Noti n = new Noti(
-                            generateId(spot) + 1000,
-                            Source.SPOT_NEW,
-                            Type.SPOT,
-                            spot.title,
-                            now,
-                            null, null,
-                            "", // 기간 없음
-                            "새로운 관광지 정보가 업데이트되었습니다."
-                    );
+                    Noti n = new Noti(generateId(spot) + 1000, Source.SPOT_NEW, Type.SPOT, spot.title, now, null, null, "", "새로운 관광지 정보가 업데이트되었습니다.");
                     allNotifications.add(n);
                     showSystemNotification(requireContext(), n);
                 }
@@ -184,11 +165,9 @@ public class NotificationsFragment extends Fragment {
             applyFilter();
         });
 
-        // 칩 가시성
         setVisible(binding.chipFestival, AlarmPrefs.allowFestival(requireContext()));
         setVisible(binding.chipSpot, AlarmPrefs.allowSpot(requireContext()));
 
-        // 칩 클릭
         binding.chipGroup.setOnCheckedStateChangeListener((ChipGroup group, List<Integer> checkedIds) -> {
             int id = checkedIds.isEmpty() ? binding.chipAll.getId() : checkedIds.get(0);
             updateHeaderForTab(id);
@@ -216,69 +195,34 @@ public class NotificationsFragment extends Fragment {
         String periodText = buildDateRange(spot.startDate, spot.endDate);
         Calendar cal = Calendar.getInstance();
 
-        // 시작 1일 전
         cal.setTime(spot.startDate);
         cal.add(Calendar.DAY_OF_MONTH, -1);
-        Noti d1Start = new Noti(
-                generateId(spot) + 2000,
-                Source.FESTIVAL, Type.FESTIVAL,
-                spot.title,
-                cal.getTime(),
-                spot.startDate, spot.endDate,
-                periodText,
-                "찜 목록의 축제·행사가 1일 뒤에 시작됩니다."
-        );
+        Noti d1Start = new Noti(generateId(spot) + 2000, Source.FESTIVAL, Type.FESTIVAL, spot.title, cal.getTime(), spot.startDate, spot.endDate, periodText, "찜 목록의 축제·행사가 1일 뒤에 시작됩니다.");
         allNotifications.add(d1Start);
         showSystemNotification(requireContext(), d1Start);
 
-        // 시작 1주 전
         cal.setTime(spot.startDate);
         cal.add(Calendar.DAY_OF_MONTH, -7);
-        Noti d7Start = new Noti(
-                generateId(spot) + 3000,
-                Source.FESTIVAL, Type.FESTIVAL,
-                spot.title,
-                cal.getTime(),
-                spot.startDate, spot.endDate,
-                periodText,
-                "찜 목록의 축제·행사가 1주 뒤에 시작됩니다."
-        );
+        Noti d7Start = new Noti(generateId(spot) + 3000, Source.FESTIVAL, Type.FESTIVAL, spot.title, cal.getTime(), spot.startDate, spot.endDate, periodText, "찜 목록의 축제·행사가 1주 뒤에 시작됩니다.");
         allNotifications.add(d7Start);
         showSystemNotification(requireContext(), d7Start);
 
-        // 종료 1일 전
         cal.setTime(spot.endDate);
         cal.add(Calendar.DAY_OF_MONTH, -1);
-        Noti d1End = new Noti(
-                generateId(spot) + 4000,
-                Source.FESTIVAL, Type.FESTIVAL,
-                spot.title,
-                cal.getTime(),
-                spot.startDate, spot.endDate,
-                periodText,
-                "축제가 1일 뒤에 종료됩니다."
-        );
+        Noti d1End = new Noti(generateId(spot) + 4000, Source.FESTIVAL, Type.FESTIVAL, spot.title, cal.getTime(), spot.startDate, spot.endDate, periodText, "축제가 1일 뒤에 종료됩니다.");
         allNotifications.add(d1End);
         showSystemNotification(requireContext(), d1End);
 
-        // 종료 1주 전
         cal.setTime(spot.endDate);
         cal.add(Calendar.DAY_OF_MONTH, -7);
-        Noti d7End = new Noti(
-                generateId(spot) + 5000,
-                Source.FESTIVAL, Type.FESTIVAL,
-                spot.title,
-                cal.getTime(),
-                spot.startDate, spot.endDate,
-                periodText,
-                "축제가 1주 뒤에 종료됩니다."
-        );
+        Noti d7End = new Noti(generateId(spot) + 5000, Source.FESTIVAL, Type.FESTIVAL, spot.title, cal.getTime(), spot.startDate, spot.endDate, periodText, "축제가 1주 뒤에 종료됩니다.");
         allNotifications.add(d7End);
         showSystemNotification(requireContext(), d7End);
     }
 
     // ───── Header / Filter ─────
     private void updateHeaderForTab(int id) {
+        if (binding == null) return;
         if (id == binding.chipFestival.getId())
             binding.tvSectionTitle.setText(R.string.noti_header_festival);
         else if (id == binding.chipSpot.getId())
@@ -287,11 +231,13 @@ public class NotificationsFragment extends Fragment {
     }
 
     private int getCheckedId(ChipGroup group) {
+        if (binding == null) return -1;
         List<Integer> ids = group.getCheckedChipIds();
         return ids.isEmpty() ? binding.chipAll.getId() : ids.get(0);
     }
 
     private void applyFilter() {
+        if (getContext() == null || binding == null) return;
         int checkedId = getCheckedId(binding.chipGroup);
         boolean wishFest = AlarmPrefs.isEnabled(requireContext(), AlarmPrefs.KEY_WISH_FESTIVAL);
         boolean wishSpot = AlarmPrefs.isEnabled(requireContext(), AlarmPrefs.KEY_WISH_SPOT);
@@ -321,6 +267,7 @@ public class NotificationsFragment extends Fragment {
     }
 
     private boolean selectFirstVisibleChip(ChipGroup group) {
+        if (binding == null) return false;
         if (binding.chipFestival.getVisibility() == View.VISIBLE) {
             binding.chipFestival.setChecked(true);
             return true;
@@ -338,12 +285,10 @@ public class NotificationsFragment extends Fragment {
         NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
 
-        NotificationChannel wish = new NotificationChannel(
-                CH_WISH, "찜 알림", NotificationManager.IMPORTANCE_DEFAULT);
+        NotificationChannel wish = new NotificationChannel(CH_WISH, "찜 알림", NotificationManager.IMPORTANCE_DEFAULT);
         wish.setDescription("찜 목록 관련 알림");
 
-        NotificationChannel fest = new NotificationChannel(
-                CH_FESTIVAL, "축제·행사 알림", NotificationManager.IMPORTANCE_DEFAULT);
+        NotificationChannel fest = new NotificationChannel(CH_FESTIVAL, "축제·행사 알림", NotificationManager.IMPORTANCE_DEFAULT);
         fest.setDescription("축제 시작/종료 전 안내");
 
         nm.createNotificationChannel(wish);
@@ -353,46 +298,28 @@ public class NotificationsFragment extends Fragment {
     private static String badge(Source s, Type t) {
         String left;
         switch (s) {
-            case WISH:
-                left = "찜 목록";
-                break;
-            case FESTIVAL:
-                left = "축제 알림";
-                break;
-            case SPOT_NEW:
-                left = "신규 관광지";
-                break;
-            default:
-                left = "";
+            case WISH: left = "찜 목록"; break;
+            case FESTIVAL: left = "축제 알림"; break;
+            case SPOT_NEW: left = "신규 관광지"; break;
+            default: left = "";
         }
         String right = (t == Type.FESTIVAL) ? "축제·행사" : "관광지";
         return left + " (" + right + ")";
     }
 
-    /**
-     * 시스템 알림 (펼침 레이아웃만 사용)
-     */
     private void showSystemNotification(@NonNull Context ctx, @NonNull Noti n) {
-        // 설정 끈 경우 미발송
-        if (n.source == Source.WISH && n.type == Type.FESTIVAL &&
-                !AlarmPrefs.isEnabled(ctx, AlarmPrefs.KEY_WISH_FESTIVAL)) return;
-        if (n.source == Source.WISH && n.type == Type.SPOT &&
-                !AlarmPrefs.isEnabled(ctx, AlarmPrefs.KEY_WISH_SPOT)) return;
+        if (n.source == Source.WISH && n.type == Type.FESTIVAL && !AlarmPrefs.isEnabled(ctx, AlarmPrefs.KEY_WISH_FESTIVAL)) return;
+        if (n.source == Source.WISH && n.type == Type.SPOT && !AlarmPrefs.isEnabled(ctx, AlarmPrefs.KEY_WISH_SPOT)) return;
 
         final String channelId = (n.source == Source.FESTIVAL) ? CH_FESTIVAL : CH_WISH;
 
-        Intent intent = new Intent(ctx, com.inhatc.localit.MainActivity.class);
+        Intent intent = new Intent(ctx, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent contentIntent = PendingIntent.getActivity(
-                ctx, (int) n.id, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+        PendingIntent contentIntent = PendingIntent.getActivity(ctx, (int) n.id, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         RemoteViews expanded = new RemoteViews(ctx.getPackageName(), R.layout.item_notification);
         String badge = badge(n.source, n.type);
-        CharSequence when = DateUtils.getRelativeTimeSpanString(
-                (n.timestamp != null ? n.timestamp.getTime() : System.currentTimeMillis()),
-                System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS);
+        CharSequence when = DateUtils.getRelativeTimeSpanString((n.timestamp != null ? n.timestamp.getTime() : System.currentTimeMillis()), System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS);
         String period = !TextUtils.isEmpty(n.periodText) ? "기간 : " + n.periodText : "";
         String desc = n.description;
 
@@ -401,13 +328,13 @@ public class NotificationsFragment extends Fragment {
         expanded.setTextViewText(R.id.tvTitle, n.title != null ? n.title : "");
         expanded.setTextViewText(R.id.tvPeriod, period);
         expanded.setTextViewText(R.id.tvDesc, desc);
-        expanded.setImageViewResource(R.id.ivLogo, R.drawable.logo); // 원하시는 로고
+        expanded.setImageViewResource(R.id.ivLogo, R.drawable.logo);
 
         String collapsedTitle = n.title;
         String collapsedText = !TextUtils.isEmpty(period) ? period : badge;
 
         NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, channelId)
-                .setSmallIcon(R.drawable.logo) // 알림용 단색 아이콘 사용 권장
+                .setSmallIcon(R.drawable.logo)
                 .setContentTitle(collapsedTitle)
                 .setContentText(collapsedText)
                 .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
@@ -418,11 +345,17 @@ public class NotificationsFragment extends Fragment {
                 .setShowWhen(false)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+        }
         NotificationManagerCompat.from(ctx).notify((int) n.id, b.build());
     }
 
     // ───── Adapter ─────
-    private static class NotiAdapter extends RecyclerView.Adapter<NotiVH> {
+    // [수정됨] 컴파일 오류를 해결하기 위해 Adapter와 ViewHolder 구조를 수정했습니다.
+    public static class NotiAdapter extends RecyclerView.Adapter<NotiAdapter.NotiVH> {
         private final List<Noti> items = new ArrayList<>();
 
         void submit(List<Noti> newItems) {
@@ -450,117 +383,76 @@ public class NotificationsFragment extends Fragment {
             return items.size();
         }
 
+        // ViewHolder를 Adapter의 non-static inner class로 변경하여 안정성 확보
+        public class NotiVH extends RecyclerView.ViewHolder {
+            private final ImageView ivLogo = itemView.findViewById(R.id.ivLogo);
+            private final TextView tvBadge = itemView.findViewById(R.id.tvBadge);
+            private final TextView tvWhen = itemView.findViewById(R.id.tvWhen);
+            private final TextView tvTitle = itemView.findViewById(R.id.tvTitle);
+            private final TextView tvPeriod = itemView.findViewById(R.id.tvPeriod);
+            private final TextView tvDesc = itemView.findViewById(R.id.tvDesc);
+
+            NotiVH(@NonNull View itemView) {
+                super(itemView);
+            }
+
+            void bind(final Noti n) {
+                ivLogo.setImageResource(R.drawable.logo);
+                tvBadge.setText(badge(n.source, n.type));
+                tvTitle.setText(n.title != null ? n.title : "");
+
+                CharSequence when = DateUtils.getRelativeTimeSpanString((n.timestamp != null ? n.timestamp.getTime() : System.currentTimeMillis()), System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS);
+                tvWhen.setText(when);
+
+                String p = n.periodText;
+                if (TextUtils.isEmpty(p)) {
+                    tvPeriod.setVisibility(View.GONE);
+                } else {
+                    tvPeriod.setVisibility(View.VISIBLE);
+                    tvPeriod.setText("기간 : " + p);
+                }
+
+                if (TextUtils.isEmpty(n.description)) {
+                    tvDesc.setVisibility(View.GONE);
+                } else {
+                    tvDesc.setVisibility(View.VISIBLE);
+                    tvDesc.setText(n.description);
+                }
+
+                itemView.setOnClickListener(v -> {
+                    Context context = v.getContext();
+                    if (context instanceof NotificationsFragmentHost) {
+                        ((NotificationsFragmentHost) context).removeNotification(n.id);
+                    }
+                    NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+                    if (nm != null) nm.cancel((int) n.id);
+                });
+            }
+        }
+
         static class DiffCb extends DiffUtil.Callback {
             final List<Noti> o, n;
-
-            DiffCb(List<Noti> o, List<Noti> n) {
-                this.o = o;
-                this.n = n;
-            }
-
-            @Override
-            public int getOldListSize() {
-                return o.size();
-            }
-
-            @Override
-            public int getNewListSize() {
-                return n.size();
-            }
-
-            @Override
-            public boolean areItemsTheSame(int i, int j) {
-                return o.get(i).id == n.get(j).id;
-            }
-
-            @Override
-            public boolean areContentsTheSame(int i, int j) {
+            DiffCb(List<Noti> o, List<Noti> n) { this.o = o; this.n = n; }
+            @Override public int getOldListSize() { return o.size(); }
+            @Override public int getNewListSize() { return n.size(); }
+            @Override public boolean areItemsTheSame(int i, int j) { return o.get(i).id == n.get(j).id; }
+            @Override public boolean areContentsTheSame(int i, int j) {
                 Noti a = o.get(i), b = n.get(j);
                 return a.source == b.source && a.type == b.type &&
                         eq(a.title, b.title) && eq(a.timestamp, b.timestamp) &&
                         eq(a.startDate, b.startDate) && eq(a.endDate, b.endDate) &&
                         eq(a.periodText, b.periodText) && eq(a.description, b.description);
             }
-
             private static boolean eq(Object x, Object y) {
                 return (x == y) || (x != null && x.equals(y));
             }
         }
     }
 
-    private static class NotiVH extends RecyclerView.ViewHolder {
-        private final android.widget.ImageView ivLogo = itemView.findViewById(R.id.ivLogo);
-        private final android.widget.TextView tvBadge = itemView.findViewById(R.id.tvBadge);
-        private final android.widget.TextView tvWhen = itemView.findViewById(R.id.tvWhen);
-        private final android.widget.TextView tvTitle = itemView.findViewById(R.id.tvTitle);
-        private final android.widget.TextView tvPeriod = itemView.findViewById(R.id.tvPeriod);
-        private final android.widget.TextView tvDesc = itemView.findViewById(R.id.tvDesc);
-
-        NotiVH(@NonNull View itemView) {
-            super(itemView);
-        }
-
-        private static String toBadge(Source s, Type t) {
-            String left;
-            switch (s) {
-                case WISH:
-                    left = "찜 목록";
-                    break;
-                case FESTIVAL:
-                    left = "축제 알림";
-                    break;
-                case SPOT_NEW:
-                    left = "신규 관광지";
-                    break;
-                default:
-                    left = "";
-            }
-            String right = (t == Type.FESTIVAL) ? "축제·행사" : "관광지";
-            return left + " (" + right + ")";
-        }
-
-        void bind(Noti n) {
-            ivLogo.setImageResource(R.drawable.logo);
-            tvBadge.setText(toBadge(n.source, n.type));
-
-            CharSequence when = DateUtils.getRelativeTimeSpanString(
-                    (n.timestamp != null ? n.timestamp.getTime() : System.currentTimeMillis()),
-                    System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS);
-            tvWhen.setText(when);
-
-            tvTitle.setText(n.title != null ? n.title : "");
-
-            // ★ 기간은 n.periodText 사용 (startDate/endDate로 재계산 X)
-            String p = n.periodText;
-            if (android.text.TextUtils.isEmpty(p)) {
-                tvPeriod.setVisibility(View.GONE);
-            } else {
-                tvPeriod.setVisibility(View.VISIBLE);
-                tvPeriod.setText("기간 : " + p);
-            }
-
-            if (android.text.TextUtils.isEmpty(n.description)) {
-                tvDesc.setVisibility(View.GONE);
-            } else {
-                tvDesc.setVisibility(View.VISIBLE);
-                tvDesc.setText(n.description);
-            }
-
-            itemView.setOnClickListener(v -> {
-                Context context = v.getContext();
-                if (context instanceof NotificationsFragmentHost) {
-                    ((NotificationsFragmentHost) context).removeNotification(n.id);
-                }
-                NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-                if (nm != null) nm.cancel((int) n.id);
-            });
-        }
-
-        /**
-         * Activity에서 RecyclerView에서도 알림 제거를 위해 구현해야 함
-         */
-        public interface NotificationsFragmentHost {
-            void removeNotification(long notiId);
-        }
+    /**
+     * Activity에서 RecyclerView에서도 알림 제거를 위해 구현해야 함
+     */
+    public interface NotificationsFragmentHost {
+        void removeNotification(long notiId);
     }
 }

@@ -24,7 +24,7 @@ import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
 import com.inhatc.localit.api.naver.NaverApiService;
 import com.inhatc.localit.api.naver.NaverNewsResponse;
-import com.inhatc.localit.api.naver.RetrofitClient;
+import com.inhatc.localit.api.ApiClient;
 import com.inhatc.localit.ui.category.FestivalActivity;
 import com.inhatc.localit.ui.category.FestivalDetailActivity;
 import com.inhatc.localit.ui.category.NewsActivity;
@@ -124,7 +124,7 @@ public class RegionDetailActivity extends AppCompatActivity {
         NaverMapSdk.getInstance(this).setClient(
                 new NaverMapSdk.NcpKeyClient("j6uu2y26y1"));
 
-        naverApiService = RetrofitClient.getInstance().create(NaverApiService.class);
+        naverApiService = ApiClient.getInstance().create(NaverApiService.class);
 
         String rawRegion = getIntent().getStringExtra("regionName");
         String rawSub = getIntent().getStringExtra("subRegionName");

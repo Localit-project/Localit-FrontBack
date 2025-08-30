@@ -6,7 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.graphics.Typeface;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -19,7 +19,7 @@ public class RegionAdapter extends RecyclerView.Adapter<RegionAdapter.RegionView
 
     private final List<String> regionList;
     private final OnRegionClickListener listener;
-    // 클릭 이벤트를 위한 인터페이스
+
     public interface OnRegionClickListener {
         void onRegionClick(String region);
     }
@@ -42,31 +42,47 @@ public class RegionAdapter extends RecyclerView.Adapter<RegionAdapter.RegionView
         String region = regionList.get(position);
         holder.textRegionName.setText(region);
 
-        // 선택된 항목일 경우
+        // 선택된 항목에 따라 UI를 업데이트합니다.
         if (position == selectedPosition) {
-            holder.itemRegionContainer.setBackgroundColor(Color.WHITE); // 배경 흰색
-            holder.textRegionName.setTypeface(null, Typeface.BOLD);     // Bold 처리
+            holder.itemRegionContainer.setBackgroundColor(Color.WHITE);
+            holder.textRegionName.setTypeface(null, Typeface.BOLD);
         } else {
-            holder.itemRegionContainer.setBackgroundColor(Color.parseColor("#F5F5F5")); // 기본 회색
-            holder.textRegionName.setTypeface(null, Typeface.NORMAL);   // 기본 텍스트
+            holder.itemRegionContainer.setBackgroundColor(Color.parseColor("#F5F5F5"));
+            holder.textRegionName.setTypeface(null, Typeface.NORMAL);
         }
 
-        // 클릭 이벤트 처리
+        // [수정됨] 클릭 이벤트 처리 로직 개선
         holder.itemView.setOnClickListener(v -> {
-            selectedPosition = position;
-            notifyDataSetChanged(); // 전체 리프레시
-            listener.onRegionClick(region);
+            // 1. 클릭된 순간의 정확한 위치를 가져옵니다.
+            int currentPosition = holder.getAdapterPosition();
+            // 2. 유효하지 않은 위치는 무시합니다 (예: 아이템이 빠르게 삭제된 경우).
+            if (currentPosition == RecyclerView.NO_POSITION) {
+                return;
+            }
+
+            // 3. 이전에 선택되었던 아이템의 위치를 저장합니다.
+            int previousPosition = selectedPosition;
+            // 4. 새로 선택된 아이템의 위치를 업데이트합니다.
+            selectedPosition = currentPosition;
+
+            // 5. 변경이 필요한 부분만 효율적으로 새로 고칩니다.
+            // 이전에 선택됐던 아이템을 다시 그려서 선택 해제 처리
+            if (previousPosition != RecyclerView.NO_POSITION) {
+                notifyItemChanged(previousPosition);
+            }
+            // 새로 선택된 아이템을 다시 그려서 선택 처리
+            notifyItemChanged(selectedPosition);
+
+            // 6. 리스너에는 정확한 위치의 데이터를 전달합니다.
+            listener.onRegionClick(regionList.get(currentPosition));
         });
     }
-
-
 
     @Override
     public int getItemCount() {
         return regionList.size();
     }
 
-    // ViewHolder 정의
     static class RegionViewHolder extends RecyclerView.ViewHolder {
         TextView textRegionName;
         View itemRegionContainer;

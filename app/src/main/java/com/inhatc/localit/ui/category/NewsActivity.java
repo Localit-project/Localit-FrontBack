@@ -23,7 +23,7 @@ import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
 import com.inhatc.localit.api.naver.NaverApiService;
 import com.inhatc.localit.api.naver.NaverNewsResponse;
-import com.inhatc.localit.api.naver.RetrofitClient;
+import com.inhatc.localit.api.naver.NaverApiClient;
 import com.inhatc.localit.db.TouristSpot;
 import com.inhatc.localit.db.TouristSpotRepository;
 
@@ -69,7 +69,7 @@ public class NewsActivity extends AppCompatActivity {
         favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
         touristSpotRepository = new TouristSpotRepository(getApplication());
 
-        apiService = RetrofitClient.getInstance().create(NaverApiService.class);
+        apiService = NaverApiClient.getInstance().create(NaverApiService.class);
         setupRecyclerView();
 
         regionBaseQuery = getRegionNameFromIntent();

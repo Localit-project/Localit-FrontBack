@@ -49,13 +49,27 @@ public class SubRegionAdapter extends RecyclerView.Adapter<SubRegionAdapter.View
             holder.textView.setTypeface(null, android.graphics.Typeface.NORMAL);
         }
 
-        // 클릭 시 리스너 호출 및 UI 업데이트
+        // ▼▼▼ [수정됨] 클릭 시 리스너 호출 및 UI 업데이트 ▼▼▼
         holder.itemView.setOnClickListener(v -> {
+            // 1. 클릭된 '순간'의 정확한 위치를 가져옵니다.
+            int currentPosition = holder.getAdapterPosition();
+            // 2. 해당 위치가 유효한지 확인합니다 (아이템이 빠르게 삭제되었을 수 있음).
+            if (currentPosition == RecyclerView.NO_POSITION) {
+                return;
+            }
+
+            // 3. 이전에 선택된 위치를 저장하고, 새 위치를 업데이트합니다.
             int previousPosition = selectedPosition;
-            selectedPosition = position;
-            notifyItemChanged(previousPosition);
-            notifyItemChanged(position);
-            listener.onSubRegionClick(subRegion);
+            selectedPosition = currentPosition;
+
+            // 4. 변경이 필요한 아이템만 효율적으로 새로 고칩니다.
+            if (previousPosition != RecyclerView.NO_POSITION) {
+                notifyItemChanged(previousPosition);
+            }
+            notifyItemChanged(selectedPosition);
+
+            // 5. 정확한 위치의 데이터를 리스너에 전달합니다.
+            listener.onSubRegionClick(subRegions.get(currentPosition));
         });
     }
 

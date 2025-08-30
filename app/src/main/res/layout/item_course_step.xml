@@ -13,21 +13,29 @@
         android:textStyle="bold"
         android:textColor="#222"/>
 
-    <ImageView
-        android:id="@+id/ivStepImage"
+    <!-- 이미지 + 텍스트 겹치기 -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="180dp"
-        android:layout_marginTop="8dp"
-        android:scaleType="centerCrop"
-        android:contentDescription="@string/app_name">
+        android:layout_marginTop="8dp">
+
+        <ImageView
+            android:id="@+id/ivStepImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/app_name"/>
 
         <TextView
             android:id="@+id/textView3"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="activity_course_detail" />
-    </ImageView>
+            android:layout_gravity="center"
+            android:text="activity_course_detail"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:background="#66000000"/>
+    </FrameLayout>
 
     <TextView
         android:id="@+id/tvStepDesc"
