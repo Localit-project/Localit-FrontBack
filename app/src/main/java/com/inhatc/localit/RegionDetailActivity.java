@@ -43,6 +43,7 @@ import java.util.Map;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import com.inhatc.localit.api.naver.NaverApiHelper;
 
 public class RegionDetailActivity extends AppCompatActivity {
 
@@ -363,21 +364,41 @@ public class RegionDetailActivity extends AppCompatActivity {
     }
 
     private void fetchNewsPreview() {
-        String query;
+        // 1. 검색할 기본 지역 이름을 정합니다.
+        String baseSearchTerm;
         if (!TextUtils.isEmpty(subRegionName)) {
-            query = subRegionName + " 축제 행사 관광";
+            baseSearchTerm = subRegionName; // 예: "수원시"
         } else {
-            query = regionName + " 축제 행사 관광";
+            baseSearchTerm = regionName;    // 예: "강원특별자치도"
         }
+
+        // 2. 검색 결과가 잘 나오도록 지역 이름을 다듬습니다.
+        if ("강원특별자치도".equals(baseSearchTerm)) {
+            baseSearchTerm = "강원도";
+        }
+        if ("전북특별자치도".equals(baseSearchTerm)) {
+            baseSearchTerm = "전라북도";
+        }
+        if ("세종특별자치시".equals(baseSearchTerm)) {
+            baseSearchTerm = "세종시";
+        }
+
+        // 3. 더 자연스러운 검색어로 변경합니다.
+        String query = baseSearchTerm + " 소식";
+
+        // 디버깅을 위해 최종 검색어를 로그로 출력합니다.
+        Log.d("RegionDetailActivity", "뉴스 API 검색어: " + query);
 
         if (TextUtils.isEmpty(query)) {
             bindNewsPreview(null, null);
             return;
         }
 
-        Call<NaverNewsResponse> call = naverApiService.getNews(
+        // 4. 올바른 Helper 클래스(NaverApiHelper)를 사용하여 API를 호출합니다.
+        Call<NaverNewsResponse> call = NaverApiHelper.getApiService().getNews(
                 NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, query, 3, "sim"
         );
+
         call.enqueue(new Callback<NaverNewsResponse>() {
             @Override
             public void onResponse(Call<NaverNewsResponse> call, Response<NaverNewsResponse> response) {
@@ -385,6 +406,10 @@ public class RegionDetailActivity extends AppCompatActivity {
                     List<String> titles = new ArrayList<>();
                     newsLinks.clear();
                     newsPubDates.clear();
+
+                    // 받아온 뉴스 개수를 로그로 확인합니다.
+                    Log.d("RegionDetailActivity", "받아온 뉴스 개수: " + response.body().getItems().size());
+
                     for (NaverNewsResponse.Item item : response.body().getItems()) {
                         String title = item.getTitle().replaceAll("<b>|</b>", "");
                         titles.add(title);
@@ -393,13 +418,16 @@ public class RegionDetailActivity extends AppCompatActivity {
                     }
                     bindNewsPreview(titles, newsPubDates);
                 } else {
+                    // API 응답은 성공했으나 결과가 없거나 오류인 경우
+                    Log.e("RegionDetailActivity", "뉴스 API 응답 오류: " + response.code());
                     bindNewsPreview(null, null);
                 }
             }
 
             @Override
             public void onFailure(Call<NaverNewsResponse> call, Throwable t) {
-                Log.e("RegionDetailActivity", "뉴스 가져오기 실패", t);
+                // 네트워크 오류 등 API 호출 자체가 실패한 경우
+                Log.e("RegionDetailActivity", "뉴스 API 호출 실패", t);
                 bindNewsPreview(null, null);
             }
         });
