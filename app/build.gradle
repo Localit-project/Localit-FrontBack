@@ -1,4 +1,3 @@
-
 plugins {
     id 'com.android.application'
     id 'com.google.gms.google-services'
@@ -13,9 +12,6 @@ if (lpFile.exists()) {
 android {
     namespace 'com.inhatc.localit'
     compileSdk 35
-    buildFeatures {
-        viewBinding true
-    }
 
     defaultConfig {
         applicationId "com.inhatc.localit"
@@ -24,16 +20,17 @@ android {
         versionCode 1
         versionName "1.0"
 
-
-        // 네이버 지도 클라이언트 아이디 (AndroidManifest에 주입)
+        // AndroidManifest 주입 (네이버 지도)
         manifestPlaceholders = [
                 NAVERMAP_CLIENT_ID: localProps.getProperty("NAVERMAP_CLIENT_ID", "")
         ]
 
-        // TourAPI 키를 BuildConfig로 노출
+        // ★ 키는 가급적 local.properties로 관리 권장 (임시 하드코드 → 가능하면 옮기기)
         buildConfigField "String", "TOUR_API_KEY", "\"wL/Ry8EMiMg43mPRl3wyQhKosVExsJbLLDcZebat4S4eedobtNuBG+eqrj5GPKHvEAxy4NjYPz25Parbyeg8PA==\""
-        // 2. BuildConfig에 GPT API 키 변수 추가
-        buildConfigField "String", "GPT_API_KEY", "\"${GPT_API_KEY}\""
+
+        // ★ GPT API 키를 local.properties에서 읽어 BuildConfig에 주입
+        def gptKey = localProps.getProperty("GPT_API_KEY", "")
+        buildConfigField "String", "GPT_API_KEY", "\"${gptKey}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -43,43 +40,48 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        debug {
+            // 필요 시 debug 설정
+        }
     }
 
     compileOptions {
+        // 프로젝트 상황 맞게 11 또는 17 사용 (지금은 11)
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
 
-
+    // ★ 중복 선언되어 있던 buildFeatures를 하나로 통합
     buildFeatures {
         viewBinding true
-        buildConfig true
+        buildConfig  true
     }
 }
 
-// Room 버전을 사용하기 전에 변수를 정의합니다.
-def room_version = "2.6.1" // 원하는 Room 라이브러리 버전
+// Room 버전
+def room_version = "2.6.1"
 
 dependencies {
-    //챗봇 추천 액션
+    // Flexbox (추천 액션 UI 등에 사용)
     implementation "com.google.android.flexbox:flexbox:3.0.0"
 
-    // 네이버 지도 SDK 추가
+    // Naver Map
     implementation "com.naver.maps:map-sdk:3.22.1"
 
-    // Firebase BoM 및 종속성
+    // Firebase BoM + Firebase deps
     implementation platform("com.google.firebase:firebase-bom:34.0.0")
     implementation "com.google.firebase:firebase-analytics"
     implementation "com.google.firebase:firebase-auth"
     implementation "com.google.firebase:firebase-firestore"
     implementation "com.google.firebase:firebase-storage"
 
-    // AndroidX & Google Material
+    // AndroidX & Material
     implementation "androidx.appcompat:appcompat:1.7.0"
     implementation "com.google.android.material:material:1.12.0"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     implementation "androidx.recyclerview:recyclerview:1.3.2"
     implementation "androidx.browser:browser:1.8.0"
+    implementation "androidx.viewpager2:viewpager2:1.1.0"
 
     // Lifecycle
     implementation "androidx.lifecycle:lifecycle-runtime:2.7.0"
@@ -90,14 +92,16 @@ dependencies {
     implementation "androidx.navigation:navigation-fragment:2.7.7"
     implementation "androidx.navigation:navigation-ui:2.7.7"
 
-    // Room DB
+    // Room (Java: annotationProcessor)
     implementation "androidx.room:room-runtime:$room_version"
     annotationProcessor "androidx.room:room-compiler:$room_version"
 
     // Network (Retrofit) & Image Loading (Glide)
-    implementation "com.squareup.retrofit2:retrofit:2.9.0"
-    implementation "com.squareup.retrofit2:converter-gson:2.9.0"
+    // 2.11.0부터는 Java 8+ 필요. (지금 Java 11 OK)
+    implementation "com.squareup.retrofit2:retrofit:2.11.0"
+    implementation "com.squareup.retrofit2:converter-gson:2.11.0"
     implementation "com.squareup.retrofit2:converter-simplexml:2.11.0"
+
     implementation "com.github.bumptech.glide:glide:4.16.0"
     annotationProcessor "com.github.bumptech.glide:compiler:4.16.0"
 
@@ -105,17 +109,16 @@ dependencies {
     implementation "com.google.android.gms:play-services-auth:21.0.0"
     implementation "com.kakao.sdk:v2-user:2.19.0"
     implementation "com.navercorp.nid:oauth:5.7.0"
+
+    // WorkManager
     def work_version = "2.9.0"
     implementation "androidx.work:work-runtime:$work_version"
-    implementation "com.google.android.material:material:1.12.0"
-    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
-    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+
+    // OkHttp
+    implementation "com.squareup.okhttp3:okhttp:4.12.0"
+
     // Testing
     testImplementation "junit:junit:4.13.2"
     androidTestImplementation "androidx.test.ext:junit:1.1.5"
     androidTestImplementation "androidx.test.espresso:espresso-core:3.5.1"
-
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    implementation 'androidx.viewpager2:viewpager2:1.1.0'
-
 }
