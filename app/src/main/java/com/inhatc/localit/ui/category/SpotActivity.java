@@ -11,28 +11,28 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProvider; // ◀◀ 추가
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
-import com.inhatc.localit.Fragment.FavoriteViewModel; // ◀◀ 추가
+import com.inhatc.localit.Fragment.FavoriteViewModel;
 import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
 import com.inhatc.localit.api.SpotApiHelper;
 import com.inhatc.localit.api.SpotApiService;
 import com.inhatc.localit.api.SpotResponse;
-import com.inhatc.localit.db.TouristSpot; // ◀◀ 추가
-import com.inhatc.localit.db.TouristSpotRepository; // ◀◀ 추가
+import com.inhatc.localit.db.TouristSpot;
+import com.inhatc.localit.db.TouristSpotRepository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet; // ◀◀ 추가
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set; // ◀◀ 추가
+import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -180,7 +180,6 @@ public class SpotActivity extends AppCompatActivity {
             }
         });
     }
-    // ◀◀ 추가 끝
 
     private void initViews() {
         recyclerViewTourism = findViewById(R.id.recyclerViewTourism);

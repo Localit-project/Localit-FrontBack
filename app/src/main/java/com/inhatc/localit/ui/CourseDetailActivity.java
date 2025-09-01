@@ -16,6 +16,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,9 +25,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.inhatc.localit.MainActivity;
 import com.inhatc.localit.R;
 import com.inhatc.localit.api.home.TourApiHelper;
 import com.inhatc.localit.api.home.TourItem;
+import com.inhatc.localit.ui.category.SpotActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +60,8 @@ public class CourseDetailActivity extends AppCompatActivity {
     private LinearLayout rowAddr;
     private TextView tvAddress;
     private TextView btnCopyAddress;
+    private BottomNavigationView navView;
+
 
     private LinearLayout rowHomepage;
     private TextView tvHomepage;
@@ -74,7 +80,27 @@ public class CourseDetailActivity extends AppCompatActivity {
     private RecyclerView recyclerCourseSteps;
     private StepsAdapter stepsAdapter;
 
-    @Override
+    private void initViews() {
+        btnBack             = findViewById(R.id.btnBack);
+        navView             = findViewById(R.id.nav_view);
+    }
+    private void setupBottomNavigationView() {
+        if (navView == null) return;
+        navView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            Intent intent = new Intent(CourseDetailActivity.this, MainActivity.class);
+            if (id == R.id.navigation_home) intent.putExtra("start_fragment", 0);
+            else if (id == R.id.navigation_category) intent.putExtra("start_fragment", 1);
+            else if (id == R.id.navigation_search) intent.putExtra("start_fragment", 2);
+            else if (id == R.id.navigation_favorite) intent.putExtra("start_fragment", 3);
+            else if (id == R.id.navigation_mypage) intent.putExtra("start_fragment", 4);
+            startActivity(intent);
+            finish();
+            return true;
+        });
+    }
+
+        @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_course_detail);
@@ -110,6 +136,9 @@ public class CourseDetailActivity extends AppCompatActivity {
 
         progress = findViewById(R.id.progress);
         tvError = findViewById(R.id.tvError);
+
+        navView = findViewById(R.id.nav_view);   
+        setupBottomNavigationView();
 
         // 코스 섹션 바인딩
         sectionCourseInfo = findViewById(R.id.sectionCourseInfo);
@@ -368,6 +397,8 @@ public class CourseDetailActivity extends AppCompatActivity {
                     iv.setImageResource(R.drawable.sample1);
                 }
             }
+
         }
+
     }
 }

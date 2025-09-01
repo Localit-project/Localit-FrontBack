@@ -354,16 +354,17 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- 하단 내비 (그대로 유지) -->
+    <!-- 하단 내비 -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/nav_view"
         android:layout_width="0dp"
-        android:layout_height="70dp"
+        android:layout_height="80dp"
         android:background="?android:attr/windowBackground"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:menu="@menu/bottom_nav_menu" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:menu="@menu/bottom_nav_menu"
+        app:labelVisibilityMode="unlabeled" />
 
     <!-- 로딩/에러(옵션) -->
     <ProgressBar

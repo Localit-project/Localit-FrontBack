@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.inhatc.localit.databinding.ActivityMapBinding;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.inhatc.localit.ui.CourseDetailActivity;
 
 
 public class MapActivity extends AppCompatActivity {
@@ -22,6 +23,27 @@ public class MapActivity extends AppCompatActivity {
     private TextView[] regionTexts;
     private String[] regions;
     private BottomNavigationView navView;
+    private ImageView btnBack;
+
+    private void initViews() {
+        btnBack             = findViewById(R.id.btnBack);
+        navView             = findViewById(R.id.nav_view);
+    }
+    private void setupBottomNavigationView() {
+        if (navView == null) return;
+        navView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            Intent intent = new Intent(MapActivity.this, MainActivity.class);
+            if (id == R.id.navigation_home) intent.putExtra("start_fragment", 0);
+            else if (id == R.id.navigation_category) intent.putExtra("start_fragment", 1);
+            else if (id == R.id.navigation_search) intent.putExtra("start_fragment", 2);
+            else if (id == R.id.navigation_favorite) intent.putExtra("start_fragment", 3);
+            else if (id == R.id.navigation_mypage) intent.putExtra("start_fragment", 4);
+            startActivity(intent);
+            finish();
+            return true;
+        });
+    }
 
 
     @Override
@@ -29,6 +51,9 @@ public class MapActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMapBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        navView = findViewById(R.id.nav_view);
+        setupBottomNavigationView();
 
         // strings.xml의 지역 배열
         regions = getResources().getStringArray(R.array.regions_array);
@@ -106,22 +131,4 @@ public class MapActivity extends AppCompatActivity {
         }
     }
 
-    private void setupBottomNavigationView() {
-        if (navView == null) return;
-        navView.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            Intent intent = new Intent(this, MainActivity.class);
-            if (id == R.id.navigation_home) intent.putExtra("start_fragment", 0);
-            else if (id == R.id.navigation_category) intent.putExtra("start_fragment", 1);
-            else if (id == R.id.navigation_search) intent.putExtra("start_fragment", 2);
-            else if (id == R.id.navigation_favorite) intent.putExtra("start_fragment", 3);
-            else if (id == R.id.navigation_mypage) intent.putExtra("start_fragment", 4);
-
-            // 수정된 부분: 하단 네비게이션에서도 플래그를 사용합니다.
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            startActivity(intent);
-
-            return true;
-        });
-    }
 }
