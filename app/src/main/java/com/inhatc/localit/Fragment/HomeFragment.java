@@ -64,6 +64,14 @@ public class HomeFragment extends Fragment {
     private final List<SpotResponse.Item> spotCardItems = new ArrayList<>();
     private final List<SpotResponse.Item> festivalCardItems = new ArrayList<>();
 
+    private void onCourseClicked(TourItem item) {
+        Intent i = new Intent(requireContext(), CourseDetailActivity.class);
+        i.putExtra("contentId", item.contentid);
+        // 비어있으면 25
+        i.putExtra("contentTypeId", TextUtils.isEmpty(item.contenttypeid) ? "25" : item.contenttypeid);
+        startActivity(i);
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

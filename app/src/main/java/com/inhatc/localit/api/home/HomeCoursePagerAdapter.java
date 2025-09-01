@@ -83,7 +83,7 @@ public class HomeCoursePagerAdapter
         VH(@NonNull View itemView) {
             super(itemView);
             card = (CardView) itemView;
-            image = itemView.findViewById(R.id.imageCourse); // ★ XML과 동일
+            image = itemView.findViewById(R.id.imageCourse);
         }
     }
 

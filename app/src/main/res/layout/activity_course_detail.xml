@@ -247,6 +247,102 @@
                             android:textSize="14sp"
                             android:lineSpacingExtra="2dp"
                             android:text="" />
+
+                        <!-- ===== 코스정보 섹션 (detailIntro1) ===== -->
+                        <LinearLayout
+                            android:id="@+id/sectionCourseInfo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="vertical"
+                            android:background="@drawable/bg_info_section_round"
+                            android:padding="12dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="코스정보"
+                                android:textStyle="bold"
+                                android:textSize="16sp"
+                                android:textColor="#222"
+                                android:paddingBottom="8dp"/>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvCourseSchedule"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="일정: -"
+                                    android:textSize="14sp"
+                                    android:textColor="#333333"
+                                    android:paddingTop="4dp"
+                                    android:paddingBottom="4dp"/>
+
+                                <TextView
+                                    android:id="@+id/tvCourseDistance"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="거리: -"
+                                    android:textSize="14sp"
+                                    android:textColor="#333333"
+                                    android:paddingTop="4dp"
+                                    android:paddingBottom="4dp"/>
+
+                                <TextView
+                                    android:id="@+id/tvCourseTaketime"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="소요시간: -"
+                                    android:textSize="14sp"
+                                    android:textColor="#333333"
+                                    android:paddingTop="4dp"
+                                    android:paddingBottom="4dp"/>
+
+                                <TextView
+                                    android:id="@+id/tvCourseTheme"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="테마: -"
+                                    android:textSize="14sp"
+                                    android:textColor="#333333"
+                                    android:paddingTop="4dp"
+                                    android:paddingBottom="4dp"/>
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- ===== 여행 코스 리스트 (detailInfo1) ===== -->
+                        <LinearLayout
+                            android:id="@+id/sectionCourseList"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="vertical"
+                            android:background="@drawable/bg_info_section_round"
+                            android:padding="12dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="여행 코스"
+                                android:textStyle="bold"
+                                android:textSize="16sp"
+                                android:textColor="#222"
+                                android:paddingBottom="8dp"/>
+
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/recyclerCourseSteps"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:nestedScrollingEnabled="false"
+                                android:overScrollMode="never"/>
+                        </LinearLayout>
+
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>

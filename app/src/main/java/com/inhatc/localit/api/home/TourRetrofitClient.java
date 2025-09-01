@@ -1,39 +1,47 @@
-// app/src/main/java/com/inhatc/localit/api/home/TourRetrofitClient.java
 package com.inhatc.localit.api.home;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
+import retrofit2.converter.scalars.ScalarsConverterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public final class TourRetrofitClient {
+final class TourRetrofitClient {
 
-    private static volatile TourApiService service;
+    private static volatile TourApiService INSTANCE;
 
-    public static TourApiService get() {
-        if (service == null) {
+    private TourRetrofitClient() {}
+
+    static TourApiService get() {
+        if (INSTANCE == null) {
             synchronized (TourRetrofitClient.class) {
-                if (service == null) {
-                    OkHttpClient client = new OkHttpClient.Builder().build();
+                if (INSTANCE == null) {
+                    HttpLoggingInterceptor log = new HttpLoggingInterceptor();
+                    log.setLevel(HttpLoggingInterceptor.Level.BASIC);
 
-                    Gson gson = new GsonBuilder()
-                            .setLenient()
-                            .create();
-
-                    Retrofit retrofit = new Retrofit.Builder()
-                            .baseUrl("https://apis.data.go.kr/B551011/KorService2/")
-                            .client(client)
-                            .addConverterFactory(GsonConverterFactory.create(gson))
+                    OkHttpClient ok = new OkHttpClient.Builder()
+                            .connectTimeout(15, TimeUnit.SECONDS)
+                            .readTimeout(20, TimeUnit.SECONDS)
+                            .writeTimeout(20, TimeUnit.SECONDS)
+                            .addInterceptor(log)
+                            // 굳이 Accept 고정하지 않음( XML 폴백 대비 )
                             .build();
 
-                    service = retrofit.create(TourApiService.class);
+                    Retrofit rt = new Retrofit.Builder()
+                            .baseUrl("https://apis.data.go.kr/B551011/KorService2/")
+                            // RAW(XML/문자) 먼저
+                            .addConverterFactory(ScalarsConverterFactory.create())
+                            // 그다음 JSON
+                            .addConverterFactory(GsonConverterFactory.create())
+                            .client(ok)
+                            .build();
+
+                    INSTANCE = rt.create(TourApiService.class);
                 }
             }
         }
-        return service;
+        return INSTANCE;
     }
-
-    private TourRetrofitClient() {}
 }
