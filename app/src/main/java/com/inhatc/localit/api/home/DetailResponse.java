@@ -1,24 +1,17 @@
+// DetailResponse.java
 package com.inhatc.localit.api.home;
 
 import java.util.List;
 
 public class DetailResponse {
-    public ResponseBody response;
+    public R response;
+    public static class R { public B body; }
+    public static class B { public Items items; }
+    public static class Items { public List<Item> item; }
 
-    public static class ResponseBody { public Body body; }
-    public static class Body { public Items items; }
-    public static class Items { public List<DetailItem> item; }
-
-    public static class DetailItem {
-        public String title;
-        public String overview;
-        public String addr1;
-        public String addr2;
-        public String firstimage;
-        public String firstimage2;
-        public String tel;
-        public String homepage;
-        public String mapx;
-        public String mapy;
+    public static class Item {
+        public String contentid, contenttypeid, title, overview;
+        public String addr1, addr2, zipcode, firstimage, firstimage2;
+        public Double mapx, mapy;
     }
 }

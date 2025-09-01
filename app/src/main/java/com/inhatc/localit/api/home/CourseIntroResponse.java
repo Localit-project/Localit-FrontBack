@@ -1,18 +1,16 @@
+// CourseIntroResponse.java
 package com.inhatc.localit.api.home;
 
 import java.util.List;
 
 public class CourseIntroResponse {
-    public ResponseBody response;
+    public R response;
+    public static class R { public B body; }
+    public static class B { public Items items; }
+    public static class Items { public List<Item> item; }
 
-    public static class ResponseBody { public Body body; }
-    public static class Body { public Items items; }
-    public static class Items { public List<CourseIntroItem> item; }
-
-    public static class CourseIntroItem {
-        public String distance; // 40km
-        public String schedule; // 1박2일
-        public String taketime; // 약 1시간 15분
-        public String theme;    // ----지자체-----
+    public static class Item {
+        public String contentid, contenttypeid;
+        public String distance, schedule, taketime, theme;
     }
 }

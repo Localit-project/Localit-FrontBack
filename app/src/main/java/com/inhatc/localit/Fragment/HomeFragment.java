@@ -206,19 +206,17 @@ public class HomeFragment extends Fragment {
     private void openCourseDetail(TourItem item) {
         if (getContext() == null || item == null) return;
 
-        if (courseUrlOverride.containsKey(item.contentid)) {
-            String url = courseUrlOverride.get(item.contentid);
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            startActivity(browserIntent);
-        } else {
-            Intent i = new Intent(requireContext(), CourseDetailActivity.class);
-            i.putExtra(CourseDetailActivity.EXTRA_CONTENT_ID, item.contentid);
-            i.putExtra(CourseDetailActivity.EXTRA_TITLE, TextUtils.isEmpty(item.title) ? "상세 정보" : item.title);
-            if (courseImageOverride.containsKey(item.contentid)) {
-                i.putExtra(CourseDetailActivity.EXTRA_FALLBACK_IMAGE_URI, courseImageOverride.get(item.contentid));
-            }
-            startActivity(i);
+        Intent i = new Intent(requireContext(), CourseDetailActivity.class);
+        i.putExtra(CourseDetailActivity.EXTRA_CONTENT_ID, item.contentid);
+        i.putExtra(CourseDetailActivity.EXTRA_TITLE,
+                TextUtils.isEmpty(item.title) ? "상세 정보" : item.title);
+
+        // 홈 카드의 로컬 이미지 사용(없으면 생략)
+        String fallback = courseImageOverride.get(item.contentid);
+        if (!TextUtils.isEmpty(fallback)) {
+            i.putExtra(CourseDetailActivity.EXTRA_FALLBACK_IMAGE_URI, fallback);
         }
+        startActivity(i);
     }
 
     // ================= 관광 카드 2개 =================

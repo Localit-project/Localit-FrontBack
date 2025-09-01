@@ -19,28 +19,30 @@ import java.util.List;
 
 public class CourseStepAdapter extends RecyclerView.Adapter<CourseStepAdapter.VH> {
 
-    private final List<CourseInfoResponse.CourseInfoItem> data = new ArrayList<>();
+    private final List<CourseInfoResponse.Item> data = new ArrayList<>();
 
-    public void submit(List<CourseInfoResponse.CourseInfoItem> list) {
+    public void submit(List<CourseInfoResponse.Item> list) {
         data.clear();
         if (list != null) data.addAll(list);
         notifyDataSetChanged();
     }
 
-    @NonNull
-    @Override public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    @NonNull @Override
+    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_course_step, parent, false);
         return new VH(v);
     }
 
-    @Override public void onBindViewHolder(@NonNull VH h, int pos) {
-        CourseInfoResponse.CourseInfoItem it = data.get(pos);
+    @Override
+    public void onBindViewHolder(@NonNull VH h, int pos) {
+        CourseInfoResponse.Item it = data.get(pos);
         h.title.setText((pos + 1) + ". " + (it.subname != null ? it.subname : ""));
         h.desc.setText(!TextUtils.isEmpty(it.subdetailoverview) ? it.subdetailoverview : "");
         if (!TextUtils.isEmpty(it.subdetailimg)) {
             h.image.setVisibility(View.VISIBLE);
-            Glide.with(h.image.getContext()).load(it.subdetailimg)
+            Glide.with(h.image.getContext())
+                    .load(it.subdetailimg)
                     .placeholder(R.drawable.bg_image_round)
                     .into(h.image);
         } else {
