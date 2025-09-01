@@ -120,7 +120,7 @@ public class HomeFragment extends Fragment {
         courseUrlOverride.put("2018433", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=5064fda9-ac0a-40a4-8abf-b50dc5fdb797&big_category=C01&mid_category=C0112&big_area=31");
         courseUrlOverride.put("2833450", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=36c7d072-de3d-4c4b-9c7e-e1ddaade2a7d&big_category=C01&mid_category=C0114&big_area=32");
 
-        // ----- 코스 ViewPager (API만 사용) -----
+        // ----- 코스 ViewPager -----
         courseAdapter = new HomeCoursePagerAdapter(courseImageOverride, this::openCourseDetail);
         binding.pagerCourses.setAdapter(courseAdapter);
         binding.pagerCourses.setOffscreenPageLimit(1);
@@ -130,24 +130,42 @@ public class HomeFragment extends Fragment {
             int pos = pager.getCurrentItem();
             if (pos > 0) pager.setCurrentItem(pos - 1, true);
         });
-        binding.btnNext.setOnClickListener(v -> pager.setCurrentItem(pager.getCurrentItem() + 1, true));
+        binding.btnNext.setOnClickListener(v -> {
+            if (pager.getAdapter() != null) {
+                pager.setCurrentItem(pager.getCurrentItem() + 1, true);
+            }
+        });
 
+        // 1) 폴백 리스트를 먼저 표시 (오버라이드 이미지만으로도 보이도록)
         List<String> courseIds = Arrays.asList(
                 "3517031","3516944","3516594","2022929","2987504","2018433","2833450"
         );
+        List<TourItem> fallback = new ArrayList<>();
+        for (String id : courseIds) {
+            TourItem t = new TourItem();
+            t.contentid = id;
+            t.title = "";          // 제목은 API 성공 시 채워짐
+            t.firstimage = null;   // 이미지는 어댑터에서 override를 우선 사용
+            fallback.add(t);
+        }
+        courseAdapter.submit(fallback);
+
+        // 2) API가 성공하면 교체, 실패/빈응답이면 폴백 유지
         TourApiHelper.fetchCourseSummaries(courseIds, courseItems -> {
             if (getActivity() == null) return;
-            getActivity().runOnUiThread(() -> courseAdapter.submit(courseItems)); // List<TourItem>
+            getActivity().runOnUiThread(() -> {
+                if (courseItems != null && !courseItems.isEmpty()) {
+                    courseAdapter.submit(courseItems);
+                }
+            });
         });
 
         wireHomeCards();
 
-        // 레이아웃에 리사이클러뷰가 남아 있다면 숨김
         if (binding.recyclerFestivals != null) binding.recyclerFestivals.setVisibility(View.GONE);
 
-        // 관광/축제 카드: API로 최신 2개 바인딩
         fetchNationwideSpotCards();
-        fetchLatestFestivalsForCards();   // ← 목록 없이 카드만 채움
+        fetchLatestFestivalsForCards();
 
         return root;
     }
@@ -182,7 +200,6 @@ public class HomeFragment extends Fragment {
         if (binding.cardFestival1 != null) binding.cardFestival1.setOnClickListener(v -> openFestivalDetailFromCard(0));
         if (binding.cardFestival2 != null) binding.cardFestival2.setOnClickListener(v -> openFestivalDetailFromCard(1));
 
-        // 더보기 누르면 목록 화면에서 전체 리스트 표시
         if (binding.btnMoreFestivals != null) {
             binding.btnMoreFestivals.setOnClickListener(v ->
                     startActivity(new Intent(requireContext(), FestivalActivity.class)));
@@ -206,17 +223,19 @@ public class HomeFragment extends Fragment {
     private void openCourseDetail(TourItem item) {
         if (getContext() == null || item == null) return;
 
-        Intent i = new Intent(requireContext(), CourseDetailActivity.class);
-        i.putExtra(CourseDetailActivity.EXTRA_CONTENT_ID, item.contentid);
-        i.putExtra(CourseDetailActivity.EXTRA_TITLE,
-                TextUtils.isEmpty(item.title) ? "상세 정보" : item.title);
-
-        // 홈 카드의 로컬 이미지 사용(없으면 생략)
-        String fallback = courseImageOverride.get(item.contentid);
-        if (!TextUtils.isEmpty(fallback)) {
-            i.putExtra(CourseDetailActivity.EXTRA_FALLBACK_IMAGE_URI, fallback);
+        if (courseUrlOverride.containsKey(item.contentid)) {
+            String url = courseUrlOverride.get(item.contentid);
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            startActivity(browserIntent);
+        } else {
+            Intent i = new Intent(requireContext(), CourseDetailActivity.class);
+            i.putExtra(CourseDetailActivity.EXTRA_CONTENT_ID, item.contentid);
+            i.putExtra(CourseDetailActivity.EXTRA_TITLE, TextUtils.isEmpty(item.title) ? "상세 정보" : item.title);
+            if (courseImageOverride.containsKey(item.contentid)) {
+                i.putExtra(CourseDetailActivity.EXTRA_FALLBACK_IMAGE_URI, courseImageOverride.get(item.contentid));
+            }
+            startActivity(i);
         }
-        startActivity(i);
     }
 
     // ================= 관광 카드 2개 =================
@@ -225,7 +244,7 @@ public class HomeFragment extends Fragment {
         Call<SpotResponse> call = api.getTourList(
                 12, 1, "AND", "localit", "C",
                 12,
-                1,         // areaCode: 서울(기본) — 필요 시 관심지역으로 교체
+                1,
                 null,
                 "json",
                 BuildConfig.TOUR_API_KEY
@@ -253,11 +272,6 @@ public class HomeFragment extends Fragment {
     }
 
     private void bindSpotCards(List<SpotResponse.Item> items) {
-        // ▼▼▼ [수정됨] 뷰가 파괴된 경우를 대비하여 NullPointerException 방지 코드를 추가합니다. ▼▼▼
-        if (binding == null) {
-            return;
-        }
-
         if (items != null && items.size() > 0) {
             SpotResponse.Item it = items.get(0);
             binding.textMarket1Title.setText(safe(it.title));
@@ -311,10 +325,7 @@ public class HomeFragment extends Fragment {
         SpotApiService api = SpotApiHelper.getApiService();
         Call<SpotResponse> call = api.getFestivalList(
                 30, 1, "AND", "localit", "json",
-                1,              // areaCode: 서울(기본) — 필요 시 관심지역으로 교체
-                null,
-                startDate,      // 오늘 이후 축제
-                "A",            // 목록에서 최신 잘 나오던 정렬값
+                1, null, startDate, "A",
                 BuildConfig.TOUR_API_KEY
         );
 
@@ -342,11 +353,6 @@ public class HomeFragment extends Fragment {
     }
 
     private void bindFestivalCards(List<SpotResponse.Item> items) {
-        // ▼▼▼ [수정됨] 뷰가 파괴된 경우를 대비하여 NullPointerException 방지 코드를 추가합니다. ▼▼▼
-        if (binding == null) {
-            return;
-        }
-
         if (items != null && items.size() > 0) {
             SpotResponse.Item it = items.get(0);
             binding.textFestival1Title.setText(safe(it.title));

@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
@@ -18,86 +19,82 @@ import com.inhatc.localit.R;
 import java.util.List;
 import java.util.Map;
 
-public class HomeCoursePagerAdapter extends ListAdapter<TourItem, HomeCoursePagerAdapter.CourseViewHolder> {
+public class HomeCoursePagerAdapter
+        extends ListAdapter<TourItem, HomeCoursePagerAdapter.VH> {
 
-    private final Map<String, String> imageOverrides;
-    private final OnCourseClickListener clickListener;
+    public interface OnCourseClick { void onClick(TourItem item); }
 
-    public interface OnCourseClickListener {
-        void onCourseClick(TourItem item);
+    private final Map<String, String> imageOverride; // contentId -> resource/URL
+    private final OnCourseClick click;
+
+    public HomeCoursePagerAdapter(@NonNull Map<String, String> imageOverride,
+                                  @NonNull OnCourseClick click) {
+        super(DIFF);
+        this.imageOverride = imageOverride;
+        this.click = click;
     }
 
-    public HomeCoursePagerAdapter(Map<String, String> imageOverrides, OnCourseClickListener clickListener) {
-        super(DIFF_CALLBACK);
-        this.imageOverrides = imageOverrides;
-        this.clickListener = clickListener;
-    }
+    public void submit(List<TourItem> list) { submitList(list); }
 
-    @NonNull
-    @Override
-    public CourseViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
+    @NonNull @Override
+    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_home_course, parent, false);
-        return new CourseViewHolder(view);
+        return new VH(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull CourseViewHolder holder, int position) {
-        TourItem tourItem = getItem(position);
-        String override = imageOverrides.get(tourItem.contentid);
-        holder.bind(tourItem, override, clickListener);
-    }
+    public void onBindViewHolder(@NonNull VH h, int position) {
+        TourItem item = getItem(position);
+        if (item == null) return;
 
-    public void submit(List<TourItem> list) {
-        submitList(list);
-    }
-
-    static class CourseViewHolder extends RecyclerView.ViewHolder {
-        private final ImageView imageView;
-
-        CourseViewHolder(@NonNull View itemView) {
-            super(itemView);
-            imageView = itemView.findViewById(R.id.imageCourse);
-        }
-
-        void bind(TourItem item, String fallbackImageUri, OnCourseClickListener listener) {
-            // 1순위: API로 받은 firstimage, 2순위: 오버라이드 리소스
-            String imageToLoad = !TextUtils.isEmpty(item.firstimage) ? item.firstimage : fallbackImageUri;
-
-            if (!TextUtils.isEmpty(imageToLoad)) {
-                if (imageToLoad.startsWith("http")) {
-                    Glide.with(imageView.getContext())
-                            .load(imageToLoad)
-                            .placeholder(R.drawable.bg_image_round) // 필요시 다른 플레이스홀더
-                            .error(R.drawable.bg_image_round)
-                            .into(imageView);
-                } else {
-                    imageView.setImageURI(Uri.parse(imageToLoad));
-                }
-            } else {
-                imageView.setImageResource(R.drawable.bg_image_round);
+        String override = imageOverride == null ? null : imageOverride.get(item.contentid);
+        if (!TextUtils.isEmpty(override)) {
+            try {
+                Glide.with(h.image)
+                        .load(Uri.parse(override))
+                        .placeholder(R.drawable.sample1)
+                        .error(R.drawable.sample1)
+                        .into(h.image);
+            } catch (Exception e) {
+                loadFallback(h, item);
             }
+        } else {
+            loadFallback(h, item);
+        }
+        h.card.setOnClickListener(v -> click.onClick(item));
+    }
 
-            itemView.setOnClickListener(v -> {
-                if (listener != null) listener.onCourseClick(item);
-            });
+    private void loadFallback(@NonNull VH h, @NonNull TourItem item) {
+        if (!TextUtils.isEmpty(item.firstimage)) {
+            Glide.with(h.image)
+                    .load(item.firstimage)
+                    .placeholder(R.drawable.sample1)
+                    .error(R.drawable.sample1)
+                    .into(h.image);
+        } else {
+            h.image.setImageResource(R.drawable.sample1);
         }
     }
 
-    private static final DiffUtil.ItemCallback<TourItem> DIFF_CALLBACK =
-            new DiffUtil.ItemCallback<TourItem>() {
-                @Override
-                public boolean areItemsTheSame(@NonNull TourItem oldItem, @NonNull TourItem newItem) {
-                    return oldItem != null && newItem != null &&
-                            TextUtils.equals(oldItem.contentid, newItem.contentid);
-                }
+    static class VH extends RecyclerView.ViewHolder {
+        final CardView card;
+        final ImageView image;
+        VH(@NonNull View itemView) {
+            super(itemView);
+            card = (CardView) itemView;
+            image = itemView.findViewById(R.id.imageCourse); // ★ XML과 동일
+        }
+    }
 
-                @Override
-                public boolean areContentsTheSame(@NonNull TourItem oldItem, @NonNull TourItem newItem) {
-                    // 간단 비교 (id / title / firstimage)
-                    return TextUtils.equals(oldItem.contentid, newItem.contentid) &&
-                            TextUtils.equals(oldItem.title, newItem.title) &&
-                            TextUtils.equals(oldItem.firstimage, newItem.firstimage);
+    private static final DiffUtil.ItemCallback<TourItem> DIFF =
+            new DiffUtil.ItemCallback<TourItem>() {
+                @Override public boolean areItemsTheSame(@NonNull TourItem a, @NonNull TourItem b) {
+                    return TextUtils.equals(a.contentid, b.contentid);
+                }
+                @Override public boolean areContentsTheSame(@NonNull TourItem a, @NonNull TourItem b) {
+                    return TextUtils.equals(a.title, b.title)
+                            && TextUtils.equals(a.firstimage, b.firstimage);
                 }
             };
 }

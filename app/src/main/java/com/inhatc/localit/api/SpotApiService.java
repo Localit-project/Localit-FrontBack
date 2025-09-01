@@ -37,7 +37,26 @@ public interface SpotApiService {
     );
 
     // --- 검색: 기존 호출을 살리기 위해 오버로드 2개 제공 ---
+    // ========= 코스(25) 전용 =========
+    @GET("detailIntro2")
+    Call<com.inhatc.localit.api.CourseIntroResponse> getCourseIntro2(
+            @Query("MobileOS") String os,
+            @Query("MobileApp") String app,
+            @Query("_type") String type,
+            @Query("contentId") String contentId,
+            @Query("contentTypeId") int contentTypeId, // 25
+            @Query("serviceKey") String key
+    );
 
+    @GET("detailInfo2")
+    Call<com.inhatc.localit.api.CourseInfoResponse> getCourseInfo2(
+            @Query("MobileOS") String os,
+            @Query("MobileApp") String app,
+            @Query("_type") String type,
+            @Query("contentId") String contentId,
+            @Query("contentTypeId") int contentTypeId, // 25
+            @Query("serviceKey") String key
+    );
     // (A) 프로젝트 일부가 이 시그니처를 사용
     @GET("searchKeyword2")
     Call<SpotResponse> searchKeyword(
@@ -72,8 +91,8 @@ public interface SpotApiService {
             @Query("MobileApp") String app,
             @Query("_type") String type,
             @Query("contentId") String contentId,
-            @Query("defaultYN") String defaultYN,   // String
-            @Query("contentTypeId") int contentTypeId, // int
+            @Query("defaultYN") String defaultYN,
+            @Query("contentTypeId") int contentTypeId,
             @Query("firstImageYN") String firstImageYN,
             @Query("areacodeYN") String areacodeYN,
             @Query("catcodeYN") String catcodeYN,
@@ -82,6 +101,7 @@ public interface SpotApiService {
             @Query("overviewYN") String overviewYN,
             @Query("serviceKey") String serviceKey
     );
+
 
     @GET("detailInfo2")
     Call<SpotDetailInfoResponse> getDetailInfo(

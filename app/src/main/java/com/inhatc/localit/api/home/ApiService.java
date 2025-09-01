@@ -4,6 +4,8 @@ import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Headers;
 import retrofit2.http.Query;
+import com.inhatc.localit.api.CourseIntroResponse;
+import com.inhatc.localit.api.CourseInfoResponse;
 
 public interface ApiService {
 
