@@ -30,7 +30,7 @@ android {
         buildConfigField "String", "TOUR_API_BASE", "\"https://apis.data.go.kr/B551011/KorService2/\""
 
 
-        // ★ GPT API 키를 local.properties에서 읽어 BuildConfig에 주입
+        // GPT API 키를 local.properties에서 읽어 BuildConfig에 주입
         def gptKey = localProps.getProperty("GPT_API_KEY", "")
         buildConfigField "String", "GPT_API_KEY", "\"${gptKey}\""
 

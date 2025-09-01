@@ -10,7 +10,7 @@
         android:id="@+id/topBar"
         android:layout_width="0dp"
         android:layout_height="56dp"
-        android:layout_marginTop="25dp"
+        android:layout_marginTop="30dp"
         android:background="@android:color/white"
         android:gravity="center_vertical"
         android:orientation="horizontal"

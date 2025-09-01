@@ -17,11 +17,9 @@ public class MarketActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_market);
 
         // UI 요소 초기화
         btnBack = findViewById(R.id.btnBack);
-        marketRecyclerView = findViewById(R.id.marketRecyclerView);
 
         // 뒤로가기 버튼 클릭 리스너 설정
         btnBack.setOnClickListener(v -> finish());
