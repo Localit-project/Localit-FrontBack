@@ -3,7 +3,6 @@ package com.inhatc.localit.Fragment;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -64,6 +63,16 @@ public class HomeFragment extends Fragment {
     private final List<SpotResponse.Item> spotCardItems = new ArrayList<>();
     private final List<SpotResponse.Item> festivalCardItems = new ArrayList<>();
 
+    /** 무한 캐러셀용 데이터로 감싸기 (size < 2면 원본 반환) */
+    private List<TourItem> makeLoopData(List<TourItem> src) {
+        if (src == null || src.size() < 2) return src;
+        List<TourItem> loop = new ArrayList<>(src.size() + 2);
+        loop.add(src.get(src.size() - 1)); // 앞에 마지막 복제
+        loop.addAll(src);                   // 본체
+        loop.add(src.get(0));               // 뒤에 첫 번째 복제
+        return loop;
+    }
+
     private void onCourseClicked(TourItem item) {
         Intent i = new Intent(requireContext(), CourseDetailActivity.class);
         i.putExtra("contentId", item.contentid);
@@ -111,7 +120,7 @@ public class HomeFragment extends Fragment {
             interestRegionLauncher.launch(i);
         });
 
-        // 코스 커버 이미지 오버라이드 맵
+        // 코스 커버 이미지 오버라이드 맵 (contentId -> drawable 리소스 URI)
         String pkg = requireContext().getPackageName();
         courseImageOverride.put("3517031", "android.resource://" + pkg + "/drawable/travel1");
         courseImageOverride.put("3516944", "android.resource://" + pkg + "/drawable/travel2");
@@ -121,21 +130,53 @@ public class HomeFragment extends Fragment {
         courseImageOverride.put("2018433", "android.resource://" + pkg + "/drawable/travel6");
         courseImageOverride.put("2833450", "android.resource://" + pkg + "/drawable/travel7");
 
-        // ----- 코스 ViewPager -----
+        // ----- 코스 ViewPager (무한 캐러셀) -----
         courseAdapter = new HomeCoursePagerAdapter(courseImageOverride, this::openCourseDetail);
         binding.pagerCourses.setAdapter(courseAdapter);
         binding.pagerCourses.setOffscreenPageLimit(1);
 
-        ViewPager2 pager = binding.pagerCourses;
-        binding.btnPrev.setOnClickListener(v -> {
-            int pos = pager.getCurrentItem();
-            if (pos > 0) pager.setCurrentItem(pos - 1, true);
-        });
-        binding.btnNext.setOnClickListener(v ->
-                pager.setCurrentItem(pager.getCurrentItem() + 1, true)
-        );
+        final ViewPager2 pager = binding.pagerCourses;
 
-        // 폴백 리스트를 먼저 표시
+        // 경계 보정 콜백: 센티널 위치에서 애니메이션 없이 실제 위치로 점프
+        pager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            private int currentPos = 0;
+
+            @Override
+            public void onPageSelected(int position) {
+                currentPos = position;
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+                if (state == ViewPager2.SCROLL_STATE_IDLE) {
+                    int count = courseAdapter.getItemCount();
+                    if (count > 1) {
+                        if (currentPos == 0) {
+                            // 맨 앞 센티널 -> 마지막 실제 항목
+                            pager.setCurrentItem(count - 2, false);
+                        } else if (currentPos == count - 1) {
+                            // 맨 뒤 센티널 -> 첫 실제 항목
+                            pager.setCurrentItem(1, false);
+                        }
+                    }
+                }
+            }
+        });
+
+        // Prev/Next 버튼: 단순 -1 / +1 (경계 처리는 콜백이 담당)
+        binding.btnPrev.setOnClickListener(v -> {
+            int count = courseAdapter.getItemCount();
+            if (count <= 1) return;
+            pager.setCurrentItem(pager.getCurrentItem() - 1, true);
+        });
+
+        binding.btnNext.setOnClickListener(v -> {
+            int count = courseAdapter.getItemCount();
+            if (count <= 1) return;
+            pager.setCurrentItem(pager.getCurrentItem() + 1, true);
+        });
+
+        // 폴백 리스트를 먼저 표시 (루프 데이터로 감싸고 시작 인덱스를 1로)
         List<String> courseIds = Arrays.asList(
                 "3517031","3516944","3516594","2022929","2987504","2018433","2833450"
         );
@@ -148,18 +189,26 @@ public class HomeFragment extends Fragment {
             t.firstimage = null;   // 이미지는 오버라이드 우선
             fallback.add(t);
         }
-        courseAdapter.submit(fallback);
+        List<TourItem> loopFallback = makeLoopData(fallback);
+        courseAdapter.submit(loopFallback);
+        if (loopFallback != null && loopFallback.size() > 1) {
+            pager.setCurrentItem(1, false); // 첫 실제 항목으로
+        }
 
-        // API 성공 시 최신 데이터로 교체
+        // API 성공 시 최신 데이터로 교체 (루프 데이터로 감싸기 + 시작 인덱스 보정)
         TourApiHelper.fetchCourseSummaries(courseIds, courseItems -> {
             if (getActivity() == null) return;
             getActivity().runOnUiThread(() -> {
                 if (courseItems != null && !courseItems.isEmpty()) {
-                    // contenttypeid 누락된 항목 보정
+                    // contenttypeid 누락 보정
                     for (TourItem it : courseItems) {
                         if (TextUtils.isEmpty(it.contenttypeid)) it.contenttypeid = "25";
                     }
-                    courseAdapter.submit(courseItems);
+                    List<TourItem> loopItems = makeLoopData(courseItems);
+                    courseAdapter.submit(loopItems);
+                    if (loopItems != null && loopItems.size() > 1) {
+                        pager.setCurrentItem(1, false);
+                    }
                 }
             });
         });
@@ -210,7 +259,7 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    // ★ 코스 카드를 클릭하면 항상 내부 상세로 이동
+    // 코스 카드를 클릭하면 항상 내부 상세로 이동
     private void openCourseDetail(TourItem item) {
         if (getContext() == null || item == null) return;
 
