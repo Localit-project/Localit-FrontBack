@@ -7,9 +7,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public final class ApiClient {
     private static final String BASE_URL = "https://apis.data.go.kr/B551011/KorService2/";
-    private static ApiService s;
+    private static TourApiService s;
 
-    public static ApiService get() {
+    public static TourApiService get() {
         if (s != null) return s;
 
         HttpLoggingInterceptor log = new HttpLoggingInterceptor();
@@ -24,7 +24,7 @@ public final class ApiClient {
                 .client(ok)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
-                .create(ApiService.class);
+                .create(TourApiService.class);
         return s;
     }
 

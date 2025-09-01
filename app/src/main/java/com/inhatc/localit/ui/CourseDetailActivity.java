@@ -2,273 +2,225 @@ package com.inhatc.localit.ui;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.widget.ImageButton;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.text.HtmlCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.inhatc.localit.BuildConfig;
 import com.inhatc.localit.R;
-import com.inhatc.localit.api.ApiClient;
-import com.inhatc.localit.api.CourseInfoResponse;
-import com.inhatc.localit.api.CourseIntroResponse;
-import com.inhatc.localit.api.SpotApiHelper;
-import com.inhatc.localit.api.SpotApiService;
-import com.inhatc.localit.api.SpotDetailCommonResponse;
-import com.inhatc.localit.ui.course.CourseStepAdapter;
-import com.inhatc.localit.ui.course.GalleryAdapter;
+import com.inhatc.localit.api.home.TourApiHelper;
+import com.inhatc.localit.api.home.TourItem;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
-/** 여행코스 상세 (KorService2) */
 public class CourseDetailActivity extends AppCompatActivity {
 
+    // === Intent Extras ===
     public static final String EXTRA_CONTENT_ID = "extra_content_id";
     public static final String EXTRA_TITLE = "extra_title";
     public static final String EXTRA_FALLBACK_IMAGE_URI = "extra_fallback_image_uri";
+    public static final String EXTRA_CONTENT_TYPE_ID = "extra_content_type_id"; // HomeFragment에서 참조
+    public static final String EXTRA_HOMEPAGE = "extra_homepage"; // 선택: 홈페이지만 따로 넘길 때
 
-    private ImageView imageMain;
+    // === Data ===
+    private String contentId;
+    private String contentTypeId;       // 선택
+    private String initialTitle;
+    private String fallbackImageUri;
+    private String homepageExtra;       // 선택
+
+    // === Views ===
+    private ImageView btnBack;
+    private TextView textRegionTitle;
     private TextView textTitle;
+    private ImageView imageMain;
 
-    // 기본정보 뷰
-    private TextView tvAddress, tvPhone, tvHomepage, tvCourseIntro;
-    private TextView btnCopyAddress, btnCall, btnOpenSite;
+    private LinearLayout rowAddr;
+    private TextView tvAddress;
+    private TextView btnCopyAddress;
 
-    // 코스 인트로 섹션(옵션)
-    private TextView tvCourseSchedule, tvCourseDistance, tvCourseTaketime, tvCourseTheme;
+    private LinearLayout rowHomepage;
+    private TextView tvHomepage;
+    private TextView btnOpenSite;
 
-    // 리스트들
-    private RecyclerView recyclerGallery, recyclerCourseSteps;
-    private final GalleryAdapter galleryAdapter = new GalleryAdapter();
-    private final CourseStepAdapter courseAdapter = new CourseStepAdapter();
+    private LinearLayout infoSection;
+    private LinearLayout rowExtraInfo;
+    private TextView tvExtra;
 
-    private SpotApiService api;
-    private String serviceKey;
+    private ProgressBar progress;
+    private TextView tvError;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_course_detail);
 
-        api = ApiClient.getInstance().create(SpotApiService.class);
-        serviceKey = BuildConfig.TOUR_API_KEY; // 인코딩/디코딩 X
+        // === Get Intent ===
+        Intent intent = getIntent();
+        contentId = intent.getStringExtra(EXTRA_CONTENT_ID);
+        contentTypeId = intent.getStringExtra(EXTRA_CONTENT_TYPE_ID); // 사용 여부는 선택
+        initialTitle = intent.getStringExtra(EXTRA_TITLE);
+        fallbackImageUri = intent.getStringExtra(EXTRA_FALLBACK_IMAGE_URI);
+        homepageExtra = intent.getStringExtra(EXTRA_HOMEPAGE);
 
-        bindViews();
+        // === Bind Views ===
+        btnBack = findViewById(R.id.btnBack);
+        textRegionTitle = findViewById(R.id.textRegionTitle);
+        textTitle = findViewById(R.id.textTitle);
+        imageMain = findViewById(R.id.imageMain);
 
-        ImageButton back = findViewById(R.id.btnBack);
-        if (back != null) back.setOnClickListener(v -> finish());
+        rowAddr = findViewById(R.id.textAddr);
+        tvAddress = findViewById(R.id.tvAddress);
+        btnCopyAddress = findViewById(R.id.btnCopyAddress);
 
-        // 갤러리
-        recyclerGallery.setLayoutManager(
-                new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        recyclerGallery.setAdapter(galleryAdapter);
+        rowHomepage = findViewById(R.id.rowHomepage);
+        tvHomepage = findViewById(R.id.tvHomepage);
+        btnOpenSite = findViewById(R.id.btnOpenSite);
 
-        // 코스 스텝 리스트
-        recyclerCourseSteps.setLayoutManager(new LinearLayoutManager(this));
-        recyclerCourseSteps.setAdapter(courseAdapter);
+        infoSection = findViewById(R.id.infoSection);
+        rowExtraInfo = findViewById(R.id.textExtraInfo);
+        tvExtra = findViewById(R.id.tvExtra);
 
-        // 인텐트
-        Intent i = getIntent();
-        String contentId = i.getStringExtra(EXTRA_CONTENT_ID);
-        String title     = i.getStringExtra(EXTRA_TITLE);
-        String fallback  = i.getStringExtra(EXTRA_FALLBACK_IMAGE_URI);
+        progress = findViewById(R.id.progress);
+        tvError = findViewById(R.id.tvError);
 
-        if (!TextUtils.isEmpty(title)) textTitle.setText(title);
-        if (!TextUtils.isEmpty(fallback)) Glide.with(this).load(Uri.parse(fallback)).into(imageMain);
+        // === Init UI ===
+        textRegionTitle.setText("상세 정보");
+        textTitle.setText(!TextUtils.isEmpty(initialTitle) ? initialTitle : "코스 상세");
+        loadImage(fallbackImageUri, imageMain);
+
+        btnBack.setOnClickListener(v -> finish()); // 심볼 에러 방지
+
+        btnCopyAddress.setOnClickListener(v -> {
+            String addr = tvAddress.getText() != null ? tvAddress.getText().toString() : "";
+            if (!TextUtils.isEmpty(addr)) {
+                ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                cm.setPrimaryClip(ClipData.newPlainText("address", addr));
+                Toast.makeText(this, "주소를 복사했어요.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        btnOpenSite.setOnClickListener(v -> {
+            CharSequence url = tvHomepage.getText();
+            if (!TextUtils.isEmpty(url)) {
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString())));
+                } catch (Exception e) {
+                    Toast.makeText(this, "사이트를 열 수 없어요.", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
 
         if (TextUtils.isEmpty(contentId)) {
-            Toast.makeText(this, "contentId 가 없습니다.", Toast.LENGTH_SHORT).show();
-            finish();
+            showError("잘못된 코스 ID입니다.");
             return;
         }
 
-        // 공통정보
-        fetchCommon(contentId);
-        // 이미지
-        fetchImages(contentId);
-        // 코스 소개(거리/일정/소요/테마)
-        fetchCourseIntro(contentId);
-        // 코스 구간 리스트
-        fetchCourseInfo(contentId);
-    }
-
-    private void bindViews() {
-        imageMain  = findViewById(R.id.imageMain);
-        textTitle  = findViewById(R.id.textTitle);
-
-        tvAddress  = findViewById(R.id.tvAddress);
-        tvPhone    = findViewById(R.id.tvPhone);
-        tvHomepage = findViewById(R.id.tvHomepage);
-        tvCourseIntro = findViewById(R.id.tvCourseIntro);
-
-        btnCopyAddress = findViewById(R.id.btnCopyAddress);
-        btnCall        = findViewById(R.id.btnCall);
-        btnOpenSite    = findViewById(R.id.btnOpenSite);
-
-        recyclerGallery   = findViewById(R.id.recyclerGallery);
-        recyclerCourseSteps = findViewById(R.id.recyclerCourseSteps);
-        // (혹시 레이아웃이 recyclerCourse 라면 findViewById(R.id.recyclerCourse)로 바꿔도 됩니다.)
-
-        // 코스 인트로 섹션(있으면 채움)
-        tvCourseSchedule = findViewById(R.id.tvCourseSchedule);
-        tvCourseDistance = findViewById(R.id.tvCourseDistance);
-        tvCourseTaketime = findViewById(R.id.tvCourseTaketime);
-        tvCourseTheme    = findViewById(R.id.tvCourseTheme);
-    }
-
-    // detailCommon2
-    private void fetchCommon(String contentId) {
-        SpotApiHelper.fetchDetailCommon(contentId, "25", (SpotDetailCommonResponse.Item it) -> runOnUiThread(() -> {
-            if (it == null) return;
-
-            // 대표 이미지
-            String img = !TextUtils.isEmpty(it.firstimage) ? it.firstimage : it.firstimage2;
-            if (!TextUtils.isEmpty(img)) {
-                Glide.with(this).load(img)
-                        .placeholder(R.drawable.sample1).error(R.drawable.sample1)
-                        .into(imageMain);
+        // === Load (요약 위주: title/firstimage/addr1/overview 중심) ===
+        setLoading(true);
+        TourApiHelper.fetchCourseSummaries(Collections.singletonList(contentId), items -> runOnUiThread(() -> {
+            setLoading(false);
+            if (items == null || items.isEmpty()) {
+                showError("상세 정보를 불러오지 못했습니다.");
+                return;
             }
-
-            // 주소/전화/홈페이지
-            setText(tvAddress, join(it.addr1, it.addr2));
-            setText(tvPhone, stripHtml(it.tel));
-            if (!TextUtils.isEmpty(it.homepage)) {
-                tvHomepage.setText(HtmlCompat.fromHtml(it.homepage.replaceAll("(?i)<br\\s*/?>","\n"),
-                        HtmlCompat.FROM_HTML_MODE_LEGACY));
-            } else {
-                setText(tvHomepage, "");
-            }
-
-            // 액션
-            if (btnCopyAddress != null) {
-                btnCopyAddress.setOnClickListener(v -> {
-                    ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-                    if (cm != null) {
-                        cm.setPrimaryClip(ClipData.newPlainText("address", tvAddress.getText()));
-                        Toast.makeText(this, "주소를 복사했습니다.", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-            if (btnCall != null) {
-                btnCall.setOnClickListener(v -> {
-                    String tel = tvPhone.getText() != null ? tvPhone.getText().toString().trim() : "";
-                    if (!TextUtils.isEmpty(tel)) {
-                        startActivity(new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + tel)));
-                    }
-                });
-            }
-            if (btnOpenSite != null) {
-                btnOpenSite.setOnClickListener(v -> {
-                    CharSequence cs = tvHomepage.getText();
-                    String url = cs != null ? cs.toString().replaceAll("<.*?>", "").trim() : "";
-                    if (!TextUtils.isEmpty(url)) {
-                        if (!url.startsWith("http")) url = "http://" + url;
-                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-                    }
-                });
-            }
+            bind(items.get(0));
         }));
     }
 
-    // detailImage2
-    private void fetchImages(String contentId) {
-        SpotApiHelper.fetchDetailImages(contentId, urls -> runOnUiThread(() -> {
-            List<String> list = urls != null ? urls : new ArrayList<>();
-            galleryAdapter.submit(list);
-        }));
+    private void bind(TourItem item) {
+        // 제목
+        String title = !TextUtils.isEmpty(item.title)
+                ? item.title
+                : (!TextUtils.isEmpty(initialTitle) ? initialTitle : "코스 상세");
+        textTitle.setText(title);
+
+        // 대표 이미지
+        if (!TextUtils.isEmpty(item.firstimage)) {
+            loadImage(item.firstimage, imageMain);
+        } else {
+            loadImage(fallbackImageUri, imageMain);
+        }
+
+        // 주소
+        String addr = safe(() -> item.addr1);
+        if (!TextUtils.isEmpty(addr)) {
+            tvAddress.setText(addr);
+            rowAddr.setVisibility(View.VISIBLE);
+        } else {
+            rowAddr.setVisibility(View.GONE);
+        }
+
+        // 홈페이지 (TourItem에 필드가 없을 수 있어 인텐트로만 처리)
+        if (!TextUtils.isEmpty(homepageExtra)) {
+            tvHomepage.setText(homepageExtra);
+            rowHomepage.setVisibility(View.VISIBLE);
+        } else {
+            rowHomepage.setVisibility(View.GONE);
+        }
+
+        // 개요 → 추가정보
+        String overview = safe(() -> item.overview);
+        if (!TextUtils.isEmpty(overview)) {
+            tvExtra.setText(overview);
+            rowExtraInfo.setVisibility(View.VISIBLE);
+        } else {
+            rowExtraInfo.setVisibility(View.GONE);
+        }
+
+        // infoSection 보여줄지 결정
+        if (rowAddr.getVisibility() == View.GONE
+                && rowHomepage.getVisibility() == View.GONE
+                && rowExtraInfo.getVisibility() == View.GONE) {
+            infoSection.setVisibility(View.GONE);
+        } else {
+            infoSection.setVisibility(View.VISIBLE);
+        }
     }
 
-    // detailIntro2 (코스 전용)
-    private void fetchCourseIntro(String contentId) {
-        api.getCourseIntro2("AND","localit","json", contentId, 25, serviceKey)
-                .enqueue(new Callback<CourseIntroResponse>() {
-                    @Override public void onResponse(Call<CourseIntroResponse> call, Response<CourseIntroResponse> res) {
-                        if (!res.isSuccessful()
-                                || res.body()==null
-                                || res.body().response==null
-                                || res.body().response.body==null
-                                || res.body().response.body.items==null
-                                || res.body().response.body.items.item==null
-                                || res.body().response.body.items.item.isEmpty()) return;
-
-                        CourseIntroResponse.CourseIntroItem it =
-                                res.body().response.body.items.item.get(0);
-
-                        runOnUiThread(() -> {
-                            // 상단 요약 한 줄
-                            StringBuilder sb = new StringBuilder();
-                            if (!TextUtils.isEmpty(it.schedule)) sb.append("일정: ").append(it.schedule).append("  ");
-                            if (!TextUtils.isEmpty(it.taketime)) sb.append("소요시간: ").append(it.taketime).append("  ");
-                            if (!TextUtils.isEmpty(it.distance)) sb.append("거리: ").append(it.distance).append("  ");
-                            if (!TextUtils.isEmpty(it.theme))    sb.append("\n테마: ").append(it.theme);
-                            setText(tvCourseIntro, sb.toString());
-
-                            // 개별 라인(섹션이 있으면 채움)
-                            setText(tvCourseSchedule, label("일정: ", it.schedule));
-                            setText(tvCourseDistance, label("거리: ", it.distance));
-                            setText(tvCourseTaketime, label("소요시간: ", it.taketime));
-                            setText(tvCourseTheme,    label("테마: ", it.theme));
-                        });
-                    }
-                    @Override public void onFailure(Call<CourseIntroResponse> call, Throwable t) { /* no-op */ }
-                });
+    private void loadImage(String uriOrUrl, ImageView target) {
+        if (TextUtils.isEmpty(uriOrUrl)) {
+            target.setImageResource(R.drawable.sample1);
+            return;
+        }
+        Glide.with(this)
+                .load(uriOrUrl)
+                .placeholder(R.drawable.sample1)
+                .error(R.drawable.sample1)
+                .into(target);
     }
 
-    // detailInfo2 (코스 전용, 서브코스 리스트)
-    private void fetchCourseInfo(String contentId) {
-        api.getCourseInfo2("AND","localit","json", contentId, 25, serviceKey)
-                .enqueue(new Callback<CourseInfoResponse>() {
-                    @Override public void onResponse(Call<CourseInfoResponse> call, Response<CourseInfoResponse> res) {
-                        List<CourseInfoResponse.CourseInfoItem> list = new ArrayList<>();
-                        if (res.isSuccessful()
-                                && res.body()!=null
-                                && res.body().response!=null
-                                && res.body().response.body!=null
-                                && res.body().response.body.items!=null
-                                && res.body().response.body.items.item!=null) {
-                            list = res.body().response.body.items.item;
-                        }
-                        List<CourseInfoResponse.CourseInfoItem> finalList = list;
-                        runOnUiThread(() -> courseAdapter.submit(finalList));
-                    }
-                    @Override public void onFailure(Call<CourseInfoResponse> call, Throwable t) { /* no-op */ }
-                });
+    private void setLoading(boolean show) {
+        if (progress != null) progress.setVisibility(show ? View.VISIBLE : View.GONE);
+        View scroll = findViewById(R.id.scrollView);
+        if (scroll != null) scroll.setVisibility(show ? View.INVISIBLE : View.VISIBLE);
+        if (tvError != null) tvError.setVisibility(View.GONE);
     }
 
-    // utils
-    private void setText(TextView tv, String v) {
-        if (tv == null) return;
-        String s = v == null ? "" : v.trim();
-        tv.setText(s);
+    private void showError(String msg) {
+        if (tvError != null) {
+            tvError.setText(msg);
+            tvError.setVisibility(View.VISIBLE);
+        } else {
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        }
+        View scroll = findViewById(R.id.scrollView);
+        if (scroll != null) scroll.setVisibility(View.INVISIBLE);
+        if (progress != null) progress.setVisibility(View.GONE);
     }
-    private String stripHtml(String html) {
-        if (TextUtils.isEmpty(html)) return "";
-        return HtmlCompat.fromHtml(html.replaceAll("(?i)<br\\s*/?>","\n"),
-                HtmlCompat.FROM_HTML_MODE_LEGACY).toString().trim();
-    }
-    private String join(String a, String b) {
-        if (TextUtils.isEmpty(a)) return b == null ? "" : b;
-        if (TextUtils.isEmpty(b)) return a;
-        return a + " " + b;
-    }
-    private String label(String head, String body) {
-        if (TextUtils.isEmpty(body)) return "";
-        return head + body;
-    }
+
+    // 안전 접근 헬퍼
+    private interface Getter<T> { T get() throws Exception; }
+    private <T> T safe(Getter<T> g) { try { return g.get(); } catch (Throwable t) { return null; } }
 }

@@ -56,8 +56,8 @@ public class HomeFragment extends Fragment {
     private FragmentHomeBinding binding;
     public HomeCoursePagerAdapter courseAdapter;
 
+    // 코스 커버 이미지만 앱 번들 리소스로 오버라이드 (클릭 시엔 내부 상세로 이동)
     private final Map<String, String> courseImageOverride = new LinkedHashMap<>();
-    private final Map<String, String> courseUrlOverride = new LinkedHashMap<>();
 
     private ActivityResultLauncher<Intent> interestRegionLauncher;
 
@@ -103,6 +103,7 @@ public class HomeFragment extends Fragment {
             interestRegionLauncher.launch(i);
         });
 
+        // 코스 커버 이미지 오버라이드 맵
         String pkg = requireContext().getPackageName();
         courseImageOverride.put("3517031", "android.resource://" + pkg + "/drawable/travel1");
         courseImageOverride.put("3516944", "android.resource://" + pkg + "/drawable/travel2");
@@ -111,14 +112,6 @@ public class HomeFragment extends Fragment {
         courseImageOverride.put("2987504", "android.resource://" + pkg + "/drawable/travel5");
         courseImageOverride.put("2018433", "android.resource://" + pkg + "/drawable/travel6");
         courseImageOverride.put("2833450", "android.resource://" + pkg + "/drawable/travel7");
-
-        courseUrlOverride.put("3517031", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=e42e60b7-eac0-4540-a1e4-749bed108154&big_category=&mid_category=&big_area=37");
-        courseUrlOverride.put("3516944", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=223fa941-e1ee-4853-aa8d-3faa620263d3&big_category=&mid_category=&big_area=33");
-        courseUrlOverride.put("3516594", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=9f4873a0-ba10-4bdb-bb05-97f00a029c67&big_category=&mid_category=&big_area=38");
-        courseUrlOverride.put("2022929", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=cf46676f-41d0-495f-972c-bfb32d59ff0b&big_category=C01&mid_category=C0115&big_area=1");
-        courseUrlOverride.put("2987504", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=2d54823f-a765-4b64-8693-72bc59e6798b&big_category=C01&mid_category=C0114&big_area=2");
-        courseUrlOverride.put("2018433", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=5064fda9-ac0a-40a4-8abf-b50dc5fdb797&big_category=C01&mid_category=C0112&big_area=31");
-        courseUrlOverride.put("2833450", "https://korean.visitkorea.or.kr/detail/cs_detail_cos.do?cotid=36c7d072-de3d-4c4b-9c7e-e1ddaade2a7d&big_category=C01&mid_category=C0114&big_area=32");
 
         // ----- 코스 ViewPager -----
         courseAdapter = new HomeCoursePagerAdapter(courseImageOverride, this::openCourseDetail);
@@ -130,13 +123,11 @@ public class HomeFragment extends Fragment {
             int pos = pager.getCurrentItem();
             if (pos > 0) pager.setCurrentItem(pos - 1, true);
         });
-        binding.btnNext.setOnClickListener(v -> {
-            if (pager.getAdapter() != null) {
-                pager.setCurrentItem(pager.getCurrentItem() + 1, true);
-            }
-        });
+        binding.btnNext.setOnClickListener(v ->
+                pager.setCurrentItem(pager.getCurrentItem() + 1, true)
+        );
 
-        // 1) 폴백 리스트를 먼저 표시 (오버라이드 이미지만으로도 보이도록)
+        // 폴백 리스트를 먼저 표시
         List<String> courseIds = Arrays.asList(
                 "3517031","3516944","3516594","2022929","2987504","2018433","2833450"
         );
@@ -145,16 +136,21 @@ public class HomeFragment extends Fragment {
             TourItem t = new TourItem();
             t.contentid = id;
             t.title = "";          // 제목은 API 성공 시 채워짐
-            t.firstimage = null;   // 이미지는 어댑터에서 override를 우선 사용
+            t.contenttypeid = "25";// 코스
+            t.firstimage = null;   // 이미지는 오버라이드 우선
             fallback.add(t);
         }
         courseAdapter.submit(fallback);
 
-        // 2) API가 성공하면 교체, 실패/빈응답이면 폴백 유지
+        // API 성공 시 최신 데이터로 교체
         TourApiHelper.fetchCourseSummaries(courseIds, courseItems -> {
             if (getActivity() == null) return;
             getActivity().runOnUiThread(() -> {
                 if (courseItems != null && !courseItems.isEmpty()) {
+                    // contenttypeid 누락된 항목 보정
+                    for (TourItem it : courseItems) {
+                        if (TextUtils.isEmpty(it.contenttypeid)) it.contenttypeid = "25";
+                    }
                     courseAdapter.submit(courseItems);
                 }
             });
@@ -206,6 +202,26 @@ public class HomeFragment extends Fragment {
         }
     }
 
+    // ★ 코스 카드를 클릭하면 항상 내부 상세로 이동
+    private void openCourseDetail(TourItem item) {
+        if (getContext() == null || item == null) return;
+
+        Intent i = new Intent(requireContext(), CourseDetailActivity.class);
+        i.putExtra(CourseDetailActivity.EXTRA_CONTENT_ID, item.contentid);
+        i.putExtra(CourseDetailActivity.EXTRA_TITLE,
+                TextUtils.isEmpty(item.title) ? "상세 정보" : item.title);
+        // 코스 타입 보장(없으면 25로 세팅)
+        i.putExtra(CourseDetailActivity.EXTRA_CONTENT_TYPE_ID,
+                TextUtils.isEmpty(item.contenttypeid) ? "25" : item.contenttypeid);
+
+        // 커버 이미지 폴백 전달(상세에서 썸네일/헤더로 활용)
+        if (courseImageOverride.containsKey(item.contentid)) {
+            i.putExtra(CourseDetailActivity.EXTRA_FALLBACK_IMAGE_URI,
+                    courseImageOverride.get(item.contentid));
+        }
+        startActivity(i);
+    }
+
     private void openFestivalDetailFromCard(int idx) {
         if (festivalCardItems == null || festivalCardItems.size() <= idx) return;
 
@@ -218,24 +234,6 @@ public class HomeFragment extends Fragment {
         i.putExtra(FestivalDetailActivity.EXTRA_ADDR1, safe(it.addr1));
         i.putExtra(FestivalDetailActivity.EXTRA_FIRST_IMAGE, safe(it.firstimage));
         startActivity(i);
-    }
-
-    private void openCourseDetail(TourItem item) {
-        if (getContext() == null || item == null) return;
-
-        if (courseUrlOverride.containsKey(item.contentid)) {
-            String url = courseUrlOverride.get(item.contentid);
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            startActivity(browserIntent);
-        } else {
-            Intent i = new Intent(requireContext(), CourseDetailActivity.class);
-            i.putExtra(CourseDetailActivity.EXTRA_CONTENT_ID, item.contentid);
-            i.putExtra(CourseDetailActivity.EXTRA_TITLE, TextUtils.isEmpty(item.title) ? "상세 정보" : item.title);
-            if (courseImageOverride.containsKey(item.contentid)) {
-                i.putExtra(CourseDetailActivity.EXTRA_FALLBACK_IMAGE_URI, courseImageOverride.get(item.contentid));
-            }
-            startActivity(i);
-        }
     }
 
     // ================= 관광 카드 2개 =================

@@ -11,5 +11,7 @@ public class GlobalApplication extends Application {
         super.onCreate();
         KakaoSdk.init(this, "47032f657514090a03eb23e26657b152");//카카오 로그인 초기화
         NotiHelper.ensureChannels(this); // 알림
+        com.inhatc.localit.api.home.TourApiHelper.AppCtx.init(getApplicationContext());
+
     }
 }
