@@ -61,10 +61,9 @@ public class MypageFragment extends Fragment {
 
     private FragmentMypageBinding binding;
 
-    private ActivityResultLauncher<String>  galleryLauncher;
-    private ActivityResultLauncher<Uri>     cameraLauncher;
+    private ActivityResultLauncher<String> galleryLauncher;
+    private ActivityResultLauncher<Uri> cameraLauncher;
     private ActivityResultLauncher<String[]> permissionLauncher;
-    private ImageButton btnBack;
 
     private enum Pending { NONE, GALLERY, CAMERA }
     private Pending pending = Pending.NONE;
@@ -84,9 +83,6 @@ public class MypageFragment extends Fragment {
 
         // 뒤로가기 버튼 (UI)
         binding.btnBack.setOnClickListener(v -> goHomeSingleTop());
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> goHomeSingleTop());
-        }
 
         // 물리/소프트 뒤로가기 키 처리
         requireActivity().getOnBackPressedDispatcher().addCallback(
@@ -139,6 +135,9 @@ public class MypageFragment extends Fragment {
 
         // 유저 프로필 로딩
         loadUserProfile();
+
+        // 회원 탈퇴 버튼 리스너
+        binding.rowWithdraw.setOnClickListener(v -> confirmAccountDeletion());
 
         return root;
     }
@@ -466,6 +465,59 @@ public class MypageFragment extends Fragment {
 
         Toast.makeText(requireContext(), "로그아웃 되었습니다.", Toast.LENGTH_SHORT).show();
         goLoginAndFinish();
+    }
+
+    /* ───────────── 회원 탈퇴 ───────────── */
+
+    private void confirmAccountDeletion() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("회원 탈퇴")
+                .setMessage("정말 회원 탈퇴하시겠어요? 모든 데이터가 영구적으로 삭제됩니다.")
+                .setPositiveButton("탈퇴하기", (d, w) -> performAccountDeletion())
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void performAccountDeletion() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String docId = getProfileDocId();
+
+        if (user == null || docId == null) {
+            Toast.makeText(requireContext(), "로그인이 되어있지 않습니다.", Toast.LENGTH_SHORT).show();
+            goLoginAndFinish();
+            return;
+        }
+
+        // 1. Firestore 사용자 데이터 삭제
+        FirebaseFirestore.getInstance().collection("users").document(docId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("MypageFragment", "Firestore user document deleted.");
+
+                    // 2. Firebase 인증 정보 삭제
+                    user.delete()
+                            .addOnCompleteListener(task -> {
+                                if (task.isSuccessful()) {
+                                    Log.d("MypageFragment", "Firebase user account deleted.");
+
+                                    // 3. 로컬 세션 정리 및 로그인 화면으로 이동
+                                    requireContext().getSharedPreferences("auth", Context.MODE_PRIVATE)
+                                            .edit().clear().apply();
+
+                                    Toast.makeText(requireContext(), "회원 탈퇴가 완료되었습니다.", Toast.LENGTH_SHORT).show();
+                                    goLoginAndFinish();
+                                } else {
+                                    Log.e("MypageFragment", "Firebase account deletion failed.", task.getException());
+                                    Toast.makeText(requireContext(), "회원 탈퇴 실패: 다시 로그인 후 시도해주세요.", Toast.LENGTH_LONG).show();
+                                    // 재인증 필요 시, 로그인 화면으로 보내야 함
+                                    goLoginAndFinish();
+                                }
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("MypageFragment", "Firestore document deletion failed.", e);
+                    Toast.makeText(requireContext(), "데이터 삭제 실패. 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void goLoginAndFinish() {

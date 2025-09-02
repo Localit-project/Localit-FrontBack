@@ -1,22 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    card_view:cardCornerRadius="12dp"
-    card_view:cardUseCompatPadding="true"
-    card_view:cardElevation="4dp">
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:cardUseCompatPadding="false"
+    app:cardPreventCornerOverlap="true">
 
-    <!-- 가로(Row) 정렬: 썸네일 | 텍스트 | 하트 -->
+    <!-- 한 행 높이를 고정해서(96dp) 카드 크기 통일 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="96dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
-        android:background="?attr/selectableItemBackground">
+        android:padding="12dp">
 
         <!-- 썸네일 -->
         <ImageView
@@ -24,8 +27,9 @@
             android:layout_width="80dp"
             android:layout_height="80dp"
             android:scaleType="centerCrop"
-            android:contentDescription="썸네일" />
-        <!-- 텍스트 영역 -->
+            android:contentDescription="@string/app_name" />
+
+        <!-- 텍스트 -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -35,32 +39,32 @@
             android:paddingEnd="8dp"
             android:gravity="center_vertical">
 
+            <!-- 제목: 모두 16sp, bold로 통일 -->
             <TextView
                 android:id="@+id/textTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:text="제목"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
-                android:textColor="#222222" />
+                android:includeFontPadding="false"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:textColor="#222" />
 
+            <!-- 보조(주소/요약): 13sp, 한 줄로 고정해서 높이 변동 X -->
             <TextView
                 android:id="@+id/textAddr"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:textSize="13sp"
+                android:includeFontPadding="false"
                 android:maxLines="1"
                 android:ellipsize="end"
-                android:text="보조 정보"
-                android:textSize="13sp"
-                android:fontFamily="sans-serif"
-                android:textColor="#666666" />
+                android:textColor="#666" />
         </LinearLayout>
 
-        <!-- 우측 하트 -->
+        <!-- 하트 -->
         <ImageButton
             android:id="@+id/imageButtonHeart"
             android:layout_width="40dp"
