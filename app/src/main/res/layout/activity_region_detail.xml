@@ -5,7 +5,9 @@
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".RegionDetailActivity">
+    tools:context=".RegionDetailActivity"
+    android:clipToPadding="false"
+    android:clipChildren="false">
 
     <LinearLayout
         android:id="@+id/topBar"
@@ -60,10 +62,13 @@
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="13dp"
+        android:paddingBottom="16dp"
+        android:clipToPadding="false"
+        android:clipChildren="false"
+        app:layout_constraintTop_toBottomOf="@id/topBar"
         app:layout_constraintBottom_toTopOf="@id/nav_view"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/topBar">
+        app:layout_constraintStart_toStartOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -76,7 +81,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 app:cardCornerRadius="8dp"
-                app:cardElevation="2dp">
+                app:cardElevation="2dp"
+                app:cardUseCompatPadding="true"
+                app:cardPreventCornerOverlap="true">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -151,7 +158,9 @@
                         android:clickable="true"
                         android:focusable="true"
                         app:cardCornerRadius="8dp"
-                        app:cardElevation="2dp">
+                        app:cardElevation="2dp"
+                        app:cardUseCompatPadding="true"
+                        app:cardPreventCornerOverlap="true">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -212,7 +221,9 @@
                         android:clickable="true"
                         android:focusable="true"
                         app:cardCornerRadius="8dp"
-                        app:cardElevation="2dp">
+                        app:cardElevation="2dp"
+                        app:cardUseCompatPadding="true"
+                        app:cardPreventCornerOverlap="true">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -316,7 +327,9 @@
                         android:clickable="true"
                         android:focusable="true"
                         app:cardCornerRadius="8dp"
-                        app:cardElevation="2dp">
+                        app:cardElevation="2dp"
+                        app:cardUseCompatPadding="true"
+                        app:cardPreventCornerOverlap="true">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -377,7 +390,9 @@
                         android:clickable="true"
                         android:focusable="true"
                         app:cardCornerRadius="8dp"
-                        app:cardElevation="2dp">
+                        app:cardElevation="2dp"
+                        app:cardUseCompatPadding="true"
+                        app:cardPreventCornerOverlap="true">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -474,7 +489,9 @@
                     android:clickable="true"
                     android:focusable="true"
                     app:cardCornerRadius="8dp"
-                    app:cardElevation="2dp">
+                    app:cardElevation="2dp"
+                    app:cardUseCompatPadding="true"
+                    app:cardPreventCornerOverlap="true">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -522,7 +539,9 @@
                     android:clickable="true"
                     android:focusable="true"
                     app:cardCornerRadius="8dp"
-                    app:cardElevation="2dp">
+                    app:cardElevation="2dp"
+                    app:cardUseCompatPadding="true"
+                    app:cardPreventCornerOverlap="true">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -570,7 +589,9 @@
                     android:clickable="true"
                     android:focusable="true"
                     app:cardCornerRadius="8dp"
-                    app:cardElevation="2dp">
+                    app:cardElevation="2dp"
+                    app:cardUseCompatPadding="true"
+                    app:cardPreventCornerOverlap="true">
 
                     <LinearLayout
                         android:layout_width="match_parent"
